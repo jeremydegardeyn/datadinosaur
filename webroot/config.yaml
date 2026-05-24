@@ -1,0 +1,61 @@
+site:
+  name: "DataDinosaur"
+  tagline: "Human Data Expertise for the AI Era"
+  description: "Real-world data engineering insights, career advice, and consulting for professionals navigating the AI landscape."
+  base_url: "https://my.datadinosaur.com"
+  author: "Jeremy"
+  copyright_year: 2026
+
+nav:
+  - label: "Home"
+    href: "/"
+  - label: "Blog"
+    href: "/blog"
+  - label: "Services"
+    href: "/services"
+  - label: "Contact"
+    href: "/contact"
+
+blog:
+  posts_per_page: 8
+  show_author:    true
+  show_date:      true
+  show_read_time: true
+  show_views:     false
+  show_tags:      true
+  show_category:  true
+  comments_enabled:    true
+  comment_moderation:  true        # pending until admin approves
+  excerpt_length:      200         # chars for auto-excerpt
+  date_format:         "F j, Y"
+  show_sidebar:        true
+  sidebar_widgets:
+    - search
+    - categories
+    - recent_posts
+
+ads:
+  enabled: false                   # flip to true when ready
+  # Paste your Google AdSense code below after enabling
+  header_ad_code:        ""
+  sidebar_ad_code:       ""
+  between_posts_ad_code: ""
+
+contact:
+  email: "jeremy@datadinosaur.com"
+  consulting_types:
+    - "Data Architecture Review"
+    - "Data Governance & Metadata Strategy"
+    - "AI / Gen AI Integration"
+    - "Data Quality Assessment"
+    - "General Question"
+
+footer:
+  links:
+    - label: "Blog"
+      href: "/blog"
+    - label: "Services"
+      href: "/services"
+    - label: "Contact"
+      href: "/contact"
+  social: []                       # add { label: "LinkedIn", href: "..." } when ready
