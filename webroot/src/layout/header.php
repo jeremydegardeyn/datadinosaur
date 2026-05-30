@@ -10,6 +10,10 @@
 <?php if (($config['ads']['enabled'] ?? false) && !empty($config['ads']['header_ad_code'])): ?>
 <?= $config['ads']['header_ad_code'] ?>
 <?php endif; ?>
+<?php if (($config['analytics']['enabled'] ?? false) && !empty($config['analytics']['goatcounter_code'])): ?>
+<script data-goatcounter="https://<?= e($config['analytics']['goatcounter_code']) ?>.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+<?php endif; ?>
 </head>
 <body class="<?= e($body_class) ?>">
 

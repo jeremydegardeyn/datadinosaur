@@ -50,6 +50,13 @@ contact:
     - "Data Quality Assessment"
     - "General Question"
 
+# Analytics — sign up free at goatcounter.com (no cookies, GDPR-clean)
+# Set enabled: true and paste your GoatCounter site code (the subdomain part)
+# e.g. if your URL is https://datadinosaur.goatcounter.com, code is "datadinosaur"
+analytics:
+  enabled: false
+  goatcounter_code: ""
+
 footer:
   links:
     - label: "Blog"

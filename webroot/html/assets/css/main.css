@@ -142,7 +142,72 @@ h1,h2,h3,h4,h5 {
 }
 .hero-cta { display: flex; gap: .75rem; flex-wrap: wrap; }
 .hero-logo { flex-shrink: 0; opacity: .92; }
-.hero-dino { width: clamp(280px, 36vw, 420px); filter: drop-shadow(0 4px 20px rgba(16,185,129,.25)); }
+
+/* ---- Hero animation wrap ---- */
+.hero-dino-wrap {
+  position: relative;
+  width: clamp(280px, 36vw, 420px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  padding: .5rem .5rem .6rem;
+}
+
+#hero-matrix {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  /* opacity driven by JS */
+}
+
+.hero-dino-svg {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 4px 22px rgba(57,181,74,.3));
+}
+
+.hero-tagline-anim {
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  font-family: monospace;
+  font-size: .72rem;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: #7ecf8e;
+  margin-top: .35rem;
+  text-align: center;
+  transition: opacity 1.8s ease;
+}
+.hero-tagline-anim.visible { opacity: 0.9; }
+
+/* ---- Dino chomp animation ---- */
+#hero-dino-graphic {
+  transform-box: fill-box;
+  transform-origin: 50% 90%;  /* pivot near base of dino D-shape */
+}
+
+@keyframes dinoChomp {
+  0%   { transform: rotate(0deg)   scaleX(1);    }  /* rest        */
+  12%  { transform: rotate(-22deg) scaleX(1);    }  /* look up     */
+  26%  { transform: rotate(9deg)   scaleX(1);    }  /* swing right */
+  37%  { transform: rotate(-14deg) scaleX(1);    }  /* bite setup  */
+  44%  { transform: rotate(-14deg) scaleX(0.58); }  /* CHOMP 1 ←  */
+  51%  { transform: rotate(-14deg) scaleX(1.06); }  /* rebound     */
+  58%  { transform: rotate(-14deg) scaleX(0.58); }  /* CHOMP 2 ←  */
+  67%  { transform: rotate(-14deg) scaleX(1.0);  }  /* rebound     */
+  82%  { transform: rotate(3deg)   scaleX(1);    }  /* settle      */
+  100% { transform: rotate(0deg)   scaleX(1);    }  /* rest        */
+}
+
+.dino-chomping {
+  animation: dinoChomp 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
 
 /* ---- Value props ---- */
 .value-props { padding: 4rem 0; }
