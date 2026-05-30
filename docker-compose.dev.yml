@@ -23,7 +23,7 @@ services:
       - MYSQL_HOST=db
       - MYSQL_DATABASE=${MYSQL_DATABASE:-datadinosaur}
       - MYSQL_USER=${MYSQL_USER:-dduser}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-devpass}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
       - CONTACT_TO_EMAIL=${CONTACT_TO_EMAIL:-dev@localhost}
@@ -43,8 +43,8 @@ services:
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-datadinosaur}
       MYSQL_USER: ${MYSQL_USER:-dduser}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-devpass}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootdevpass}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     volumes:
       - mysql-dev-data:/var/lib/mysql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
