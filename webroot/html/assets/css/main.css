@@ -224,6 +224,8 @@ h1,h2,h3,h4,h5 {
 .post-author { font-size: .78rem; color: var(--text-muted); }
 .btn-admin-edit { font-size: .75rem; color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: .1rem .5rem; }
 .btn-admin-edit:hover { background: var(--accent); color: #000; text-decoration: none; }
+.btn-admin-delete { font-size: .75rem; color: var(--danger); border: 1px solid var(--danger); border-radius: 4px; padding: .1rem .5rem; background: transparent; cursor: pointer; line-height: 1.4; }
+.btn-admin-delete:hover { background: var(--danger); color: #fff; }
 
 /* ---- Pagination ---- */
 .pagination { display: flex; align-items: center; gap: 1rem; justify-content: center; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }

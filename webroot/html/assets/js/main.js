@@ -127,6 +127,24 @@ function moderateComment(id, action, csrf) {
     .catch(console.error);
 }
 
+/* ---- Delete inquiry ---- */
+function deleteInquiry(id, csrf) {
+  if (!confirm('Delete this inquiry permanently?')) return;
+  const fd = new FormData();
+  fd.append('action', 'delete_inquiry');
+  fd.append('inquiry_id', id);
+  fd.append('csrf_token', csrf);
+  fetch('/api/contact', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        const el = document.querySelector(`[data-inquiry-id="${id}"]`);
+        if (el) el.remove();
+      }
+    })
+    .catch(console.error);
+}
+
 /* ---- Helpers ---- */
 function slugify(str) {
   return str.toLowerCase()

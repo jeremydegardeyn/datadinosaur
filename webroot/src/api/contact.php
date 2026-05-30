@@ -1,6 +1,15 @@
 <?php
 declare(strict_types=1);
 
+// ---- Admin: delete inquiry (JSON) ----
+if (($_POST['action'] ?? '') === 'delete_inquiry' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!is_admin()) json_response(['error' => 'Unauthorized'], 401);
+    if (!verify_csrf($_POST['csrf_token'] ?? '')) json_response(['error' => 'Invalid CSRF'], 403);
+    $pdo = db_connect();
+    $pdo->prepare("DELETE FROM contact_inquiries WHERE id = ?")->execute([(int)($_POST['inquiry_id'] ?? 0)]);
+    json_response(['ok' => true]);
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: /contact');
     exit;

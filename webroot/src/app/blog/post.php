@@ -66,10 +66,13 @@ $excerpt = $post['excerpt'] ?: auto_excerpt($post['content'], 160);
   <?php if (!empty($comments)): ?>
   <div class="comments-list">
     <?php foreach ($comments as $c): ?>
-    <div class="comment">
+    <div class="comment" data-comment-id="<?= (int)$c['id'] ?>">
       <div class="comment-meta">
         <strong class="comment-author"><?= e($c['author_name']) ?></strong>
         <time><?= date('M j, Y', strtotime($c['created_at'])) ?></time>
+        <?php if (is_admin()): ?>
+        <button class="btn-admin-delete" onclick="moderateComment(<?= (int)$c['id'] ?>, 'delete', '<?= e(csrf_token()) ?>')">Delete</button>
+        <?php endif; ?>
       </div>
       <div class="comment-body"><?= nl2br(e($c['content'])) ?></div>
     </div>

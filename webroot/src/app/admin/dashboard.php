@@ -17,6 +17,11 @@ $cmts_stmt = $pdo->prepare("SELECT c.*, p.title AS post_title, p.slug AS post_sl
 $cmts_stmt->execute();
 $pending_comments = $cmts_stmt->fetchAll();
 
+// Approved comments
+$approved_stmt = $pdo->prepare("SELECT c.*, p.title AS post_title, p.slug AS post_slug FROM blog_comments c JOIN blog_posts p ON p.id = c.post_id WHERE c.status = 'approved' ORDER BY c.created_at DESC LIMIT 30");
+$approved_stmt->execute();
+$approved_comments = $approved_stmt->fetchAll();
+
 // Recent inquiries
 $inq_stmt = $pdo->query("SELECT id, name, email, subject, inquiry_type, status, created_at FROM contact_inquiries ORDER BY created_at DESC LIMIT 20");
 $inquiries = $inq_stmt->fetchAll();
@@ -90,22 +95,44 @@ $inquiries = $inq_stmt->fetchAll();
   </section>
   <?php endif; ?>
 
+  <!-- Approved comments -->
+  <?php if (!empty($approved_comments)): ?>
+  <section class="admin-section">
+    <h2>Approved Comments</h2>
+    <?php foreach ($approved_comments as $c): ?>
+    <div class="comment-moderation" data-comment-id="<?= (int)$c['id'] ?>">
+      <div class="comment-moderation-meta">
+        <strong><?= e($c['author_name']) ?></strong> on
+        <a href="/blog/<?= e($c['post_slug']) ?>"><?= e($c['post_title']) ?></a>
+        &mdash; <?= date('M j, Y g:ia', strtotime($c['created_at'])) ?>
+      </div>
+      <p><?= e($c['content']) ?></p>
+      <div class="comment-actions">
+        <button class="btn btn-danger btn-sm" onclick="moderateComment(<?= $c['id'] ?>, 'spam',   '<?= e(csrf_token()) ?>')">Spam</button>
+        <button class="btn btn-ghost  btn-sm" onclick="moderateComment(<?= $c['id'] ?>, 'delete', '<?= e(csrf_token()) ?>')">Delete</button>
+      </div>
+    </div>
+    <?php endforeach; ?>
+  </section>
+  <?php endif; ?>
+
   <!-- Inquiries -->
   <?php if (!empty($inquiries)): ?>
   <section class="admin-section">
     <h2>Contact Inquiries</h2>
     <table class="admin-table">
       <thead>
-        <tr><th>From</th><th>Subject</th><th>Type</th><th>Status</th><th>Date</th></tr>
+        <tr><th>From</th><th>Subject</th><th>Type</th><th>Status</th><th>Date</th><th></th></tr>
       </thead>
       <tbody>
         <?php foreach ($inquiries as $q): ?>
-        <tr>
+        <tr data-inquiry-id="<?= (int)$q['id'] ?>">
           <td><?= e($q['name']) ?><br><small><?= e($q['email']) ?></small></td>
           <td><?= e($q['subject']) ?></td>
           <td><?= e($q['inquiry_type']) ?></td>
           <td><span class="badge badge-<?= $q['status'] ?>"><?= $q['status'] ?></span></td>
           <td><?= date('M j, Y', strtotime($q['created_at'])) ?></td>
+          <td><button class="btn btn-danger btn-sm" onclick="deleteInquiry(<?= (int)$q['id'] ?>, '<?= e(csrf_token()) ?>')">Delete</button></td>
         </tr>
         <?php endforeach; ?>
       </tbody>
