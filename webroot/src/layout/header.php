@@ -17,7 +17,7 @@
   <div class="container header-inner">
     <a href="/" class="site-logo">
       <img src="/assets/images/data_dinosaur_header.svg" alt="DataDinosaur" height="36">
-      <span class="site-tagline">human expertise in an ai era</span>
+      <span class="site-tagline">Human Expertise for the AI Era</span>
     </a>
 
     <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
