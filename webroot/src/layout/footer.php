@@ -2,11 +2,6 @@
 
 <footer class="site-footer">
   <div class="container footer-inner">
-    <div class="footer-brand">
-      <img src="/assets/images/data_dinosaur_footer.svg" alt="DataDinosaur" height="32">
-      <p class="footer-tagline"><?= e($config['site']['tagline']) ?></p>
-    </div>
-
     <nav class="footer-nav">
       <?php foreach ($config['footer']['links'] as $link): ?>
       <a href="<?= e($link['href']) ?>"><?= e($link['label']) ?></a>
