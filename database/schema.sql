@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS contact_inquiries (
     company      VARCHAR(200),
     subject      VARCHAR(300)  NOT NULL,
     message      TEXT          NOT NULL,
-    inquiry_type ENUM('consulting','question','other') DEFAULT 'other',
+    inquiry_type VARCHAR(200) DEFAULT 'General Question',
     status       ENUM('new','read','replied') DEFAULT 'new',
     created_at   DATETIME      DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

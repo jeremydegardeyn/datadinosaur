@@ -138,7 +138,7 @@ function get_recent_posts(int $limit = 5): array
 {
     $pdo  = db_connect();
     $stmt = $pdo->prepare(
-        "SELECT id, title, slug, published_at
+        "SELECT id, title, slug, excerpt, content, published_at
          FROM blog_posts
          WHERE status = 'published'
          ORDER BY published_at DESC
