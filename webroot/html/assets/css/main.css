@@ -88,14 +88,14 @@ h1,h2,h3,h4,h5 {
   height: 64px; gap: 1rem;
 }
 .site-logo {
-  display: flex; align-items: center; gap: .65rem;
+  display: flex; flex-direction: column; align-items: flex-start; gap: .15rem;
   text-decoration: none;
 }
 .site-logo img { height: 36px; width: auto; }
 .site-logo:hover { text-decoration: none; }
-.site-name {
-  font-size: 1.15rem; font-weight: 700; color: var(--heading);
-  letter-spacing: -.3px;
+.site-tagline {
+  font-size: .65rem; font-weight: 400; color: var(--text-muted);
+  letter-spacing: .06em; text-transform: lowercase;
 }
 .site-nav {
   display: flex; align-items: center; gap: .15rem;

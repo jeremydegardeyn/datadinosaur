@@ -16,8 +16,8 @@
 <header class="site-header">
   <div class="container header-inner">
     <a href="/" class="site-logo">
-      <img src="/assets/images/data_dinosaur_footer.svg" alt="DataDinosaur" height="36">
-      <span class="site-name">DataDinosaur</span>
+      <img src="/assets/images/data_dinosaur_header.svg" alt="DataDinosaur" height="36">
+      <span class="site-tagline">human expertise in an ai era</span>
     </a>
 
     <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">

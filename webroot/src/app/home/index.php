@@ -16,7 +16,7 @@ $recent_posts = get_recent_posts(3);
       </div>
     </div>
     <div class="hero-logo">
-      <img src="/assets/images/data_dinosaur.svg" alt="DataDinosaur" class="hero-dino">
+      <img src="/assets/images/data_dinosaur_footer.svg" alt="DataDinosaur" class="hero-dino">
     </div>
   </div>
 </section>
