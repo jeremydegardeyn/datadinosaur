@@ -14,7 +14,7 @@ function get_posts(int $page = 1, int $per_page = 8, ?int $category_id = null): 
     }
 
     $sql = "SELECT p.id, p.title, p.slug, p.excerpt, p.content, p.author,
-                   p.views, p.published_at, c.name AS category_name, c.slug AS category_slug
+                   p.category_id, p.views, p.published_at, c.name AS category_name, c.slug AS category_slug
             FROM blog_posts p
             LEFT JOIN blog_categories c ON c.id = p.category_id
             WHERE {$where}

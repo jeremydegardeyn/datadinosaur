@@ -116,8 +116,10 @@ if ($action === 'moderate_comment' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($mod === 'delete') {
         $pdo->prepare("DELETE FROM blog_comments WHERE id = ?")->execute([$id]);
-    } elseif (in_array($mod, ['approve', 'spam'], true)) {
-        $pdo->prepare("UPDATE blog_comments SET status = ? WHERE id = ?")->execute([$mod, $id]);
+    } elseif ($mod === 'approve') {
+        $pdo->prepare("UPDATE blog_comments SET status = 'approved' WHERE id = ?")->execute([$id]);
+    } elseif ($mod === 'spam') {
+        $pdo->prepare("UPDATE blog_comments SET status = 'spam' WHERE id = ?")->execute([$id]);
     }
     json_response(['ok' => true]);
 }
