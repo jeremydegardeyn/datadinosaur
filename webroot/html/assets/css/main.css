@@ -91,6 +91,7 @@ h1,h2,h3,h4,h5 {
   display: flex; align-items: center; gap: .65rem;
   text-decoration: none;
 }
+.site-logo img { height: 44px; width: auto; }
 .site-logo:hover { text-decoration: none; }
 .site-name {
   font-size: 1.15rem; font-weight: 700; color: var(--heading);
@@ -371,7 +372,7 @@ select { cursor: pointer; }
   gap: 2rem;
 }
 .footer-brand { display: flex; flex-direction: column; gap: .5rem; }
-.footer-brand img { opacity: .7; }
+.footer-brand img { opacity: .7; height: 32px; width: auto; }
 .footer-tagline { font-size: .82rem; color: var(--text-muted); max-width: 220px; }
 .footer-nav { display: flex; flex-direction: column; gap: .4rem; text-align: center; }
 .footer-nav a { font-size: .85rem; color: var(--text-muted); }
