@@ -142,7 +142,7 @@ h1,h2,h3,h4,h5 {
 }
 .hero-cta { display: flex; gap: .75rem; flex-wrap: wrap; }
 .hero-logo { flex-shrink: 0; opacity: .92; }
-.hero-dino { width: clamp(200px, 28vw, 340px); filter: drop-shadow(0 4px 20px rgba(16,185,129,.25)); }
+.hero-dino { width: clamp(280px, 36vw, 420px); filter: drop-shadow(0 4px 20px rgba(16,185,129,.25)); }
 
 /* ---- Value props ---- */
 .value-props { padding: 4rem 0; }
