@@ -401,6 +401,12 @@ select { cursor: pointer; }
 .badge-draft     { background: rgba(245,158,11,.15);  color: var(--accent); }
 .badge-new       { background: rgba(245,158,11,.15);  color: var(--accent); }
 .badge-read      { background: var(--surface2); color: var(--text-muted); }
+/* Post visibility toggle */
+.col-visible { width: 54px; text-align: center; }
+.visibility-toggle { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.visibility-toggle input[type="checkbox"] { width: 1rem; height: 1rem; accent-color: var(--primary); cursor: pointer; }
+.admin-table tr.post-hidden td { opacity: .45; }
+.admin-table tr.post-hidden td:nth-child(3) { opacity: 1; } /* keep checkbox readable */
 .admin-edit { padding: 2rem 1.25rem 4rem; max-width: 900px; }
 .admin-edit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
 .editor-wrap { display: flex; flex-direction: column; gap: 0; }

@@ -95,6 +95,19 @@ if (in_array($action, ['create', 'update'], true) && $_SERVER['REQUEST_METHOD'] 
     exit;
 }
 
+// ---- Admin: toggle post visibility ----
+if ($action === 'toggle_visibility' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!is_admin()) json_response(['error' => 'Unauthorized'], 401);
+    if (!verify_csrf($_POST['csrf_token'] ?? '')) json_response(['error' => 'Invalid CSRF'], 403);
+
+    $pdo     = db_connect();
+    $post_id = (int)($_POST['post_id'] ?? 0);
+    $visible = (int)(bool)((int)($_POST['visible'] ?? 1));
+    $pdo->prepare("UPDATE blog_posts SET visible = ?, updated_at = NOW() WHERE id = ?")
+        ->execute([$visible, $post_id]);
+    json_response(['ok' => true]);
+}
+
 // ---- Admin: delete post ----
 if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!is_admin()) json_response(['error' => 'Unauthorized'], 401);

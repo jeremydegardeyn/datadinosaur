@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     category_id    INT,
     featured_image VARCHAR(255),
     status         ENUM('draft','published') DEFAULT 'draft',
+    visible        TINYINT(1)    NOT NULL DEFAULT 1,
     views          INT           DEFAULT 0,
     created_at     DATETIME      DEFAULT CURRENT_TIMESTAMP,
     updated_at     DATETIME      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

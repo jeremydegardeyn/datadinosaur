@@ -109,6 +109,28 @@ function deletePost(id, csrf) {
     .catch(console.error);
 }
 
+/* ---- Toggle post visibility ---- */
+function togglePostVisibility(id, visible, csrf) {
+  const fd = new FormData();
+  fd.append('action',     'toggle_visibility');
+  fd.append('post_id',    id);
+  fd.append('visible',    visible ? '1' : '0');
+  fd.append('csrf_token', csrf);
+  fetch('/api/blog', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        const row = document.querySelector(`tr[data-post-id="${id}"]`);
+        if (row) {
+          row.classList.toggle('post-hidden', !visible);
+          const lbl = row.querySelector('.visibility-toggle');
+          if (lbl) lbl.title = visible ? 'Visible — click to hide' : 'Hidden — click to show';
+        }
+      }
+    })
+    .catch(console.error);
+}
+
 /* ---- Moderate comment ---- */
 function moderateComment(id, action, csrf) {
   const fd = new FormData();

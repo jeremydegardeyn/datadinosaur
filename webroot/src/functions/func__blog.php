@@ -5,7 +5,7 @@ function get_posts(int $page = 1, int $per_page = 8, ?int $category_id = null): 
 {
     $pdo    = db_connect();
     $offset = ($page - 1) * $per_page;
-    $where  = 'p.status = \'published\'';
+    $where  = 'p.status = \'published\' AND p.visible = 1';
     $params = [];
 
     if ($category_id !== null) {
@@ -32,7 +32,7 @@ function get_posts(int $page = 1, int $per_page = 8, ?int $category_id = null): 
 function count_posts(?int $category_id = null): int
 {
     $pdo    = db_connect();
-    $where  = 'status = \'published\'';
+    $where  = 'status = \'published\' AND visible = 1';
     $params = [];
     if ($category_id !== null) {
         $where .= ' AND category_id = :cat';
@@ -51,7 +51,7 @@ function get_post_by_slug(string $slug): ?array
         "SELECT p.*, c.name AS category_name, c.slug AS category_slug
          FROM blog_posts p
          LEFT JOIN blog_categories c ON c.id = p.category_id
-         WHERE p.slug = ? AND p.status = 'published'"
+         WHERE p.slug = ? AND p.status = 'published' AND p.visible = 1"
     );
     $stmt->execute([$slug]);
     $post = $stmt->fetch() ?: null;
@@ -109,7 +109,7 @@ function search_posts(string $query, int $limit = 10): array
         "SELECT id, title, slug, excerpt, published_at,
                 MATCH(title, excerpt, content) AGAINST(:q IN NATURAL LANGUAGE MODE) AS score
          FROM blog_posts
-         WHERE status = 'published'
+         WHERE status = 'published' AND visible = 1
            AND MATCH(title, excerpt, content) AGAINST(:q2 IN NATURAL LANGUAGE MODE)
          ORDER BY score DESC
          LIMIT :lim"
@@ -127,7 +127,7 @@ function get_categories(): array
     $stmt = $pdo->query(
         "SELECT c.id, c.name, c.slug, COUNT(p.id) AS post_count
          FROM blog_categories c
-         LEFT JOIN blog_posts p ON p.category_id = c.id AND p.status = 'published'
+         LEFT JOIN blog_posts p ON p.category_id = c.id AND p.status = 'published' AND p.visible = 1
          GROUP BY c.id
          ORDER BY c.name ASC"
     );
@@ -140,7 +140,7 @@ function get_recent_posts(int $limit = 5): array
     $stmt = $pdo->prepare(
         "SELECT id, title, slug, excerpt, content, published_at
          FROM blog_posts
-         WHERE status = 'published'
+         WHERE status = 'published' AND visible = 1
          ORDER BY published_at DESC
          LIMIT ?"
     );

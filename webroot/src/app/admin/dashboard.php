@@ -9,7 +9,7 @@ $pending_cmts   = (int)$pdo->query("SELECT COUNT(*) FROM blog_comments WHERE sta
 $new_inquiries  = (int)$pdo->query("SELECT COUNT(*) FROM contact_inquiries WHERE status='new'")->fetchColumn();
 
 // Recent posts
-$posts_stmt = $pdo->query("SELECT id, title, slug, status, published_at, views FROM blog_posts ORDER BY updated_at DESC LIMIT 20");
+$posts_stmt = $pdo->query("SELECT id, title, slug, status, visible, published_at, views FROM blog_posts ORDER BY updated_at DESC LIMIT 20");
 $posts = $posts_stmt->fetchAll();
 
 // Pending comments
@@ -57,13 +57,20 @@ $inquiries = $inq_stmt->fetchAll();
     <h2>Posts</h2>
     <table class="admin-table">
       <thead>
-        <tr><th>Title</th><th>Status</th><th>Views</th><th>Published</th><th></th></tr>
+        <tr><th>Title</th><th>Status</th><th class="col-visible">Public</th><th>Views</th><th>Published</th><th></th></tr>
       </thead>
       <tbody>
         <?php foreach ($posts as $p): ?>
-        <tr>
+        <?php $isVisible = (bool)(int)$p['visible']; ?>
+        <tr data-post-id="<?= (int)$p['id'] ?>"<?= !$isVisible ? ' class="post-hidden"' : '' ?>>
           <td><a href="/blog/<?= e($p['slug']) ?>"><?= e($p['title']) ?></a></td>
           <td><span class="badge badge-<?= $p['status'] ?>"><?= $p['status'] ?></span></td>
+          <td class="col-visible">
+            <label class="visibility-toggle" title="<?= $isVisible ? 'Visible — click to hide' : 'Hidden — click to show' ?>">
+              <input type="checkbox" <?= $isVisible ? 'checked' : '' ?>
+                     onchange="togglePostVisibility(<?= (int)$p['id'] ?>, this.checked, '<?= e(csrf_token()) ?>')">
+            </label>
+          </td>
           <td><?= (int)$p['views'] ?></td>
           <td><?= $p['published_at'] ? date('M j, Y', strtotime($p['published_at'])) : '—' ?></td>
           <td><a href="/blog/edit?id=<?= (int)$p['id'] ?>" class="btn-sm">Edit</a></td>
