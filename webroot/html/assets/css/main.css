@@ -385,6 +385,7 @@ select { cursor: pointer; }
 /* ---- Admin ---- */
 .admin-dashboard { padding: 2rem 1.25rem 4rem; }
 .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+.admin-header-actions { display: flex; gap: .75rem; align-items: center; }
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; }
 .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; text-align: center; }
 .stat-card.stat-alert { border-color: var(--accent); }

@@ -29,7 +29,13 @@ $inquiries = $inq_stmt->fetchAll();
 <div class="container admin-dashboard">
   <div class="admin-header">
     <h1>Admin Dashboard</h1>
-    <a href="/blog/new" class="btn btn-primary">+ New Post</a>
+    <div class="admin-header-actions">
+      <?php if (!empty($config['analytics']['enabled']) && !empty($config['analytics']['goatcounter_code'])): ?>
+      <a href="https://<?= e($config['analytics']['goatcounter_code']) ?>.goatcounter.com"
+         class="btn btn-ghost" target="_blank" rel="noopener noreferrer">&#128200; Traffic Stats</a>
+      <?php endif; ?>
+      <a href="/blog/new" class="btn btn-primary">+ New Post</a>
+    </div>
   </div>
 
   <!-- Stats row -->
