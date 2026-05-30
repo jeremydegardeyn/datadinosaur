@@ -92,11 +92,11 @@ $excerpt = $post['excerpt'] ?: auto_excerpt($post['content'], 160);
       <input type="hidden" name="post_id"    value="<?= (int)$post['id'] ?>">
       <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
       <div class="form-row">
-        <label>Name *
-          <input type="text" name="author_name" required maxlength="100">
+        <label><span>Name <span class="field-note">(Optional)</span></span>
+          <input type="text" name="author_name" maxlength="100">
         </label>
-        <label>Email * <span class="field-note">(not published)</span>
-          <input type="email" name="author_email" required maxlength="200">
+        <label><span>Email <span class="field-note">(Optional — not published)</span></span>
+          <input type="email" name="author_email" maxlength="200">
         </label>
       </div>
       <label>Comment *
