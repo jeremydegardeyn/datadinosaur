@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     content        LONGTEXT      NOT NULL,
     author         VARCHAR(100)  DEFAULT 'Jeremy',
     category_id    INT,
-    featured_image VARCHAR(255),
     status         ENUM('draft','published') DEFAULT 'draft',
     visible        TINYINT(1)    NOT NULL DEFAULT 1,
     views          INT           DEFAULT 0,

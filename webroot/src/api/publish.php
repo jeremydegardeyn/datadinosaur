@@ -34,12 +34,13 @@ $pdo  = db_connect();
 $slug = sanitize_slug($title);
 
 // Ensure slug is unique
-$base_slug = $slug;
-$i = 1;
-while ($pdo->prepare("SELECT id FROM blog_posts WHERE slug = ?")->execute([$slug]) &&
-       $pdo->prepare("SELECT id FROM blog_posts WHERE slug = ?")->execute([$slug]) &&
-       $pdo->query("SELECT id FROM blog_posts WHERE slug = " . $pdo->quote($slug))->fetch()) {
+$base_slug  = $slug;
+$i          = 1;
+$slug_check = $pdo->prepare("SELECT id FROM blog_posts WHERE slug = ?");
+$slug_check->execute([$slug]);
+while ($slug_check->fetch()) {
     $slug = $base_slug . '-' . $i++;
+    $slug_check->execute([$slug]);
 }
 
 // Resolve category

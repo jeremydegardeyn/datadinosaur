@@ -8,7 +8,7 @@ INSERT IGNORE INTO blog_categories (id, name, slug) VALUES
 (5, 'AI & Agents',  'ai-agents');
 
 INSERT IGNORE INTO blog_posts
-  (id, title, slug, excerpt, content, author, category_id, status, published_at)
+  (id, title, slug, excerpt, content, author, category_id, status, visible, published_at)
 VALUES
 
 (1,
@@ -59,7 +59,7 @@ A GitHub repo breaks the experience paradox. It *is* experience. It shows you ca
 The best data engineers I''ve worked with weren''t the ones with the most certifications. They were the ones who couldn''t stop building things.
 
 Start tonight.',
-'Jeremy', 1, 'published', '2026-05-15 08:00:00'),
+'Jeremy', 1, 'published', 1, '2026-05-15 08:00:00'),
 
 (2,
 'Data Engineering''s Durable Skills: What AI Can''t Automate',
@@ -107,7 +107,7 @@ The data engineer role is evolving from "person who builds pipelines" to "person
 That''s not a lesser role. It''s a more important one.
 
 Start building depth in these areas now. The engineers who establish expertise early will be the hardest to replace.',
-'Jeremy', 2, 'published', '2026-05-17 08:00:00'),
+'Jeremy', 2, 'published', 1, '2026-05-17 08:00:00'),
 
 (3,
 'Goodbye Brittle Dashboards, Hello Conversational BI',
@@ -150,7 +150,7 @@ Less time on: building semantic models, managing BI tool infrastructure, writing
 More time on: building rich metadata catalogs, defining entity relationships and data lineage, ensuring data quality so AI queries return trustworthy results, managing security at the data layer.
 
 The knowledge graph is only as good as the metadata behind it. That''s where your expertise becomes irreplaceable.',
-'Jeremy', 3, 'published', '2026-05-19 08:00:00'),
+'Jeremy', 3, 'published', 1, '2026-05-19 08:00:00'),
 
 (4,
 'Gen AI Did the Boring Stuff So You Don''t Have To',
@@ -200,7 +200,7 @@ The chronic under-investment in documentation that has plagued data teams for ye
 The time you save on the boring stuff is time you can spend on the interesting stuff.
 
 And the interesting stuff is where you build expertise that''s harder to automate.',
-'Jeremy', 4, 'published', '2026-05-21 08:00:00'),
+'Jeremy', 4, 'published', 1, '2026-05-21 08:00:00'),
 
 (5,
 'The Dawn of Agentic Data Workflows',
@@ -248,4 +248,4 @@ You become the person who designs the agentic workflow (goals, tools, guardrails
 The engineers who will be most valuable aren''t those who can write pipelines — it''s those who can design, orchestrate, and govern agentic systems.
 
 We''re early in this. But the direction is clear. Start learning to work *with* agents, not just tools.',
-'Jeremy', 5, 'published', '2026-05-23 08:00:00');
+'Jeremy', 5, 'published', 1, '2026-05-23 08:00:00');
