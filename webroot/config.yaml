@@ -54,8 +54,8 @@ contact:
 # Set enabled: true and paste your GoatCounter site code (the subdomain part)
 # e.g. if your URL is https://datadinosaur.goatcounter.com, code is "datadinosaur"
 analytics:
-  enabled: false
-  goatcounter_code: ""
+  enabled: true
+  goatcounter_code: "datadinosaur"
 
 footer:
   links:
