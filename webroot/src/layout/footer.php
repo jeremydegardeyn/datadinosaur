@@ -3,7 +3,7 @@
 <footer class="site-footer">
   <div class="container footer-inner">
     <div class="footer-brand">
-      <img src="/assets/images/data_dinosaur_small.png" alt="DataDinosaur" height="32">
+      <img src="/assets/images/data_dinosaur.svg" alt="DataDinosaur" height="32">
       <p class="footer-tagline"><?= e($config['site']['tagline']) ?></p>
     </div>
 
