@@ -16,7 +16,7 @@
 <header class="site-header">
   <div class="container header-inner">
     <a href="/" class="site-logo">
-      <img src="/assets/images/data_dinosaur.svg" alt="DataDinosaur" height="44">
+      <img src="/assets/images/data_dinosaur_footer.svg" alt="DataDinosaur" height="36">
       <span class="site-name">DataDinosaur</span>
     </a>
 
