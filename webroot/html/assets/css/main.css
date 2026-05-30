@@ -141,6 +141,7 @@ h1,h2,h3,h4,h5 {
   color: var(--text-muted); font-size: 1.1rem; margin-bottom: 2rem; max-width: 520px;
 }
 .hero-cta { display: flex; gap: .75rem; flex-wrap: wrap; }
+.hero-social { display: flex; gap: .65rem; flex-wrap: wrap; margin-top: 1.25rem; }
 .hero-logo { flex-shrink: 0; opacity: .92; }
 
 /* ---- Hero animation wrap ---- */
@@ -439,6 +440,28 @@ select { cursor: pointer; }
 .footer-nav a + a { border-left: 1px solid var(--border); }
 .footer-nav a:hover { color: var(--primary); }
 .footer-copy { font-size: .75rem; color: var(--text-muted); text-align: center; }
+.footer-social { display: flex; gap: .65rem; flex-wrap: wrap; justify-content: center; }
+
+/* Shared social link pill — used in hero and footer */
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .82rem;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .28rem .65rem;
+  transition: color .18s, border-color .18s, background .18s;
+  white-space: nowrap;
+}
+.social-link:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: rgba(16,185,129,.06);
+  text-decoration: none;
+}
+.social-link svg { flex-shrink: 0; }
 
 /* ---- Responsive ---- */
 @media (max-width: 800px) {

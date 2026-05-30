@@ -65,4 +65,10 @@ footer:
       href: "/services"
     - label: "Contact"
       href: "/contact"
-  social: []                       # add { label: "LinkedIn", href: "..." } when ready
+  social:
+    - label: "LinkedIn"
+      href: "https://www.linkedin.com/in/jeremy-degardeyn-05288b77/"
+      icon: "linkedin"
+    - label: "GitHub"
+      href: "https://github.com/jeremydegardeyn/"
+      icon: "github"
