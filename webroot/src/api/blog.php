@@ -27,11 +27,12 @@ if ($action === 'comment' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $email   = trim($_POST['author_email'] ?? '');
     $content = trim($_POST['content']      ?? '');
 
-    if (!$post_id || !$name || !$email || !$content) {
+    if (!$post_id || !$content) {
         header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? '/blog'));
         exit;
     }
-    if (!validate_email($email)) {
+    if (!$name) $name = 'Anonymous';
+    if ($email && !validate_email($email)) {
         header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? '/blog'));
         exit;
     }
