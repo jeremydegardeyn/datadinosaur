@@ -26,7 +26,10 @@ $show_sidebar = $config['blog']['show_sidebar'] ?? true;
         $excerpt = $p['excerpt'] ?: auto_excerpt($p['content'], $config['blog']['excerpt_length']);
         $rt = reading_time($p['content']);
       ?>
-      <article class="post-row">
+      <article class="post-row<?= !empty($p['pinned']) ? ' post-row--pinned' : '' ?>">
+        <?php if (!empty($p['pinned'])): ?>
+        <span class="pinned-badge">📌 Pinned</span>
+        <?php endif; ?>
         <div class="post-row-meta">
           <?php if ($config['blog']['show_date']): ?>
           <time datetime="<?= e($p['published_at']) ?>">

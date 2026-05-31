@@ -49,6 +49,11 @@ $page_title = ($is_new ? 'New Post' : 'Edit: ' . $post['title']) . ' — Admin';
           <option value="published" <?= ($is_new || $post['status'] === 'published')   ? 'selected' : '' ?>>Published</option>
         </select>
       </label>
+      <label class="checkbox-label">
+        <input type="checkbox" name="pinned" value="1"
+               <?= (!$is_new && !empty($post['pinned'])) ? 'checked' : '' ?>>
+        📌 Pin to top
+      </label>
     </div>
 
     <label>Excerpt <span class="field-note">(optional — auto-generated if blank)</span>
