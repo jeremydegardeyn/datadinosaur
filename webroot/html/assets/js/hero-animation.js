@@ -1,17 +1,28 @@
 /* DataDinosaur — hero-animation.js
    0–2 s  : matrix rain builds up
-   2 s    : dino jaw chomps 3× — body and head stay fixed,
-             only dino-lower-jaw rotates (pivot: right-center = jaw hinge)
+   2 s    : dino head rotates ~-90° counterclockwise (snout swings DOWN toward the
+             last "a" in Data), jaw opens then chomps 2×, bite mark appears on "a",
+             head returns to rest
    5.5 s  : tagline fades in
    10 s   : rain fades out
+
+   Pivot geometry (fill-box, right center):
+     dino-head pivot  ≈ (314.8, 256)  — neck connection to D body
+     dino-lower-jaw pivot ≈ right-center of jaw fill-box — jaw hinge
+
+   Head rotation -90° swings the snout from upper-left to lower-left,
+   putting the mouth directly over the "a". Positive jaw rotation opens
+   the mandible (chin drops away from skull in the head's local frame).
 */
 'use strict';
 
 (function () {
-  var canvas   = document.getElementById('hero-matrix');
-  var dinoHead = document.getElementById('dino-head');
-  var dinoJaw  = document.getElementById('dino-lower-jaw');
-  var tagline  = document.getElementById('hero-tagline');
+  var canvas    = document.getElementById('hero-matrix');
+  var dinoHead  = document.getElementById('dino-head');
+  var dinoJaw   = document.getElementById('dino-lower-jaw');
+  var dataA     = document.getElementById('data-a');
+  var dataABit  = document.getElementById('data-a-bitten');
+  var tagline   = document.getElementById('hero-tagline');
   if (!canvas || !dinoHead) return;
 
   var ctx       = canvas.getContext('2d');
@@ -39,7 +50,6 @@
   resize();
   window.addEventListener('resize', resize, { passive: true });
 
-  /* fade canvas in */
   canvas.style.opacity    = '0';
   canvas.style.transition = 'opacity 1.5s ease';
   setTimeout(function () { canvas.style.opacity = '1'; }, 100);
@@ -57,12 +67,9 @@
         for (t = TRAIL; t >= 0; t--) {
           cy = d.y - t * FS;
           if (cy < -FS || cy > canvas.height + FS) continue;
-          if (t === 0) {
-            ctx.fillStyle = 'rgba(210,255,210,1)';
-          } else {
-            a = ((TRAIL - t) / TRAIL) * 0.8;
-            ctx.fillStyle = 'rgba(57,181,74,' + a + ')';
-          }
+          ctx.fillStyle = t === 0
+            ? 'rgba(210,255,210,1)'
+            : 'rgba(57,181,74,' + ((TRAIL - t) / TRAIL * 0.8) + ')';
           ctx.fillText(Math.random() < 0.5 ? '1' : '0', i * FS, cy);
         }
         d.y += d.speed;
@@ -97,69 +104,86 @@
   }
   raf = requestAnimationFrame(draw);
 
-  /* ── particle burst at chomp — spawns from snout/mouth area ── */
+  /* ── particle burst — spawn near the bitten "a" ── */
   function spawnBurst() {
-    var jr = dinoJaw ? dinoJaw.getBoundingClientRect() : null;
+    var ar = dataA ? dataA.getBoundingClientRect() : null;
     var cr = canvas.getBoundingClientRect();
     var mx, my;
-    if (jr && isFinite(jr.left) && jr.width > 0) {
-      mx = jr.left - cr.left + jr.width * 0.12;
-      my = jr.top  - cr.top  + jr.height * 0.1;
+    if (ar && isFinite(ar.left) && ar.width > 0) {
+      mx = ar.right  - cr.left - ar.width  * 0.35;
+      my = ar.top    - cr.top  + ar.height * 0.15;
     } else {
-      mx = canvas.width  * 0.35;
-      my = canvas.height * 0.05;
+      mx = canvas.width  * 0.28;
+      my = canvas.height * 0.80;
     }
-    if (mx < 0 || mx > canvas.width)  mx = canvas.width  * 0.35;
-    if (my < 0 || my > canvas.height) my = canvas.height * 0.05;
 
     var i, ang, spd;
     for (i = 0; i < 22; i++) {
-      ang = (Math.random() - 0.5) * Math.PI * 0.85;
-      spd = 2.5 + Math.random() * 5;
+      ang = (Math.random() - 0.5) * Math.PI * 1.1;
+      spd = 2 + Math.random() * 4.5;
       particles.push({
-        x:      mx + (Math.random() - 0.5) * 28,
+        x:      mx + (Math.random() - 0.5) * 24,
         y:      my,
         vx:     Math.sin(ang) * spd,
         vy:    -Math.abs(Math.cos(ang)) * spd,
         char:   Math.random() < 0.5 ? '1' : '0',
         alpha:  1,
-        size:   10 + Math.random() * 7,
+        size:   9 + Math.random() * 7,
         bright: Math.random() < 0.4,
       });
     }
   }
 
+  /* ── reveal bite mark ── */
+  function applyBite() {
+    if (dataA)    dataA.style.display    = 'none';
+    if (dataABit) dataABit.style.display = '';
+  }
+
   /* ── transform setup ──
-     Jaw pivot: right-center of jaw fill-box ≈ jaw hinge at neck.
-     Positive rotation = clockwise = chin drops = mouth opens.
-     Head and body don't move.
+     Head pivot   : right-center of head fill-box (≈ neck junction)
+     Jaw pivot    : right-center of jaw fill-box  (≈ jaw hinge)
+     Negative head rotation = counterclockwise = snout sweeps DOWN toward "a".
+     Positive jaw rotation  = mandible drops    = mouth opens.
   ── */
+  dinoHead.style.transformBox    = 'fill-box';
+  dinoHead.style.transformOrigin = 'right center';
+
   if (dinoJaw) {
     dinoJaw.style.transformBox    = 'fill-box';
     dinoJaw.style.transformOrigin = 'right center';
   }
 
-  /* ── jaw keyframes: [p, jawRot°]  positive = open ── */
-  var JAW_KF = [
+  /* ── keyframes: [progress 0–1, value] ──
+     HEAD_KF : head rotation in degrees  (negative = CCW = snout down)
+     JAW_KF  : jaw rotation in degrees   (positive = mouth open)
+  ── */
+  var HEAD_KF = [
     [0.00,   0],
-    [0.10,   0],   /* brief pause before first chomp       */
-    [0.18,  28],   /* jaw drops — mouth opens              */
-    [0.26,   0],   /* CHOMP 1 — jaw snaps shut             */
-    [0.34,  28],   /* open again                           */
-    [0.42,   0],   /* CHOMP 2                              */
-    [0.50,  28],   /* open again                           */
-    [0.58,   0],   /* CHOMP 3                              */
-    [0.66,  16],   /* rest slightly open                   */
-    [0.85,  16],   /* hold                                 */
-    [1.00,   0],   /* close                                */
+    [0.28, -90],   /* sweep snout down to the "a"          */
+    [0.62, -90],   /* hold while chomping                  */
+    [1.00,   0],   /* lift back to rest                    */
   ];
 
-  /* chomp peaks — fire particles when jaw snaps shut */
-  var peaks = [0.26, 0.42, 0.58];
-  var fired = [false, false, false];
+  var JAW_KF = [
+    [0.00,   0],
+    [0.25,   0],   /* mouth closed during descent          */
+    [0.32,  38],   /* jaw drops wide open                  */
+    [0.40,   0],   /* CHOMP 1 — jaw snaps shut             */
+    [0.46,  32],   /* open again                           */
+    [0.54,   0],   /* CHOMP 2                              */
+    [0.60,  16],   /* rest slightly open                   */
+    [0.70,  16],
+    [1.00,   0],   /* close as head lifts                  */
+  ];
+
+  /* fire at each jaw-close peak */
+  var peaks  = [0.40, 0.54];
+  var fired  = [false, false];
+  var bitten = false;
 
   function lerp(a, b, t) { return a + (b - a) * t; }
-  function eio(t) { return t < 0.5 ? 2*t*t : -1 + (4-2*t)*t; }
+  function eio(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
 
   function getKF(kf, p) {
     var i, span, t;
@@ -180,12 +204,17 @@
       if (!start) start = ts;
       var p = Math.min((ts - start) / DUR, 1);
 
+      dinoHead.style.transform = 'rotate(' + getKF(HEAD_KF, p).toFixed(2) + 'deg)';
       if (dinoJaw) {
         dinoJaw.style.transform = 'rotate(' + getKF(JAW_KF, p).toFixed(2) + 'deg)';
       }
 
       for (var i = 0; i < peaks.length; i++) {
-        if (!fired[i] && p >= peaks[i]) { fired[i] = true; spawnBurst(); }
+        if (!fired[i] && p >= peaks[i]) {
+          fired[i] = true;
+          spawnBurst();
+          if (!bitten) { bitten = true; applyBite(); }
+        }
       }
 
       if (p < 1) requestAnimationFrame(step);
