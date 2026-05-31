@@ -13,7 +13,6 @@
   var FS    = 13;
   var TRAIL = 10;
   var drops = [];
-  var rainOn = true;
   var raf;
 
   /* ── canvas sizing ── */
@@ -39,33 +38,29 @@
   canvas.style.transition = 'opacity 1s ease';
   setTimeout(function () { canvas.style.opacity = '1'; }, 50);
 
-  /* ── draw loop ── */
+  /* ── draw loop — runs until canvas is fully invisible ── */
   function draw() {
     raf = requestAnimationFrame(draw);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.font = FS + 'px monospace';
 
-    if (rainOn) {
-      var i, t, d, cy;
-      for (i = 0; i < drops.length; i++) {
-        d = drops[i];
-        for (t = TRAIL; t >= 0; t--) {
-          cy = d.y - t * FS;
-          if (cy < -FS || cy > canvas.height + FS) continue;
-          ctx.fillStyle = t === 0
-            ? 'rgba(210,255,210,1)'
-            : 'rgba(57,181,74,' + ((TRAIL - t) / TRAIL * 0.8) + ')';
-          ctx.fillText(Math.random() < 0.5 ? '1' : '0', i * FS, cy);
-        }
-        d.y += d.speed;
-        if (d.y > canvas.height + TRAIL * FS && Math.random() > 0.965) {
-          d.y     = -(FS * (2 + Math.floor(Math.random() * 20)));
-          d.speed = 0.5 + Math.random();
-        }
+    var i, t, d, cy;
+    for (i = 0; i < drops.length; i++) {
+      d = drops[i];
+      for (t = TRAIL; t >= 0; t--) {
+        cy = d.y - t * FS;
+        if (cy < -FS || cy > canvas.height + FS) continue;
+        ctx.fillStyle = t === 0
+          ? 'rgba(210,255,210,1)'
+          : 'rgba(57,181,74,' + ((TRAIL - t) / TRAIL * 0.8) + ')';
+        ctx.fillText(Math.random() < 0.5 ? '1' : '0', i * FS, cy);
+      }
+      d.y += d.speed;
+      if (d.y > canvas.height + TRAIL * FS && Math.random() > 0.965) {
+        d.y     = -(FS * (2 + Math.floor(Math.random() * 20)));
+        d.speed = 0.5 + Math.random();
       }
     }
-
-    if (!rainOn) cancelAnimationFrame(raf);
   }
   raf = requestAnimationFrame(draw);
 
@@ -74,9 +69,8 @@
     if (tagline) tagline.classList.add('visible');
   }, 3000);
 
-  /* fade rain out gradually */
+  /* fade rain out gradually — RAF keeps running so animation doesn't freeze */
   setTimeout(function () {
-    rainOn = false;
     canvas.style.transition = 'opacity 4s ease';
     canvas.style.opacity    = '0';
   }, 5000);
