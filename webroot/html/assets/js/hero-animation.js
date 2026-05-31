@@ -1,9 +1,7 @@
 /* DataDinosaur — hero-animation.js
    0–2 s  : matrix rain builds up
-   2 s    : dino HEAD rotates to face up (~-80°), jaw chomps 3×
-             — dino-body (the D) stays completely fixed
-             — dino-head group rotates, pivot at right-center (neck connection)
-             — dino-lower-jaw rotates within head, pivot at right-center (jaw hinge)
+   2 s    : dino jaw chomps 3× — body and head stay fixed,
+             only dino-lower-jaw rotates (pivot: right-center = jaw hinge)
    5.5 s  : tagline fades in
    10 s   : rain fades out
 */
@@ -132,46 +130,32 @@
   }
 
   /* ── transform setup ──
-     Head pivot  : right-center of head fill-box ≈ neck connection point
-     Jaw pivot   : right-center of jaw fill-box  ≈ jaw hinge at neck
-     Both use CSS transform-box:fill-box so the pivot is relative
-     to each element's own bounding box, not the SVG viewport.
+     Jaw pivot: right-center of jaw fill-box ≈ jaw hinge at neck.
+     Positive rotation = clockwise = chin drops = mouth opens.
+     Head and body don't move.
   ── */
-  dinoHead.style.transformBox    = 'fill-box';
-  dinoHead.style.transformOrigin = 'right center';
-
   if (dinoJaw) {
     dinoJaw.style.transformBox    = 'fill-box';
     dinoJaw.style.transformOrigin = 'right center';
   }
 
-  /* ── keyframes ──
-     HEAD_KF : [p, headRot°]   — whole head rotates to look up
-     JAW_KF  : [p, jawRot°]    — lower jaw, negative = opens (drops away from skull)
-  ── */
-  var HEAD_KF = [
-    [0.00,   0],
-    [0.20, -80],   /* tilt head up — snout aimed at rain  */
-    [0.68, -80],   /* hold looking up                     */
-    [1.00,   0],   /* return to rest                      */
-  ];
-
+  /* ── jaw keyframes: [p, jawRot°]  positive = open ── */
   var JAW_KF = [
     [0.00,   0],
-    [0.20,   0],   /* mouth closed while head tilts        */
-    [0.23, -26],   /* jaw drops — mouth opens              */
-    [0.27,   0],   /* CHOMP 1 — jaw snaps shut             */
-    [0.30, -26],   /* open again                           */
-    [0.37,   0],   /* CHOMP 2                              */
-    [0.40, -26],   /* open again                           */
-    [0.47,   0],   /* CHOMP 3                              */
-    [0.51, -18],   /* rest open, still looking up          */
-    [0.68, -18],
-    [1.00,   0],   /* close as head returns to rest        */
+    [0.10,   0],   /* brief pause before first chomp       */
+    [0.18,  28],   /* jaw drops — mouth opens              */
+    [0.26,   0],   /* CHOMP 1 — jaw snaps shut             */
+    [0.34,  28],   /* open again                           */
+    [0.42,   0],   /* CHOMP 2                              */
+    [0.50,  28],   /* open again                           */
+    [0.58,   0],   /* CHOMP 3                              */
+    [0.66,  16],   /* rest slightly open                   */
+    [0.85,  16],   /* hold                                 */
+    [1.00,   0],   /* close                                */
   ];
 
   /* chomp peaks — fire particles when jaw snaps shut */
-  var peaks = [0.27, 0.37, 0.47];
+  var peaks = [0.26, 0.42, 0.58];
   var fired = [false, false, false];
 
   function lerp(a, b, t) { return a + (b - a) * t; }
@@ -196,12 +180,8 @@
       if (!start) start = ts;
       var p = Math.min((ts - start) / DUR, 1);
 
-      var headRot = getKF(HEAD_KF, p);
-      var jawRot  = getKF(JAW_KF, p);
-
-      dinoHead.style.transform = 'rotate(' + headRot.toFixed(2) + 'deg)';
       if (dinoJaw) {
-        dinoJaw.style.transform = 'rotate(' + jawRot.toFixed(2) + 'deg)';
+        dinoJaw.style.transform = 'rotate(' + getKF(JAW_KF, p).toFixed(2) + 'deg)';
       }
 
       for (var i = 0; i < peaks.length; i++) {
