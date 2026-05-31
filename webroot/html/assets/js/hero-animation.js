@@ -1,18 +1,20 @@
 /* DataDinosaur — hero-animation.js
    0–2 s  : matrix rain builds up
-   2 s    : dino rotates to face up (~-80°), then chomps 3×
-             — scaleX along rotated local axis = vertical jaw-slam
-             — particle burst of 1s/0s on each chomp close
+   2 s    : dino HEAD rotates to face up (~-80°), jaw chomps 3×
+             — dino-body (the D) stays completely fixed
+             — dino-head group rotates, pivot at right-center (neck connection)
+             — dino-lower-jaw rotates within head, pivot at right-center (jaw hinge)
    5.5 s  : tagline fades in
    10 s   : rain fades out
 */
 'use strict';
 
 (function () {
-  var canvas  = document.getElementById('hero-matrix');
-  var dinoGrp = document.getElementById('hero-dino-graphic');
-  var tagline = document.getElementById('hero-tagline');
-  if (!canvas || !dinoGrp) return;
+  var canvas   = document.getElementById('hero-matrix');
+  var dinoHead = document.getElementById('dino-head');
+  var dinoJaw  = document.getElementById('dino-lower-jaw');
+  var tagline  = document.getElementById('hero-tagline');
+  if (!canvas || !dinoHead) return;
 
   var ctx       = canvas.getContext('2d');
   var FS        = 13;
@@ -50,7 +52,6 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.font = FS + 'px monospace';
 
-    /* rain */
     if (rainOn) {
       var i, t, d, cy, a;
       for (i = 0; i < drops.length; i++) {
@@ -74,7 +75,6 @@
       }
     }
 
-    /* particles */
     if (particles.length) {
       var j, p;
       ctx.save();
@@ -99,25 +99,30 @@
   }
   raf = requestAnimationFrame(draw);
 
-  /* ── particle burst at chomp ── */
+  /* ── particle burst at chomp — spawns from snout/mouth area ── */
   function spawnBurst() {
-    var dr = dinoGrp.getBoundingClientRect();
+    var jr = dinoJaw ? dinoJaw.getBoundingClientRect() : null;
     var cr = canvas.getBoundingClientRect();
-    var mx = (dr.left + dr.right) / 2 - cr.left;
-    var my = dr.top - cr.top + 4;
-    /* fallback if rect is degenerate */
-    if (!isFinite(mx) || mx < 0 || mx > canvas.width) mx = canvas.width * 0.42;
-    if (!isFinite(my) || my < 0)                       my = canvas.height * 0.08;
+    var mx, my;
+    if (jr && isFinite(jr.left) && jr.width > 0) {
+      mx = jr.left - cr.left + jr.width * 0.12;
+      my = jr.top  - cr.top  + jr.height * 0.1;
+    } else {
+      mx = canvas.width  * 0.35;
+      my = canvas.height * 0.05;
+    }
+    if (mx < 0 || mx > canvas.width)  mx = canvas.width  * 0.35;
+    if (my < 0 || my > canvas.height) my = canvas.height * 0.05;
 
     var i, ang, spd;
     for (i = 0; i < 22; i++) {
-      ang = (Math.random() - 0.5) * Math.PI * 0.85; /* horizontal spread */
+      ang = (Math.random() - 0.5) * Math.PI * 0.85;
       spd = 2.5 + Math.random() * 5;
       particles.push({
         x:      mx + (Math.random() - 0.5) * 28,
         y:      my,
         vx:     Math.sin(ang) * spd,
-        vy:    -Math.abs(Math.cos(ang)) * spd, /* always upward */
+        vy:    -Math.abs(Math.cos(ang)) * spd,
         char:   Math.random() < 0.5 ? '1' : '0',
         alpha:  1,
         size:   10 + Math.random() * 7,
@@ -126,49 +131,62 @@
     }
   }
 
-  /* ── dino keyframe animation ──
-     Transform order:  rotate(rot) scaleX(s)
-     CSS applies left→right, each in the new local space, so:
-       1. rotate(rot)  — tilts the dino, rotates local axes
-       2. scaleX(s)    — compresses along the NOW-ROTATED local X
-     At rot=-80° the local X axis points ~upward in screen space,
-     so scaleX(0.18) slams the shape vertically = jaw snap. ✓
+  /* ── transform setup ──
+     Head pivot  : right-center of head fill-box ≈ neck connection point
+     Jaw pivot   : right-center of jaw fill-box  ≈ jaw hinge at neck
+     Both use CSS transform-box:fill-box so the pivot is relative
+     to each element's own bounding box, not the SVG viewport.
   ── */
-  dinoGrp.style.transformBox    = 'fill-box';
-  dinoGrp.style.transformOrigin = 'center center';
+  dinoHead.style.transformBox    = 'fill-box';
+  dinoHead.style.transformOrigin = 'right center';
 
-  /*  p=0..1  rot(°)  scaleX */
-  var KF = [
-    [0.00,    0,  1.00],
-    [0.20,  -80,  1.00],  /* tilt to face up — mouth aimed at rain  */
-    [0.26,  -80,  0.16],  /* CHOMP 1 — jaws slam                    */
-    [0.33,  -80,  1.10],  /* spring open                            */
-    [0.39,  -80,  0.16],  /* CHOMP 2                                */
-    [0.46,  -80,  1.10],  /* spring open                            */
-    [0.52,  -80,  0.16],  /* CHOMP 3                                */
-    [0.59,  -80,  1.05],  /* spring open                            */
-    [0.70,  -80,  1.00],  /* pause — looking up, mouth open         */
-    [1.00,    0,  1.00],  /* return to rest                         */
+  if (dinoJaw) {
+    dinoJaw.style.transformBox    = 'fill-box';
+    dinoJaw.style.transformOrigin = 'right center';
+  }
+
+  /* ── keyframes ──
+     HEAD_KF : [p, headRot°]   — whole head rotates to look up
+     JAW_KF  : [p, jawRot°]    — lower jaw, negative = opens (drops away from skull)
+  ── */
+  var HEAD_KF = [
+    [0.00,   0],
+    [0.20, -80],   /* tilt head up — snout aimed at rain  */
+    [0.68, -80],   /* hold looking up                     */
+    [1.00,   0],   /* return to rest                      */
   ];
 
-  /* chomp peaks (p values where scaleX hits minimum → fire particles) */
-  var peaks  = [0.26, 0.39, 0.52];
-  var fired  = [false, false, false];
+  var JAW_KF = [
+    [0.00,   0],
+    [0.20,   0],   /* mouth closed while head tilts        */
+    [0.23, -26],   /* jaw drops — mouth opens              */
+    [0.27,   0],   /* CHOMP 1 — jaw snaps shut             */
+    [0.30, -26],   /* open again                           */
+    [0.37,   0],   /* CHOMP 2                              */
+    [0.40, -26],   /* open again                           */
+    [0.47,   0],   /* CHOMP 3                              */
+    [0.51, -18],   /* rest open, still looking up          */
+    [0.68, -18],
+    [1.00,   0],   /* close as head returns to rest        */
+  ];
+
+  /* chomp peaks — fire particles when jaw snaps shut */
+  var peaks = [0.27, 0.37, 0.47];
+  var fired = [false, false, false];
 
   function lerp(a, b, t) { return a + (b - a) * t; }
   function eio(t) { return t < 0.5 ? 2*t*t : -1 + (4-2*t)*t; }
 
-  function getXF(p) {
+  function getKF(kf, p) {
     var i, span, t;
-    for (i = 1; i < KF.length; i++) {
-      if (p <= KF[i][0]) {
-        span = KF[i][0] - KF[i-1][0];
-        t    = span > 0 ? eio((p - KF[i-1][0]) / span) : 1;
-        return { rot: lerp(KF[i-1][1], KF[i][1], t),
-                 sx:  lerp(KF[i-1][2], KF[i][2], t) };
+    for (i = 1; i < kf.length; i++) {
+      if (p <= kf[i][0]) {
+        span = kf[i][0] - kf[i-1][0];
+        t    = span > 0 ? eio((p - kf[i-1][0]) / span) : 1;
+        return lerp(kf[i-1][1], kf[i][1], t);
       }
     }
-    return { rot: 0, sx: 1 };
+    return kf[kf.length - 1][1];
   }
 
   setTimeout(function () {
@@ -176,13 +194,16 @@
 
     function step(ts) {
       if (!start) start = ts;
-      var p  = Math.min((ts - start) / DUR, 1);
-      var xf = getXF(p);
+      var p = Math.min((ts - start) / DUR, 1);
 
-      dinoGrp.style.transform =
-        'rotate(' + xf.rot.toFixed(2) + 'deg) scaleX(' + xf.sx.toFixed(3) + ')';
+      var headRot = getKF(HEAD_KF, p);
+      var jawRot  = getKF(JAW_KF, p);
 
-      /* fire particle burst at each chomp peak */
+      dinoHead.style.transform = 'rotate(' + headRot.toFixed(2) + 'deg)';
+      if (dinoJaw) {
+        dinoJaw.style.transform = 'rotate(' + jawRot.toFixed(2) + 'deg)';
+      }
+
       for (var i = 0; i < peaks.length; i++) {
         if (!fired[i] && p >= peaks[i]) { fired[i] = true; spawnBurst(); }
       }
