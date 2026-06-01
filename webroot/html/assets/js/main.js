@@ -131,6 +131,27 @@ function togglePostVisibility(id, visible, csrf) {
     .catch(console.error);
 }
 
+/* ---- Toggle post pin ---- */
+function togglePostPin(id, pinned, csrf) {
+  const fd = new FormData();
+  fd.append('action',     'toggle_pin');
+  fd.append('post_id',    id);
+  fd.append('pinned',     pinned ? '1' : '0');
+  fd.append('csrf_token', csrf);
+  fetch('/api/blog', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        const row = document.querySelector(`tr[data-post-id="${id}"]`);
+        if (row) {
+          const lbl = row.querySelector('.pin-toggle');
+          if (lbl) lbl.title = pinned ? 'Pinned — click to unpin' : 'Not pinned — click to pin';
+        }
+      }
+    })
+    .catch(console.error);
+}
+
 /* ---- Moderate comment ---- */
 function moderateComment(id, action, csrf) {
   const fd = new FormData();

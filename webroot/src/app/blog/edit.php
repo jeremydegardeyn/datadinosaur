@@ -50,6 +50,11 @@ $page_title = ($is_new ? 'New Post' : 'Edit: ' . $post['title']) . ' — Admin';
         </select>
       </label>
       <label class="checkbox-label">
+        <input type="checkbox" name="visible" value="1"
+               <?= ($is_new || !empty($post['visible'])) ? 'checked' : '' ?>>
+        👁 Public
+      </label>
+      <label class="checkbox-label">
         <input type="checkbox" name="pinned" value="1"
                <?= (!$is_new && !empty($post['pinned'])) ? 'checked' : '' ?>>
         📌 Pin to top

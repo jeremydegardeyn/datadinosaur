@@ -61,7 +61,8 @@ if (in_array($action, ['create', 'update'], true) && $_SERVER['REQUEST_METHOD'] 
     $slug_input  = trim($_POST['slug']     ?? '');
     $status      = in_array($_POST['status'] ?? '', ['draft','published']) ? $_POST['status'] : 'draft';
     $category_id = !empty($_POST['category_id']) ? (int)$_POST['category_id'] : null;
-    $pinned      = isset($_POST['pinned']) ? 1 : 0;
+    $pinned      = isset($_POST['pinned'])  ? 1 : 0;
+    $visible     = isset($_POST['visible']) ? 1 : 0;
     $slug        = $slug_input ?: sanitize_slug($title);
 
     if (!$title || !$content) {
@@ -71,11 +72,11 @@ if (in_array($action, ['create', 'update'], true) && $_SERVER['REQUEST_METHOD'] 
 
     if ($action === 'create') {
         $stmt = $pdo->prepare(
-            "INSERT INTO blog_posts (title, slug, excerpt, content, author, category_id, status, pinned, published_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO blog_posts (title, slug, excerpt, content, author, category_id, status, pinned, visible, published_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
         $pub = $status === 'published' ? date('Y-m-d H:i:s') : null;
-        $stmt->execute([$title, $slug, $excerpt, $content, 'Jeremy', $category_id, $status, $pinned, $pub]);
+        $stmt->execute([$title, $slug, $excerpt, $content, 'Jeremy', $category_id, $status, $pinned, $visible, $pub]);
         $new_id = (int)$pdo->lastInsertId();
         header('Location: /blog/edit?id=' . $new_id . '&saved=1');
         exit;
@@ -85,13 +86,13 @@ if (in_array($action, ['create', 'update'], true) && $_SERVER['REQUEST_METHOD'] 
     $post_id = (int)($_POST['post_id'] ?? 0);
     $stmt = $pdo->prepare(
         "UPDATE blog_posts
-         SET title=?, slug=?, excerpt=?, content=?, category_id=?, status=?, pinned=?,
+         SET title=?, slug=?, excerpt=?, content=?, category_id=?, status=?, pinned=?, visible=?,
              published_at = CASE WHEN status != 'published' AND ? = 'published'
                                  THEN NOW() ELSE published_at END,
              updated_at   = NOW()
          WHERE id = ?"
     );
-    $stmt->execute([$title, $slug, $excerpt, $content, $category_id, $status, $pinned, $status, $post_id]);
+    $stmt->execute([$title, $slug, $excerpt, $content, $category_id, $status, $pinned, $visible, $status, $post_id]);
     header('Location: /blog/edit?id=' . $post_id . '&saved=1');
     exit;
 }

@@ -9,7 +9,7 @@ $pending_cmts   = (int)$pdo->query("SELECT COUNT(*) FROM blog_comments WHERE sta
 $new_inquiries  = (int)$pdo->query("SELECT COUNT(*) FROM contact_inquiries WHERE status='new'")->fetchColumn();
 
 // Recent posts
-$posts_stmt = $pdo->query("SELECT id, title, slug, status, visible, published_at, views FROM blog_posts ORDER BY updated_at DESC LIMIT 20");
+$posts_stmt = $pdo->query("SELECT id, title, slug, status, visible, pinned, published_at, views FROM blog_posts ORDER BY updated_at DESC LIMIT 20");
 $posts = $posts_stmt->fetchAll();
 
 // Pending comments
@@ -63,11 +63,11 @@ $inquiries = $inq_stmt->fetchAll();
     <h2>Posts</h2>
     <table class="admin-table">
       <thead>
-        <tr><th>Title</th><th>Status</th><th class="col-visible">Public</th><th>Views</th><th>Published</th><th></th></tr>
+        <tr><th>Title</th><th>Status</th><th class="col-visible">Public</th><th class="col-pinned">Pinned</th><th>Views</th><th>Published</th><th></th></tr>
       </thead>
       <tbody>
         <?php foreach ($posts as $p): ?>
-        <?php $isVisible = (bool)(int)$p['visible']; ?>
+        <?php $isVisible = (bool)(int)$p['visible']; $isPinned = (bool)(int)$p['pinned']; ?>
         <tr data-post-id="<?= (int)$p['id'] ?>"<?= !$isVisible ? ' class="post-hidden"' : '' ?>>
           <td><a href="/blog/<?= e($p['slug']) ?>"><?= e($p['title']) ?></a></td>
           <td><span class="badge badge-<?= $p['status'] ?>"><?= $p['status'] ?></span></td>
@@ -75,6 +75,12 @@ $inquiries = $inq_stmt->fetchAll();
             <label class="visibility-toggle" title="<?= $isVisible ? 'Visible — click to hide' : 'Hidden — click to show' ?>">
               <input type="checkbox" <?= $isVisible ? 'checked' : '' ?>
                      onchange="togglePostVisibility(<?= (int)$p['id'] ?>, this.checked, '<?= e(csrf_token()) ?>')">
+            </label>
+          </td>
+          <td class="col-pinned">
+            <label class="pin-toggle" title="<?= $isPinned ? 'Pinned — click to unpin' : 'Not pinned — click to pin' ?>">
+              <input type="checkbox" <?= $isPinned ? 'checked' : '' ?>
+                     onchange="togglePostPin(<?= (int)$p['id'] ?>, this.checked, '<?= e(csrf_token()) ?>')">
             </label>
           </td>
           <td><?= (int)$p['views'] ?></td>
