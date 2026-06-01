@@ -360,7 +360,8 @@ textarea, select {
 input:focus, textarea:focus, select:focus { outline: none; border-color: var(--primary); }
 select { cursor: pointer; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
-.checkbox-label { display: flex; align-items: center; gap: .4rem; font-size: .9rem; cursor: pointer; padding-top: 1.6rem; }
+.checkbox-group { display: flex; align-items: center; gap: 1.25rem; padding-top: 1.6rem; flex-wrap: nowrap; }
+.checkbox-label { display: flex; align-items: center; gap: .4rem; font-size: .9rem; cursor: pointer; }
 .checkbox-label input[type=checkbox] { width: 1rem; height: 1rem; accent-color: var(--primary); cursor: pointer; }
 .label-full { grid-column: 1 / -1; }
 .field-note { font-weight: 400; font-size: .78rem; color: var(--text-muted); }
