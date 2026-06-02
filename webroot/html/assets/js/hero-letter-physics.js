@@ -1,28 +1,27 @@
 (function () {
   'use strict';
 
-  var GRAVITY      = 1.2;   // SVG units / frame² — snappy, toddler-like
-  var DAMPING      = 0.56;  // velocity kept after each squish-launch
-  var SETTLE_V     = 2.2;   // give up bouncing below this speed
-  var SQUISH_F     = 9;     // frames the squish animation takes
-  var START_MS     = 500;
-  var STAGGER_MS   = 85;    // ripple left → right
+  var GRAVITY      = 0.38;  // SVG units / frame² — slow, floaty
+  var DAMPING      = 0.62;  // velocity kept after each squish-launch
+  var SETTLE_V     = 1.0;   // give up bouncing below this speed
+  var SQUISH_F     = 18;    // frames the squish animation takes
+  var START_MS     = 400;
 
   // ── Per-letter config (D a t a i n o s a u r) ───────────────────────────
   // type 'hop'  : normal toddler bounce with lean
   // type 'loop' : jumps AND drifts sideways in a small arc while spinning
   var CFG = [
-    { type:'hop',  jumpV:-11, rotAmp:  9, bounceMax:4 },  // D
-    { type:'hop',  jumpV:-13, rotAmp: -7, bounceMax:5 },  // a
-    { type:'hop',  jumpV:- 9, rotAmp: 13, bounceMax:4 },  // t
-    { type:'hop',  jumpV:-12, rotAmp: -8, bounceMax:4 },  // a
-    { type:'hop',  jumpV:-15, rotAmp:  5, bounceMax:6 },  // i  — lightest, most bouncy
-    { type:'hop',  jumpV:-10, rotAmp:  8, bounceMax:3 },  // n
-    { type:'loop', jumpV:-12, bounceMax:3 },               // o  — loops and spins ✦
-    { type:'hop',  jumpV:-13, rotAmp:-11, bounceMax:5 },  // s
-    { type:'hop',  jumpV:-11, rotAmp:  7, bounceMax:4 },  // a
-    { type:'loop', jumpV:-10, bounceMax:3 },               // u  — loops and spins ✦
-    { type:'hop',  jumpV:-14, rotAmp:  9, bounceMax:5 },  // r
+    { type:'hop',  jumpV:-6.5, rotAmp:  9, bounceMax:4 },  // D
+    { type:'hop',  jumpV:-7.5, rotAmp: -7, bounceMax:5 },  // a
+    { type:'hop',  jumpV:-5.5, rotAmp: 13, bounceMax:4 },  // t
+    { type:'hop',  jumpV:-7.0, rotAmp: -8, bounceMax:4 },  // a
+    { type:'hop',  jumpV:-9.0, rotAmp:  5, bounceMax:6 },  // i  — lightest
+    { type:'hop',  jumpV:-6.0, rotAmp:  8, bounceMax:3 },  // n
+    { type:'loop', jumpV:-7.0, bounceMax:3 },               // o  — loops and spins ✦
+    { type:'hop',  jumpV:-7.5, rotAmp:-11, bounceMax:5 },  // s
+    { type:'hop',  jumpV:-6.5, rotAmp:  7, bounceMax:4 },  // a
+    { type:'loop', jumpV:-6.0, bounceMax:3 },               // u  — loops and spins ✦
+    { type:'hop',  jumpV:-8.0, rotAmp:  9, bounceMax:5 },  // r
   ];
 
   function easeOut(t) { return 1 - (1 - t) * (1 - t); }
@@ -41,6 +40,9 @@
       var cy  = bb.y + bb.height * 0.5;
       var bot = bb.y + bb.height;   // bottom edge — squish anchor
 
+      // Random delay — not left-to-right, just scattered
+      var startAt = START_MS + Math.random() * 900;
+
       particles.push({
         el  : el,
         cx  : cx, cy : cy, bot : bot,
@@ -51,7 +53,7 @@
         spinAngle  : 0,             // accumulated spin for 'loop' type
         loopAngle  : 0,             // orbit angle for x drift
         settled    : false,
-        startAt    : START_MS + i * STAGGER_MS,
+        startAt    : startAt,
         bouncesDone: 0,
         squishF    : 0,             // >0 means squishing
         sx : 1, sy : 1,
@@ -128,7 +130,7 @@
 
         // ── FLIGHT phase ────────────────────────────────────────────────
         p.vy += GRAVITY;
-        if (p.vy > 22) p.vy = 22;
+        if (p.vy > 12) p.vy = 12;
         p.y  += p.vy;
 
         if (c.type === 'hop') {
@@ -141,9 +143,9 @@
           // Drift sideways in a circular arc while spinning full rotations.
           // Radius shrinks as the letter descends back toward floor.
           var airFrac = Math.max(0, -p.y) / Math.abs(c.jumpV * 6); // 0→1 airborne
-          p.loopAngle  += 0.18;
+          p.loopAngle  += 0.07;
           p.x           = Math.sin(p.loopAngle) * 18 * airFrac;
-          p.spinAngle  += 14;   // full spin in the air
+          p.spinAngle  += 5;    // slow, dreamy spin
         }
 
         // ── Floor hit ───────────────────────────────────────────────────
