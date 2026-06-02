@@ -1,27 +1,27 @@
 (function () {
   'use strict';
 
-  var GRAVITY  = 0.38;   // SVG units / frame²
-  var SQUISH_F = 18;     // frames for squish recovery
+  var GRAVITY  = 0.55;   // SVG units / frame²
+  var SQUISH_F = 12;     // frames for squish recovery
   var SETTLE_V = 0.5;    // stop after this many bounces
-  var START_MS = 400;
+  var START_MS = 300;
 
   // ── Per-letter config (D a t a i n o s a u r) ───────────────────────────
   // type 'straight' : goes straight up, no tilt
   // type 'tilt'     : leans a random direction each jump (never same twice)
   // type 'loop'     : drifts sideways in arc + slow spin
   var CFG = [
-    { type:'straight', jumpV:-6.5, bounceMax:5 },             // D
-    { type:'tilt',     jumpV:-7.5, rotAmp:11, bounceMax:5 },  // a
-    { type:'straight', jumpV:-5.5, bounceMax:5 },             // t
-    { type:'tilt',     jumpV:-7.0, rotAmp: 9, bounceMax:4 },  // a
-    { type:'straight', jumpV:-8.5, bounceMax:6 },             // i  — lightest
-    { type:'tilt',     jumpV:-6.0, rotAmp: 8, bounceMax:4 },  // n
-    { type:'loop',     jumpV:-7.0, bounceMax:3 },              // o  ✦
-    { type:'tilt',     jumpV:-7.5, rotAmp:12, bounceMax:5 },  // s
-    { type:'straight', jumpV:-6.5, bounceMax:5 },             // a
-    { type:'loop',     jumpV:-6.0, bounceMax:3 },              // u  ✦
-    { type:'tilt',     jumpV:-8.0, rotAmp:10, bounceMax:5 },  // r
+    { type:'straight', jumpV:-6.5, bounceMax:3 },             // D
+    { type:'tilt',     jumpV:-7.5, rotAmp:11, bounceMax:3 },  // a
+    { type:'straight', jumpV:-5.5, bounceMax:3 },             // t
+    { type:'tilt',     jumpV:-7.0, rotAmp: 9, bounceMax:3 },  // a
+    { type:'straight', jumpV:-8.5, bounceMax:4 },             // i  — lightest
+    { type:'tilt',     jumpV:-6.0, rotAmp: 8, bounceMax:3 },  // n
+    { type:'loop',     jumpV:-7.0, bounceMax:2 },              // o  ✦
+    { type:'tilt',     jumpV:-7.5, rotAmp:12, bounceMax:3 },  // s
+    { type:'straight', jumpV:-6.5, bounceMax:3 },             // a
+    { type:'loop',     jumpV:-6.0, bounceMax:2 },              // u  ✦
+    { type:'tilt',     jumpV:-8.0, rotAmp:10, bounceMax:3 },  // r
   ];
 
   function easeOut(t) { return 1 - (1 - t) * (1 - t); }
@@ -54,7 +54,7 @@
         spinAngle  : 0,
         loopAngle  : 0,
         settled    : false,
-        startAt    : START_MS + Math.random() * 900,  // random, not left-to-right
+        startAt    : START_MS + Math.random() * 500,  // random, not left-to-right
         bouncesDone: 0,
         squishF    : 0,
         sx : 1, sy : 1,
