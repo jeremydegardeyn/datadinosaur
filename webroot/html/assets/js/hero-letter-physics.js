@@ -2,7 +2,7 @@
   'use strict';
 
   var GRAVITY  = 0.55;   // SVG units / frame²
-  var SQUISH_F = 12;     // frames for squish recovery
+  var SQUISH_F = 18;     // frames for squish recovery
   var SETTLE_V = 0.5;    // stop after this many bounces
   var START_MS = 300;
 
