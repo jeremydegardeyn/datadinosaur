@@ -1,30 +1,31 @@
 (function () {
   'use strict';
 
-  var GRAVITY      = 0.38;  // SVG units / frame² — slow, floaty
-  var DAMPING      = 0.62;  // velocity kept after each squish-launch
-  var SETTLE_V     = 1.0;   // give up bouncing below this speed
-  var SQUISH_F     = 18;    // frames the squish animation takes
-  var START_MS     = 400;
+  var GRAVITY  = 0.38;   // SVG units / frame²
+  var SQUISH_F = 18;     // frames for squish recovery
+  var SETTLE_V = 0.5;    // stop after this many bounces
+  var START_MS = 400;
 
   // ── Per-letter config (D a t a i n o s a u r) ───────────────────────────
-  // type 'hop'  : normal toddler bounce with lean
-  // type 'loop' : jumps AND drifts sideways in a small arc while spinning
+  // type 'straight' : goes straight up, no tilt
+  // type 'tilt'     : leans a random direction each jump (never same twice)
+  // type 'loop'     : drifts sideways in arc + slow spin
   var CFG = [
-    { type:'hop',  jumpV:-6.5, rotAmp:  9, bounceMax:4 },  // D
-    { type:'hop',  jumpV:-7.5, rotAmp: -7, bounceMax:5 },  // a
-    { type:'hop',  jumpV:-5.5, rotAmp: 13, bounceMax:4 },  // t
-    { type:'hop',  jumpV:-7.0, rotAmp: -8, bounceMax:4 },  // a
-    { type:'hop',  jumpV:-9.0, rotAmp:  5, bounceMax:6 },  // i  — lightest
-    { type:'hop',  jumpV:-6.0, rotAmp:  8, bounceMax:3 },  // n
-    { type:'loop', jumpV:-7.0, bounceMax:3 },               // o  — loops and spins ✦
-    { type:'hop',  jumpV:-7.5, rotAmp:-11, bounceMax:5 },  // s
-    { type:'hop',  jumpV:-6.5, rotAmp:  7, bounceMax:4 },  // a
-    { type:'loop', jumpV:-6.0, bounceMax:3 },               // u  — loops and spins ✦
-    { type:'hop',  jumpV:-8.0, rotAmp:  9, bounceMax:5 },  // r
+    { type:'straight', jumpV:-6.5, bounceMax:5 },             // D
+    { type:'tilt',     jumpV:-7.5, rotAmp:11, bounceMax:5 },  // a
+    { type:'straight', jumpV:-5.5, bounceMax:5 },             // t
+    { type:'tilt',     jumpV:-7.0, rotAmp: 9, bounceMax:4 },  // a
+    { type:'straight', jumpV:-8.5, bounceMax:6 },             // i  — lightest
+    { type:'tilt',     jumpV:-6.0, rotAmp: 8, bounceMax:4 },  // n
+    { type:'loop',     jumpV:-7.0, bounceMax:3 },              // o  ✦
+    { type:'tilt',     jumpV:-7.5, rotAmp:12, bounceMax:5 },  // s
+    { type:'straight', jumpV:-6.5, bounceMax:5 },             // a
+    { type:'loop',     jumpV:-6.0, bounceMax:3 },              // u  ✦
+    { type:'tilt',     jumpV:-8.0, rotAmp:10, bounceMax:5 },  // r
   ];
 
   function easeOut(t) { return 1 - (1 - t) * (1 - t); }
+  function randSign() { return Math.random() < 0.5 ? 1 : -1; }
 
   function init() {
     var els = document.querySelectorAll('.hero-letter');
@@ -38,24 +39,24 @@
       var bb  = el.getBBox();
       var cx  = bb.x + bb.width  * 0.5;
       var cy  = bb.y + bb.height * 0.5;
-      var bot = bb.y + bb.height;   // bottom edge — squish anchor
-
-      // Random delay — not left-to-right, just scattered
-      var startAt = START_MS + Math.random() * 900;
+      var bot = bb.y + bb.height;
+      // max height letter reaches on a full jump (used to derive tilt from position)
+      var maxH = (c.jumpV * c.jumpV) / (2 * GRAVITY);
 
       particles.push({
         el  : el,
         cx  : cx, cy : cy, bot : bot,
+        maxH: maxH,
         y   : 0,  vy : 0,
-        x   : 0,                    // only used by 'loop' letters
+        x   : 0,
         rot : 0,
-        rotSpd     : 0,
-        spinAngle  : 0,             // accumulated spin for 'loop' type
-        loopAngle  : 0,             // orbit angle for x drift
+        tiltSign   : randSign(),   // randomised fresh each jump
+        spinAngle  : 0,
+        loopAngle  : 0,
         settled    : false,
-        startAt    : startAt,
+        startAt    : START_MS + Math.random() * 900,  // random, not left-to-right
         bouncesDone: 0,
-        squishF    : 0,             // >0 means squishing
+        squishF    : 0,
         sx : 1, sy : 1,
         nextVy     : 0,
         launched   : false,
@@ -75,7 +76,7 @@
     function applyTransform(p) {
       var tf;
       if (p.squishF > 0) {
-        // Scale from bottom-centre; no y offset (letter is at floor y=0)
+        // squish anchored at bottom-centre, no y offset (letter is at floor)
         tf = 'translate(' + p.cx    + ' ' + p.bot + ')' +
              ' scale('   + p.sx.toFixed(3) + ' ' + p.sy.toFixed(3) + ')' +
              ' translate(' + (-p.cx) + ' ' + (-p.bot) + ')';
@@ -87,6 +88,12 @@
              ' rotate('  + p.rot.toFixed(2) + ' ' + p.cx + ' ' + p.cy + ')';
       }
       p.el.setAttribute('transform', tf);
+    }
+
+    function launch(p) {
+      // Slight random variation in jump height so they don't feel mechanical
+      p.vy        = p.cfg.jumpV * (0.90 + Math.random() * 0.20);
+      p.tiltSign  = randSign();  // fresh random lean direction every jump
     }
 
     function frame(ts) {
@@ -102,14 +109,9 @@
 
         var c = p.cfg;
 
-        // First launch
-        if (!p.launched) {
-          p.launched = true;
-          p.vy     = c.jumpV;
-          p.rotSpd = c.type === 'hop' ? c.rotAmp * 0.14 : 0;
-        }
+        if (!p.launched) { p.launched = true; launch(p); }
 
-        // ── SQUISH phase ────────────────────────────────────────────────
+        // ── SQUISH phase ──────────────────────────────────────────────────
         if (p.squishF > 0) {
           p.squishF++;
           var sq = easeOut(Math.min(p.squishF / SQUISH_F, 1));
@@ -117,48 +119,43 @@
           p.sy = 0.52 + (1 - 0.52) * sq;
 
           if (p.squishF >= SQUISH_F) {
-            p.squishF = 0;
-            p.sx = 1; p.sy = 1;
-            if (Math.abs(p.nextVy) < SETTLE_V || p.bouncesDone >= c.bounceMax) {
-              snap(p); continue;
-            }
-            p.vy = p.nextVy;
+            p.squishF = 0; p.sx = 1; p.sy = 1;
+            if (p.bouncesDone >= c.bounceMax) { snap(p); continue; }
+            launch(p);   // new jump — fresh direction, similar height
           }
           applyTransform(p);
           continue;
         }
 
-        // ── FLIGHT phase ────────────────────────────────────────────────
+        // ── FLIGHT phase ──────────────────────────────────────────────────
         p.vy += GRAVITY;
         if (p.vy > 12) p.vy = 12;
         p.y  += p.vy;
 
-        if (c.type === 'hop') {
-          // lean into direction of travel; decay each bounce
-          var decay = Math.max(1 - p.bouncesDone * 0.28, 0.08);
-          if (p.vy < 0) p.rot += p.rotSpd * decay;
-          else          p.rot -= p.rotSpd * 0.55 * decay;
+        if (c.type === 'straight') {
+          p.rot = 0;  // stays perfectly upright
+
+        } else if (c.type === 'tilt') {
+          // Rotation derived from height — peaks at top, zero at floor.
+          // tiltSign is randomised each jump so it never leans the same way twice.
+          var frac = Math.max(0, -p.y) / p.maxH;  // 0 at floor, 1 at peak
+          p.rot = c.rotAmp * p.tiltSign * frac;
 
         } else if (c.type === 'loop') {
-          // Drift sideways in a circular arc while spinning full rotations.
-          // Radius shrinks as the letter descends back toward floor.
-          var airFrac = Math.max(0, -p.y) / Math.abs(c.jumpV * 6); // 0→1 airborne
-          p.loopAngle  += 0.07;
-          p.x           = Math.sin(p.loopAngle) * 18 * airFrac;
-          p.spinAngle  += 5;    // slow, dreamy spin
+          var airFrac = Math.max(0, -p.y) / Math.abs(p.cfg.jumpV * 6);
+          p.loopAngle += 0.07;
+          p.x          = Math.sin(p.loopAngle) * 18 * airFrac;
+          p.spinAngle += 5;
         }
 
-        // ── Floor hit ───────────────────────────────────────────────────
+        // ── Floor hit ─────────────────────────────────────────────────────
         if (p.y >= 0) {
           p.y = 0;
-          if (c.type === 'loop') p.x = 0;   // snap back to centre on landing
+          if (c.type === 'loop') { p.x = 0; p.spinAngle *= 0.1; }
+          p.rot = 0;
           p.bouncesDone++;
-          p.squishF  = 1;           // start squish
-          p.sx       = 1.38;
-          p.sy       = 0.52;
-          p.nextVy   = -p.vy * DAMPING;
-          // spin slows dramatically on impact
-          if (c.type === 'loop') p.spinAngle *= 0.1;
+          p.squishF = 1;
+          p.sx = 1.38; p.sy = 0.52;
         }
 
         applyTransform(p);
