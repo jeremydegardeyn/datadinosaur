@@ -1,29 +1,31 @@
 (function () {
   'use strict';
 
-  var GRAVITY    = 0.9;   // SVG units / frame²
-  var DAMPING    = 0.58;  // energy kept on each floor hit
-  var SETTLE_V   = 1.5;   // stop bouncing below this speed
-  var START_MS   = 400;   // ms before first letter jumps
-  var STAGGER_MS = 70;    // ms between each letter's jump
+  var GRAVITY      = 1.2;   // SVG units / frame² — snappy, toddler-like
+  var DAMPING      = 0.56;  // velocity kept after each squish-launch
+  var SETTLE_V     = 2.2;   // give up bouncing below this speed
+  var SQUISH_F     = 9;     // frames the squish animation takes
+  var START_MS     = 500;
+  var STAGGER_MS   = 85;    // ripple left → right
 
-  // ── Per-letter config (D a t a i n o s a u r) ────────────────────────────
-  // jumpV   : initial upward velocity (higher = taller jump)
-  // rotAmp  : how much it tilts during the jump (negative = leans other way)
-  // bounceMax: max floor hits before snapping home
+  // ── Per-letter config (D a t a i n o s a u r) ───────────────────────────
+  // type 'hop'  : normal toddler bounce with lean
+  // type 'loop' : jumps AND drifts sideways in a small arc while spinning
   var CFG = [
-    { jumpV:-16, rotAmp:-10, bounceMax:3 },  // D  — leans left, 3 bounces
-    { jumpV:-22, rotAmp: 14, bounceMax:5 },  // a  — high and spinny
-    { jumpV:-14, rotAmp: 18, bounceMax:5 },  // t  — tall letter does a big lean
-    { jumpV:-19, rotAmp:-12, bounceMax:4 },  // a
-    { jumpV:-26, rotAmp:  8, bounceMax:7 },  // i  — tiny & light, springs the most
-    { jumpV:-17, rotAmp: 11, bounceMax:3 },  // n
-    { jumpV:-20, rotAmp:-15, bounceMax:4 },  // o
-    { jumpV:-23, rotAmp:-18, bounceMax:5 },  // s  — wild tilt
-    { jumpV:-18, rotAmp: 10, bounceMax:4 },  // a
-    { jumpV:-15, rotAmp: -9, bounceMax:3 },  // u  — heavier, fewer bounces
-    { jumpV:-21, rotAmp: 16, bounceMax:5 },  // r
+    { type:'hop',  jumpV:-11, rotAmp:  9, bounceMax:4 },  // D
+    { type:'hop',  jumpV:-13, rotAmp: -7, bounceMax:5 },  // a
+    { type:'hop',  jumpV:- 9, rotAmp: 13, bounceMax:4 },  // t
+    { type:'hop',  jumpV:-12, rotAmp: -8, bounceMax:4 },  // a
+    { type:'hop',  jumpV:-15, rotAmp:  5, bounceMax:6 },  // i  — lightest, most bouncy
+    { type:'hop',  jumpV:-10, rotAmp:  8, bounceMax:3 },  // n
+    { type:'loop', jumpV:-12, bounceMax:3 },               // o  — loops and spins ✦
+    { type:'hop',  jumpV:-13, rotAmp:-11, bounceMax:5 },  // s
+    { type:'hop',  jumpV:-11, rotAmp:  7, bounceMax:4 },  // a
+    { type:'loop', jumpV:-10, bounceMax:3 },               // u  — loops and spins ✦
+    { type:'hop',  jumpV:-14, rotAmp:  9, bounceMax:5 },  // r
   ];
+
+  function easeOut(t) { return 1 - (1 - t) * (1 - t); }
 
   function init() {
     var els = document.querySelectorAll('.hero-letter');
@@ -37,19 +39,24 @@
       var bb  = el.getBBox();
       var cx  = bb.x + bb.width  * 0.5;
       var cy  = bb.y + bb.height * 0.5;
+      var bot = bb.y + bb.height;   // bottom edge — squish anchor
 
       particles.push({
         el  : el,
-        cx  : cx,
-        cy  : cy,
-        y   : 0,
-        vy  : 0,
+        cx  : cx, cy : cy, bot : bot,
+        y   : 0,  vy : 0,
+        x   : 0,                    // only used by 'loop' letters
         rot : 0,
-        rotSpd     : 0,          // set on first jump
+        rotSpd     : 0,
+        spinAngle  : 0,             // accumulated spin for 'loop' type
+        loopAngle  : 0,             // orbit angle for x drift
         settled    : false,
-        jumped     : false,
         startAt    : START_MS + i * STAGGER_MS,
         bouncesDone: 0,
+        squishF    : 0,             // >0 means squishing
+        sx : 1, sy : 1,
+        nextVy     : 0,
+        launched   : false,
         cfg : c,
       });
     }
@@ -58,9 +65,26 @@
 
     function snap(p) {
       p.settled = true;
-      p.el.style.transition = 'transform 0.2s ease-out';
+      p.el.style.transition = 'transform 0.22s ease-out';
       p.el.setAttribute('transform', '');
-      setTimeout(function () { p.el.style.transition = ''; }, 220);
+      setTimeout(function () { p.el.style.transition = ''; }, 240);
+    }
+
+    function applyTransform(p) {
+      var tf;
+      if (p.squishF > 0) {
+        // Scale from bottom-centre; no y offset (letter is at floor y=0)
+        tf = 'translate(' + p.cx    + ' ' + p.bot + ')' +
+             ' scale('   + p.sx.toFixed(3) + ' ' + p.sy.toFixed(3) + ')' +
+             ' translate(' + (-p.cx) + ' ' + (-p.bot) + ')';
+      } else if (p.cfg.type === 'loop') {
+        tf = 'translate(' + p.x.toFixed(2) + ' ' + p.y.toFixed(2) + ')' +
+             ' rotate('   + p.spinAngle.toFixed(2) + ' ' + p.cx + ' ' + p.cy + ')';
+      } else {
+        tf = 'translate(0 ' + p.y.toFixed(2) + ')' +
+             ' rotate('  + p.rot.toFixed(2) + ' ' + p.cx + ' ' + p.cy + ')';
+      }
+      p.el.setAttribute('transform', tf);
     }
 
     function frame(ts) {
@@ -76,44 +100,66 @@
 
         var c = p.cfg;
 
-        // First frame for this letter — give it the upward kick
-        if (!p.jumped) {
-          p.jumped = true;
-          p.vy     = c.jumpV;                       // launch upward
-          p.rotSpd = c.rotAmp * 0.18;               // start tilting on take-off
+        // First launch
+        if (!p.launched) {
+          p.launched = true;
+          p.vy     = c.jumpV;
+          p.rotSpd = c.type === 'hop' ? c.rotAmp * 0.14 : 0;
         }
 
-        // Gravity
+        // ── SQUISH phase ────────────────────────────────────────────────
+        if (p.squishF > 0) {
+          p.squishF++;
+          var sq = easeOut(Math.min(p.squishF / SQUISH_F, 1));
+          p.sx = 1.38 + (1 - 1.38) * sq;
+          p.sy = 0.52 + (1 - 0.52) * sq;
+
+          if (p.squishF >= SQUISH_F) {
+            p.squishF = 0;
+            p.sx = 1; p.sy = 1;
+            if (Math.abs(p.nextVy) < SETTLE_V || p.bouncesDone >= c.bounceMax) {
+              snap(p); continue;
+            }
+            p.vy = p.nextVy;
+          }
+          applyTransform(p);
+          continue;
+        }
+
+        // ── FLIGHT phase ────────────────────────────────────────────────
         p.vy += GRAVITY;
+        if (p.vy > 22) p.vy = 22;
         p.y  += p.vy;
 
-        // Tilt: lean into the direction of movement, decay each bounce
-        var rotDecay = Math.max(1 - p.bouncesDone * 0.25, 0.1);
-        if (p.vy < 0) {
-          // going up — tilt forward
-          p.rot += p.rotSpd * rotDecay;
-        } else {
-          // coming down — lean back
-          p.rot -= p.rotSpd * 0.6 * rotDecay;
+        if (c.type === 'hop') {
+          // lean into direction of travel; decay each bounce
+          var decay = Math.max(1 - p.bouncesDone * 0.28, 0.08);
+          if (p.vy < 0) p.rot += p.rotSpd * decay;
+          else          p.rot -= p.rotSpd * 0.55 * decay;
+
+        } else if (c.type === 'loop') {
+          // Drift sideways in a circular arc while spinning full rotations.
+          // Radius shrinks as the letter descends back toward floor.
+          var airFrac = Math.max(0, -p.y) / Math.abs(c.jumpV * 6); // 0→1 airborne
+          p.loopAngle  += 0.18;
+          p.x           = Math.sin(p.loopAngle) * 18 * airFrac;
+          p.spinAngle  += 14;   // full spin in the air
         }
 
-        // Floor hit (y back to 0 = home position)
+        // ── Floor hit ───────────────────────────────────────────────────
         if (p.y >= 0) {
-          p.y   = 0;
-          p.vy *= -DAMPING;
+          p.y = 0;
+          if (c.type === 'loop') p.x = 0;   // snap back to centre on landing
           p.bouncesDone++;
-
-          if (Math.abs(p.vy) < SETTLE_V || p.bouncesDone >= c.bounceMax) {
-            snap(p);
-            continue;
-          }
+          p.squishF  = 1;           // start squish
+          p.sx       = 1.38;
+          p.sy       = 0.52;
+          p.nextVy   = -p.vy * DAMPING;
+          // spin slows dramatically on impact
+          if (c.type === 'loop') p.spinAngle *= 0.1;
         }
 
-        p.el.setAttribute(
-          'transform',
-          'translate(0 ' + p.y.toFixed(2) + ')' +
-          ' rotate(' + p.rot.toFixed(2) + ' ' + p.cx.toFixed(2) + ' ' + p.cy.toFixed(2) + ')'
-        );
+        applyTransform(p);
       }
 
       if (anyLive) requestAnimationFrame(frame);
