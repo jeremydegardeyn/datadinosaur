@@ -12,16 +12,16 @@
   // type 'loop'     : drifts sideways in arc + slow spin
   var CFG = [
     { type:'straight', jumpV:-6.5, bounceMax:2 },             // D
-    { type:'tilt',     jumpV:-7.5, rotAmp:11, bounceMax:2 },  // a
+    { type:'tilt',     jumpV:-7.5, rotAmp:11, bounceMax:3 },  // a  ← 3 jumps
     { type:'straight', jumpV:-5.5, bounceMax:2 },             // t
     { type:'tilt',     jumpV:-7.0, rotAmp: 9, bounceMax:2 },  // a
     { type:'straight', jumpV:-8.5, bounceMax:3 },             // i  — lightest
-    { type:'tilt',     jumpV:-6.0, rotAmp: 8, bounceMax:2 },  // n
+    { type:'tilt',     jumpV:-6.0, rotAmp: 8, bounceMax:3 },  // n  ← 3 jumps
     { type:'loop',     jumpV:-7.0, bounceMax:2 },              // o  ✦
     { type:'tilt',     jumpV:-7.5, rotAmp:12, bounceMax:2 },  // s
     { type:'straight', jumpV:-6.5, bounceMax:2 },             // a
     { type:'loop',     jumpV:-6.0, bounceMax:2 },              // u  ✦
-    { type:'tilt',     jumpV:-8.0, rotAmp:10, bounceMax:2 },  // r
+    { type:'tilt',     jumpV:-8.0, rotAmp:10, bounceMax:3 },  // r  ← 3 jumps
   ];
 
   function easeOut(t) { return 1 - (1 - t) * (1 - t); }
@@ -43,8 +43,11 @@
       // max height letter reaches on a full jump (used to derive tilt from position)
       var maxH = (c.jumpV * c.jumpV) / (2 * GRAVITY);
 
+      var dotEl = el.querySelector('.letter-dot') || null;
+
       particles.push({
         el  : el,
+        dotEl: dotEl,
         cx  : cx, cy : cy, bot : bot,
         maxH: maxH,
         y   : 0,  vy : 0,
@@ -70,6 +73,7 @@
       p.settled = true;
       p.el.style.transition = 'transform 0.22s ease-out';
       p.el.setAttribute('transform', '');
+      if (p.dotEl) p.dotEl.setAttribute('transform', '');
       setTimeout(function () { p.el.style.transition = ''; }, 240);
     }
 
@@ -118,8 +122,18 @@
           p.sx = 1.38 + (1 - 1.38) * sq;
           p.sy = 0.52 + (1 - 0.52) * sq;
 
+          // Dot: pushed extra downward at peak squish, eases back out
+          if (p.dotEl) {
+            var squishCurve = (p.squishF < SQUISH_F * 0.3)
+              ? (p.squishF / (SQUISH_F * 0.3))
+              : (1 - (p.squishF - SQUISH_F * 0.3) / (SQUISH_F * 0.7));
+            var dotPush = squishCurve * 12;
+            p.dotEl.setAttribute('transform', 'translate(0 ' + dotPush.toFixed(2) + ')');
+          }
+
           if (p.squishF >= SQUISH_F) {
             p.squishF = 0; p.sx = 1; p.sy = 1;
+            if (p.dotEl) p.dotEl.setAttribute('transform', '');
             if (p.bouncesDone >= c.bounceMax) { snap(p); continue; }
             launch(p);   // new jump — fresh direction, similar height
           }
@@ -146,6 +160,12 @@
           p.loopAngle += 0.07;
           p.x          = Math.sin(p.loopAngle) * 18 * airFrac;
           p.spinAngle += 5;
+        }
+
+        // Dot rides higher than the body during flight
+        if (p.dotEl) {
+          var dotExtra = p.y * 0.45;  // negative = higher up; zero at floor
+          p.dotEl.setAttribute('transform', 'translate(0 ' + dotExtra.toFixed(2) + ')');
         }
 
         // ── Floor hit ─────────────────────────────────────────────────────
