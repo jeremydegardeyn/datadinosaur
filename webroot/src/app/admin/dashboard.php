@@ -32,7 +32,17 @@ $inquiries = $inq_stmt->fetchAll();
     <div class="admin-header-actions">
       <?php if (!empty($config['analytics']['enabled']) && !empty($config['analytics']['goatcounter_code'])): ?>
       <a href="https://<?= e($config['analytics']['goatcounter_code']) ?>.goatcounter.com"
-         class="btn btn-ghost" target="_blank" rel="noopener noreferrer">&#128200; Traffic Stats</a>
+         class="btn btn-ghost" target="_blank" rel="noopener noreferrer">
+        &#128200; Traffic Stats
+        <span class="btn-label">GoatCounter</span>
+      </a>
+      <?php endif; ?>
+      <?php if (!empty($config['analytics']['search_console_url'])): ?>
+      <a href="<?= e($config['analytics']['search_console_url']) ?>"
+         class="btn btn-ghost" target="_blank" rel="noopener noreferrer">
+        &#128269; Search Stats
+        <span class="btn-label">Search Console</span>
+      </a>
       <?php endif; ?>
       <a href="/blog/new" class="btn btn-primary">+ New Post</a>
     </div>
