@@ -56,7 +56,7 @@ contact:
 analytics:
   enabled: true
   goatcounter_code: "datadinosaur"
-  search_console_url: ""   # paste your Search Console property URL here once set up
+  search_console_url: "https://search.google.com/search-console?resource_id=https%3A%2F%2Fmy.datadinosaur.com%2F&hl=en"
 
 footer:
   links:
