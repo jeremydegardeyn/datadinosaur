@@ -95,7 +95,7 @@ h1,h2,h3,h4,h5 {
 .site-logo img { height: 36px; width: auto; }
 .site-logo:hover { text-decoration: none; }
 .site-tagline {
-  font-size: .65rem; font-weight: 400; color: var(--text-muted);
+  font-size: .65rem; font-weight: 400; color: #fff;
   letter-spacing: .04em;
 }
 .site-nav {
