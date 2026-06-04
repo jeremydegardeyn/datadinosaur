@@ -488,6 +488,7 @@ select { cursor: pointer; }
   .site-nav.open { display: flex; }
   .hero .container { flex-direction: column; text-align: center; padding: 3rem 1.25rem 2.5rem; }
   .hero-cta { justify-content: center; }
+  .hero-social { gap: 1.1rem; margin-top: 1.75rem; justify-content: center; }
   .hero-logo { display: none; }
   .blog-layout.has-sidebar { grid-template-columns: 1fr; }
   .blog-sidebar { order: -1; }
