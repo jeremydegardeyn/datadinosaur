@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /api/
+Disallow: /blog/edit
+Disallow: /blog/new
+
+Sitemap: https://my.datadinosaur.com/sitemap.xml

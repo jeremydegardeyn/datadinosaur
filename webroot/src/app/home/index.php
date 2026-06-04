@@ -1,5 +1,28 @@
 <?php
 $recent_posts = get_recent_posts(3);
+
+// Structured data for homepage
+$social_urls = array_map(fn($s) => $s['href'], $config['footer']['social'] ?? []);
+$json_ld = json_encode([
+    '@context' => 'https://schema.org',
+    '@graph'   => [
+        [
+            '@type'       => 'WebSite',
+            'name'        => $config['site']['name'],
+            'url'         => $config['site']['base_url'],
+            'description' => $config['site']['description'],
+            'author'      => ['@type' => 'Person', 'name' => $config['site']['author']],
+        ],
+        [
+            '@type'       => 'Person',
+            'name'        => $config['site']['author'],
+            'url'         => $config['site']['base_url'],
+            'jobTitle'    => 'Data Engineer & Consultant',
+            'description' => $config['site']['description'],
+            'sameAs'      => $social_urls,
+        ],
+    ],
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 ?>
 <!-- Hero -->
 <section class="hero">

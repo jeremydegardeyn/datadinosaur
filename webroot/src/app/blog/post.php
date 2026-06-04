@@ -6,7 +6,27 @@ if (!$post) {
     return;
 }
 
-$page_title = e($post['title']) . ' — ' . $config['site']['name'];
+$page_title    = $post['title'] . ' — ' . $config['site']['name'];
+$excerpt       = $post['excerpt'] ?: auto_excerpt($post['content'], 160);
+$meta_desc     = mb_strimwidth(strip_tags($excerpt), 0, 160, '…');
+$og_title      = $post['title'];
+$og_type       = 'article';
+$canonical_url = $config['site']['base_url'] . '/blog/' . $post['slug'];
+$json_ld       = json_encode([
+    '@context'        => 'https://schema.org',
+    '@type'           => 'BlogPosting',
+    'headline'        => $post['title'],
+    'description'     => $meta_desc,
+    'url'             => $canonical_url,
+    'datePublished'   => $post['published_at'] ? date('c', strtotime($post['published_at'])) : null,
+    'dateModified'    => $post['updated_at']   ? date('c', strtotime($post['updated_at']))   : null,
+    'author'          => ['@type' => 'Person', 'name' => $post['author'] ?? $config['site']['author']],
+    'publisher'       => [
+        '@type' => 'Organization',
+        'name'  => $config['site']['name'],
+        'url'   => $config['site']['base_url'],
+    ],
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
 $parsedown = new Parsedown();
 $parsedown->setSafeMode(true);
@@ -14,7 +34,6 @@ $html_content = $parsedown->text($post['content']);
 
 $comments = get_comments((int)$post['id'], true);
 $rt = reading_time($post['content']);
-$excerpt = $post['excerpt'] ?: auto_excerpt($post['content'], 160);
 ?>
 <article class="post-single container">
   <header class="post-header">

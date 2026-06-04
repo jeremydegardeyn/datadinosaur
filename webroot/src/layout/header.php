@@ -3,8 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="<?= e($config['site']['description']) ?>">
 <title><?= e($page_title) ?></title>
+<meta name="description" content="<?= e($meta_desc) ?>">
+<?php if ($seo_noindex): ?>
+<meta name="robots" content="noindex, nofollow">
+<?php else: ?>
+<link rel="canonical" href="<?= e($canonical_url) ?>">
+<?php endif; ?>
+
+<!-- Open Graph -->
+<meta property="og:site_name"   content="<?= e($config['site']['name']) ?>">
+<meta property="og:type"        content="<?= e($og_type) ?>">
+<meta property="og:title"       content="<?= e($og_title) ?>">
+<meta property="og:description" content="<?= e($meta_desc) ?>">
+<meta property="og:url"         content="<?= e($canonical_url) ?>">
+<meta property="og:image"       content="<?= e($og_image) ?>">
+
+<!-- Twitter Card -->
+<meta name="twitter:card"        content="summary">
+<meta name="twitter:title"       content="<?= e($og_title) ?>">
+<meta name="twitter:description" content="<?= e($meta_desc) ?>">
+<meta name="twitter:image"       content="<?= e($og_image) ?>">
+
+<?php if ($json_ld): ?>
+<script type="application/ld+json"><?= $json_ld ?></script>
+<?php endif; ?>
+
 <link rel="icon" href="/assets/images/data_dinosaur_small.png" type="image/png">
 <link rel="stylesheet" href="/assets/css/main.css?v=1">
 <?php if (($config['ads']['enabled'] ?? false) && !empty($config['ads']['header_ad_code'])): ?>
