@@ -9,7 +9,7 @@ $pending_cmts   = (int)$pdo->query("SELECT COUNT(*) FROM blog_comments WHERE sta
 $new_inquiries  = (int)$pdo->query("SELECT COUNT(*) FROM contact_inquiries WHERE status='new'")->fetchColumn();
 
 // Recent posts
-$posts_stmt = $pdo->query("SELECT id, title, slug, status, visible, pinned, published_at, views FROM blog_posts ORDER BY updated_at DESC LIMIT 20");
+$posts_stmt = $pdo->query("SELECT id, title, slug, status, visible, pinned, published_at, views FROM blog_posts ORDER BY published_at DESC LIMIT 20");
 $posts = $posts_stmt->fetchAll();
 
 // Pending comments
