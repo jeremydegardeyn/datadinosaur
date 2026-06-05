@@ -39,7 +39,7 @@ PG_PASSWORD     = os.environ["PG_PASSWORD"]
 CHUNK_SIZE      = 400   # words per chunk
 CHUNK_OVERLAP   = 50
 TOP_K           = 4     # chunks to retrieve
-EMBED_MODEL     = "models/text-embedding-004"
+EMBED_MODEL     = "text-embedding-004"
 CHAT_MODEL      = "gemini-2.0-flash"
 
 GEMINI_BASE = "https://generativelanguage.googleapis.com/v1"
