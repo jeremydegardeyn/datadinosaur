@@ -11,8 +11,7 @@ from typing import Optional
 import pymysql
 import psycopg2
 import psycopg2.extras
-from google import genai
-from google.genai import types as genai_types
+import requests as http
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -43,7 +42,7 @@ TOP_K           = 4     # chunks to retrieve
 EMBED_MODEL     = "models/text-embedding-004"
 CHAT_MODEL      = "gemini-2.0-flash"
 
-client = genai.Client(api_key=GEMINI_API_KEY, http_options={"api_version": "v1"})
+GEMINI_BASE = "https://generativelanguage.googleapis.com/v1"
 
 app = FastAPI(title="DataDinosaur RAG")
 app.add_middleware(
@@ -113,20 +112,21 @@ def chunk_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) 
 # ── Embedding ─────────────────────────────────────────────────────────────────
 
 def embed(texts: list[str]) -> list[list[float]]:
-    result = client.models.embed_content(
-        model=EMBED_MODEL,
-        contents=texts,
-        config=genai_types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT"),
-    )
-    return [e.values for e in result.embeddings]
+    url = f"{GEMINI_BASE}/models/{EMBED_MODEL}:batchEmbedContents?key={GEMINI_API_KEY}"
+    payload = {"requests": [
+        {"model": f"models/{EMBED_MODEL}", "content": {"parts": [{"text": t}]}, "taskType": "RETRIEVAL_DOCUMENT"}
+        for t in texts
+    ]}
+    r = http.post(url, json=payload, timeout=30)
+    r.raise_for_status()
+    return [e["values"] for e in r.json()["embeddings"]]
 
 def embed_query(text: str) -> list[float]:
-    result = client.models.embed_content(
-        model=EMBED_MODEL,
-        contents=[text],
-        config=genai_types.EmbedContentConfig(task_type="RETRIEVAL_QUERY"),
-    )
-    return result.embeddings[0].values
+    url = f"{GEMINI_BASE}/models/{EMBED_MODEL}:embedContent?key={GEMINI_API_KEY}"
+    payload = {"content": {"parts": [{"text": text}]}, "taskType": "RETRIEVAL_QUERY"}
+    r = http.post(url, json=payload, timeout=30)
+    r.raise_for_status()
+    return r.json()["embedding"]["values"]
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -261,7 +261,9 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
         ANSWER:
     """).strip()
 
-    response = client.models.generate_content(model=CHAT_MODEL, contents=prompt)
-    answer   = response.text.strip()
+    url = f"{GEMINI_BASE}/models/{CHAT_MODEL}:generateContent?key={GEMINI_API_KEY}"
+    r   = http.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=30)
+    r.raise_for_status()
+    answer = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
 
     return {"answer": answer, "sources": sources}
