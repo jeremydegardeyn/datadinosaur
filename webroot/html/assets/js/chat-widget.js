@@ -17,6 +17,7 @@
       box-shadow: 0 4px 14px rgba(0,0,0,.4);
       cursor: pointer; font-size: 22px; display: flex;
       align-items: center; justify-content: center;
+      text-shadow: 0 1px 3px rgba(0,0,0,.5);
       transition: transform .15s, background .15s;
     }
     #dd-chat-btn:hover { background: #d4890a; transform: scale(1.08); }
@@ -89,6 +90,7 @@
       padding: 8px 14px; background: #e8960a; color: #fff;
       border: none; border-radius: 8px; cursor: pointer;
       font-size: 13px; font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0,0,0,.5);
       transition: background .15s;
     }
     #dd-chat-send:hover { background: #d4890a; }
