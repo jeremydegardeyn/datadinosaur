@@ -32,10 +32,13 @@
     }
     @media (max-width: 480px) {
       #dd-chat-box {
-        right: 8px; left: 8px; width: auto; bottom: 80px;
-        max-height: 70vh;
+        right: 0; left: 0; width: 100%; bottom: 72px;
+        max-height: 72vh; border-radius: 12px 12px 0 0;
+        border-left: none; border-right: none;
       }
       #dd-chat-btn { bottom: 16px; right: 16px; }
+      #dd-chat-footer { padding: 8px; }
+      #dd-chat-input { font-size: 16px; } /* prevent iOS zoom */
     }
     #dd-chat-box.open { display: flex; }
 
