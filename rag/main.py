@@ -40,7 +40,7 @@ CHUNK_SIZE      = 400   # words per chunk
 CHUNK_OVERLAP   = 50
 TOP_K           = 4     # chunks to retrieve
 EMBED_MODEL     = "gemini-embedding-001"
-CHAT_MODEL      = "gemini-2.0-flash-lite"
+CHAT_MODEL      = "gemini-2.0-flash-lite-001"
 
 GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
 
