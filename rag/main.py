@@ -11,7 +11,8 @@ from typing import Optional
 import pymysql
 import psycopg2
 import psycopg2.extras
-import google.generativeai as genai
+from google import genai
+from google.genai import types as genai_types
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -42,7 +43,7 @@ TOP_K           = 4     # chunks to retrieve
 EMBED_MODEL     = "models/text-embedding-004"
 CHAT_MODEL      = "gemini-2.0-flash"
 
-genai.configure(api_key=GEMINI_API_KEY)
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 app = FastAPI(title="DataDinosaur RAG")
 app.add_middleware(
@@ -112,20 +113,20 @@ def chunk_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) 
 # ── Embedding ─────────────────────────────────────────────────────────────────
 
 def embed(texts: list[str]) -> list[list[float]]:
-    result = genai.embed_content(
+    result = client.models.embed_content(
         model=EMBED_MODEL,
-        content=texts,
-        task_type="retrieval_document",
+        contents=texts,
+        config=genai_types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT"),
     )
-    return result["embedding"] if len(texts) == 1 else result["embedding"]
+    return [e.values for e in result.embeddings]
 
 def embed_query(text: str) -> list[float]:
-    result = genai.embed_content(
+    result = client.models.embed_content(
         model=EMBED_MODEL,
-        content=text,
-        task_type="retrieval_query",
+        contents=[text],
+        config=genai_types.EmbedContentConfig(task_type="RETRIEVAL_QUERY"),
     )
-    return result["embedding"]
+    return result.embeddings[0].values
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -260,8 +261,7 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
         ANSWER:
     """).strip()
 
-    model    = genai.GenerativeModel(CHAT_MODEL)
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(model=CHAT_MODEL, contents=prompt)
     answer   = response.text.strip()
 
     return {"answer": answer, "sources": sources}
