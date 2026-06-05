@@ -29,6 +29,13 @@
       display: none; flex-direction: column; overflow: hidden;
       font-family: inherit;
     }
+    @media (max-width: 480px) {
+      #dd-chat-box {
+        right: 8px; left: 8px; width: auto; bottom: 80px;
+        max-height: 70vh;
+      }
+      #dd-chat-btn { bottom: 16px; right: 16px; }
+    }
     #dd-chat-box.open { display: flex; }
 
     #dd-chat-header {
