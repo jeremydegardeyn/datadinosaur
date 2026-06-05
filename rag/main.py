@@ -40,7 +40,7 @@ CHUNK_SIZE      = 400   # words per chunk
 CHUNK_OVERLAP   = 50
 TOP_K           = 4     # chunks to retrieve
 EMBED_MODEL     = "gemini-embedding-001"
-CHAT_MODEL      = "gemini-2.5-flash"
+CHAT_MODEL      = "gemini-2.0-flash-lite"
 
 GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
 
@@ -244,9 +244,10 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
 
     prompt = textwrap.dedent(f"""
         You are a helpful assistant for DataDinosaur, a data engineering and consulting blog
-        written by Jeremy. Answer the user's question based ONLY on the blog content provided
-        below. If the answer isn't covered in the content, say so honestly — don't make things up.
-        Keep answers concise and friendly. Refer to the blog posts naturally, e.g. "In my post on X..."
+        written by Jeremy. Answer the user's question based ONLY on the blog content provided below.
+        If the answer isn't covered in the content, say so honestly — don't make things up.
+        Be concise: 3-5 sentences max. Use plain text only — no markdown, no asterisks, no bullet points.
+        Refer to posts naturally, e.g. "In my post on X..."
 
         BLOG CONTENT:
         {context}

@@ -141,10 +141,23 @@
   send.addEventListener('click', submit);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
 
+  function simpleMarkdown(text) {
+    return text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/`(.+?)`/g, '<code>$1</code>')
+      .replace(/\n/g, '<br>');
+  }
+
   function addMsg(text, cls, sources) {
     const el = document.createElement('div');
     el.className = 'dd-msg ' + cls;
-    el.textContent = text;
+    if (cls === 'bot') {
+      el.innerHTML = simpleMarkdown(text);
+    } else {
+      el.textContent = text;
+    }
 
     if (sources && sources.length) {
       const div = document.createElement('div');
