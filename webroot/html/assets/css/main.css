@@ -133,8 +133,8 @@ h1,h2,h3,h4,h5 {
   font-size: clamp(2rem, 5vw, 3.2rem);
   line-height: 1.1;
   margin-bottom: 1.2rem;
-  background: linear-gradient(to right, #f0f4ff 0%, #f0f4ff 25%, #fbbf60 50%, #f0f4ff 75%, #f0f4ff 100%);
-  background-size: 300% 100%;
+  background: linear-gradient(to right, #f0f4ff 0%, #f0f4ff 40%, #fbbf60 50%, #f0f4ff 60%, #f0f4ff 100%);
+  background-size: 400% 100%;
   background-position: 100% center;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
