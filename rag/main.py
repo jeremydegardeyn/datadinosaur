@@ -39,6 +39,7 @@ PG_PASSWORD     = os.environ["PG_PASSWORD"]
 CHUNK_SIZE      = 400   # words per chunk
 CHUNK_OVERLAP   = 50
 TOP_K           = 4     # chunks to retrieve
+MIN_SCORE       = 0.55  # minimum cosine similarity to consider a chunk relevant
 EMBED_MODEL     = "gemini-embedding-001"
 CHAT_MODEL      = "gemini-2.5-flash"
 
@@ -225,11 +226,16 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
     if not rows:
         return {"answer": "I don't have enough blog content indexed yet. Check back after posts are published!", "sources": []}
 
-    # Build context block
+    # Filter out chunks below the relevance threshold
+    relevant_rows = [r for r in rows if r["score"] >= MIN_SCORE]
+    if not relevant_rows:
+        return {"answer": "That topic isn't covered in my blog posts. Try asking about data engineering, career advice, or consulting!", "sources": []}
+
+    # Build context block — only from relevant chunks
     context_parts = []
     sources = []
     seen_slugs = set()
-    for row in rows:
+    for row in relevant_rows:
         context_parts.append(
             f"[From: \"{row['post_title']}\"]\n{row['content']}"
         )
@@ -263,16 +269,6 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
     r.raise_for_status()
     answer = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
 
-    # Don't return sources if the answer indicates the question is out of scope
-    no_answer_phrases = (
-        "not covered", "don't have", "doesn't cover", "not address",
-        "no information", "can't find", "cannot find", "outside",
-        "not discussed", "not mentioned", "isn't covered",
-        "does not contain", "do not contain", "does not include",
-        "does not cover", "no content", "not available", "not found",
-        "i'm sorry", "i am sorry", "unfortunately", "not in the blog",
-        "not in my blog", "nothing about", "no blog",
-    )
-    has_answer = not any(p in answer.lower() for p in no_answer_phrases)
-
-    return {"answer": answer, "sources": sources if has_answer else []}
+    # Relevance threshold already filtered out off-topic questions above.
+    # Sources are always shown when we reach this point.
+    return {"answer": answer, "sources": sources}
