@@ -139,11 +139,11 @@ h1,h2,h3,h4,h5 {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: hero-title-sweep 5s linear infinite;
+  animation: hero-title-sweep 6s linear infinite;
 }
 @keyframes hero-title-sweep {
   0%   { background-position: 100% center; }
-  60%  { background-position: 100% center; }
+  50%  { background-position: 100% center; }
   100% { background-position: 0% center; }
 }
 .hero-sub {
