@@ -42,7 +42,7 @@ TOP_K           = 4     # chunks to retrieve
 EMBED_MODEL     = "text-embedding-004"
 CHAT_MODEL      = "gemini-2.0-flash"
 
-GEMINI_BASE = "https://generativelanguage.googleapis.com/v1"
+GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
 
 app = FastAPI(title="DataDinosaur RAG")
 app.add_middleware(
