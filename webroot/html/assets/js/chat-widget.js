@@ -13,13 +13,13 @@
     #dd-chat-btn {
       position: fixed; bottom: 24px; right: 24px; z-index: 9000;
       width: 52px; height: 52px; border-radius: 50%;
-      background: #f59e0b; color: #fff; border: none;
+      background: #92650a; color: #fff; border: none;
       box-shadow: 0 4px 14px rgba(0,0,0,.4);
       cursor: pointer; font-size: 22px; display: flex;
       align-items: center; justify-content: center;
       transition: transform .15s, background .15s;
     }
-    #dd-chat-btn:hover { background: #d97706; transform: scale(1.08); }
+    #dd-chat-btn:hover { background: #6b4a07; transform: scale(1.08); }
 
     #dd-chat-box {
       position: fixed; bottom: 88px; right: 24px; z-index: 9000;
@@ -54,7 +54,7 @@
       font-size: 13px; line-height: 1.6; word-break: break-word;
     }
     .dd-msg.bot  { background: #22263a; color: #e2e8f0; align-self: flex-start; border: 1px solid #2e3247; }
-    .dd-msg.user { background: #f59e0b; color: #fff; align-self: flex-end; }
+    .dd-msg.user { background: #92650a; color: #fff; align-self: flex-end; }
     .dd-msg.error { background: #2d1515; color: #f87171; border: 1px solid #7f1d1d; }
 
     .dd-sources {
@@ -62,10 +62,10 @@
       font-size: 11px; color: #8892a4;
     }
     .dd-sources a {
-      display: block; color: #f59e0b; text-decoration: underline;
+      display: block; color: #92650a; text-decoration: underline;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .dd-sources a:hover { color: #f59e0b; }
+    .dd-sources a:hover { color: #92650a; }
 
     #dd-chat-footer {
       padding: 10px 12px; border-top: 1px solid #2e3247;
@@ -77,14 +77,14 @@
       font-family: inherit; background: #1a1d27; color: #e2e8f0;
     }
     #dd-chat-input::placeholder { color: #8892a4; }
-    #dd-chat-input:focus { border-color: #f59e0b; }
+    #dd-chat-input:focus { border-color: #92650a; }
     #dd-chat-send {
-      padding: 8px 14px; background: #f59e0b; color: #fff;
+      padding: 8px 14px; background: #92650a; color: #fff;
       border: none; border-radius: 8px; cursor: pointer;
       font-size: 13px; font-weight: 600;
       transition: background .15s;
     }
-    #dd-chat-send:hover { background: #d97706; }
+    #dd-chat-send:hover { background: #6b4a07; }
     #dd-chat-send:disabled { background: #2e3247; color: #8892a4; cursor: default; }
 
     .dd-typing span {
