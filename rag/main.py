@@ -80,7 +80,7 @@ def ensure_schema():
                     post_title TEXT NOT NULL,
                     chunk_idx  INT NOT NULL,
                     content    TEXT NOT NULL,
-                    embedding  vector(768),
+                    embedding  vector(3072),
                     UNIQUE (post_id, chunk_idx)
                 );
             """)
