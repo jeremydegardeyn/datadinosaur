@@ -2,7 +2,7 @@
 
 > Human data expertise for the AI era — blog, consulting, and career guidance for data engineers.
 
-**Stack:** PHP 8.2-FPM · Nginx · MySQL 8.0 · Docker Compose · Let's Encrypt
+**Stack:** PHP 8.2-FPM · Nginx · MySQL 8.0 · pgvector · Docker Compose · Let's Encrypt
 
 ---
 
@@ -15,6 +15,10 @@ datadinosaur/
 ├── .env.example                # Copy to .env and fill in
 ├── nginx/                      # Nginx config + certbot mounts
 ├── php/                        # PHP-FPM Dockerfile + config
+├── rag/                        # RAG service (see RAG section below)
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── main.py                 # FastAPI app — /ingest + /ask
 ├── database/
 │   ├── schema.sql              # Table definitions (auto-loaded)
 │   └── seed.sql                # Seed blog posts (auto-loaded)
@@ -31,6 +35,7 @@ datadinosaur/
     └── src/                    # PHP source (not web-accessible)
         ├── app/                # Page controllers
         ├── api/                # JSON/redirect API endpoints
+        │   └── rag.php         # PHP proxy to RAG service
         ├── layout/             # header.php / footer.php
         └── functions/          # DB, auth, blog, mail, security
 ```
@@ -129,6 +134,99 @@ All site settings are in [`webroot/config.yaml`](webroot/config.yaml).
 - Sensitive files (`.env`, `config.yaml`, `src/`, `vendor/`) are blocked at Nginx.
 - HTTPS-only in production with HSTS.
 - `session.cookie_secure`, `httponly`, and `samesite=Strict` set in php.ini.
+
+---
+
+## RAG Chat Widget
+
+The site includes a **Retrieval-Augmented Generation (RAG)** chat widget that lets visitors ask questions and get answers grounded in the blog posts.
+
+### How it works
+
+```
+Visitor question
+      │
+      ▼
+chat-widget.js          (floating 💬 button, vanilla JS)
+      │  POST /api/rag/ask
+      ▼
+rag.php                 (PHP proxy — rate limiting, auth)
+      │  POST http://rag:8000/ask
+      ▼
+main.py (FastAPI)
+      │
+      ├─ 1. Embed question → Gemini Embeddings API (gemini-embedding-001, 3072-dim)
+      │
+      ├─ 2. Cosine similarity search → pgvector (top 4 matching blog chunks)
+      │
+      ├─ 3. Build prompt: system instructions + retrieved chunks + question
+      │
+      └─ 4. Generate answer → Gemini 2.5 Flash
+              │
+              ▼
+         Answer + source post links returned to widget
+```
+
+### Components
+
+| Component | Technology | Purpose |
+|---|---|---|
+| Chat widget | Vanilla JS (`chat-widget.js`) | Floating UI, sends questions, renders answers |
+| PHP proxy | `src/api/rag.php` | Rate limiting (10 req/min/IP), auth, forwards to Python |
+| RAG service | Python FastAPI (`rag/main.py`) | Embedding, retrieval, generation |
+| Vector store | pgvector on Postgres 16 | Stores 3072-dim embeddings, cosine similarity search |
+| Source of truth | MySQL `blog_posts` table | Posts read at ingest time |
+| Embeddings | `gemini-embedding-001` via AI Studio | Converts text to 3072-dim vectors |
+| Generation | `gemini-2.5-flash` via AI Studio | Answers questions using retrieved context |
+
+### Ingestion
+
+Blog post content is chunked (~400 words with 50-word overlap), embedded, and stored in pgvector. Ingestion runs:
+
+- **Automatically** when a post is published (hooked into `publish.php`)
+- **Manually** via the **Re-index Posts** button on the admin dashboard
+
+Re-indexing is idempotent — safe to run any time. All published posts are re-processed on each run using `ON CONFLICT DO UPDATE`.
+
+### Cost
+
+Designed to be **free or near-free** for a small blog:
+
+| Resource | Cost |
+|---|---|
+| Gemini API (AI Studio key) | Free quota |
+| pgvector (Docker on existing VM) | $0 |
+| Python RAG container (same VM) | $0 |
+
+### Environment variables
+
+Add these to `.env` alongside the existing MySQL vars:
+
+```env
+GEMINI_API_KEY=your-key-from-aistudio.google.com
+RAG_SECRET=generate-with-openssl-rand-hex-32
+RAG_URL=http://rag:8000
+PG_DB=rag
+PG_USER=rag
+PG_PASSWORD=your-pg-password
+```
+
+### First-time setup
+
+After deploying:
+
+```bash
+# Drop any stale pgvector table (first deploy only)
+docker compose exec pgvector psql -U rag -d rag -c "DROP TABLE IF EXISTS post_chunks;"
+
+# Rebuild the RAG container
+docker compose up -d --build rag
+
+# Trigger initial index from admin dashboard → Re-index Posts
+# or via curl:
+curl -X POST https://my.datadinosaur.com/api/rag/ingest \
+  -H "Cookie: <admin session cookie>"
+```
 
 ---
 
