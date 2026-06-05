@@ -84,11 +84,7 @@ def ensure_schema():
                     UNIQUE (post_id, chunk_idx)
                 );
             """)
-            cur.execute("""
-                CREATE INDEX IF NOT EXISTS idx_chunks_embedding
-                ON post_chunks USING ivfflat (embedding vector_cosine_ops)
-                WITH (lists = 10);
-            """)
+            # No index needed — exact search is fast enough for a small blog
         conn.commit()
 
 
