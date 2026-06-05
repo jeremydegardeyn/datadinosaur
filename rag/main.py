@@ -263,4 +263,10 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
     r.raise_for_status()
     answer = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
 
-    return {"answer": answer, "sources": sources}
+    # Don't return sources if the answer indicates the question is out of scope
+    no_answer_phrases = ("not covered", "don't have", "doesn't cover", "not address",
+                         "no information", "can't find", "cannot find", "outside",
+                         "not discussed", "not mentioned", "isn't covered")
+    has_answer = not any(p in answer.lower() for p in no_answer_phrases)
+
+    return {"answer": answer, "sources": sources if has_answer else []}
