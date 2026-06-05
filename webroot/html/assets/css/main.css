@@ -133,10 +133,18 @@ h1,h2,h3,h4,h5 {
   font-size: clamp(2rem, 5vw, 3.2rem);
   line-height: 1.1;
   margin-bottom: 1.2rem;
-  background: linear-gradient(135deg, #f0f4ff 30%, #fbbf60 100%);
+  background: linear-gradient(to right, #f0f4ff 0%, #f0f4ff 25%, #fbbf60 50%, #f0f4ff 75%, #f0f4ff 100%);
+  background-size: 300% 100%;
+  background-position: 100% center;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: hero-title-sweep 5s linear infinite;
+}
+@keyframes hero-title-sweep {
+  0%   { background-position: 100% center; }
+  60%  { background-position: 100% center; }
+  100% { background-position: 0% center; }
 }
 .hero-sub {
   color: var(--text-muted); font-size: 1.1rem; margin-bottom: 2rem; max-width: 520px;
