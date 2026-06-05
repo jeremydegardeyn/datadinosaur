@@ -44,6 +44,9 @@ $inquiries = $inq_stmt->fetchAll();
         <span class="btn-label">Search Console</span>
       </a>
       <?php endif; ?>
+      <button class="btn btn-ghost" id="rag-ingest-btn" onclick="ragIngest(this, '<?= e(csrf_token()) ?>')">
+        &#x1F9E0; Re-index Posts
+      </button>
       <a href="/blog/new" class="btn btn-primary">+ New Post</a>
     </div>
   </div>
@@ -169,3 +172,29 @@ $inquiries = $inq_stmt->fetchAll();
   </section>
   <?php endif; ?>
 </div>
+
+<script>
+async function ragIngest(btn, csrf) {
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Indexing…';
+  try {
+    const res  = await fetch('/api/rag/ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+      body: '{}',
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      btn.textContent = `✅ Indexed ${data.posts} posts (${data.chunks} chunks)`;
+    } else {
+      btn.textContent = '❌ ' + (data.error || 'Failed');
+    }
+  } catch {
+    btn.textContent = '❌ Network error';
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = original; }, 4000);
+  }
+}
+</script>

@@ -61,6 +61,25 @@ $stmt = $pdo->prepare(
 $stmt->execute([$title, $slug, $excerpt, $content, $cat_id, $status, $pub_at]);
 $id = $pdo->lastInsertId();
 
+// Trigger RAG re-index when post is published
+if ($status === 'published') {
+    $rag_url    = getenv('RAG_URL') ?: 'http://rag:8000';
+    $rag_secret = getenv('RAG_SECRET') ?: '';
+    $ch = curl_init($rag_url . '/ingest');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => '{}',
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'X-Rag-Secret: ' . $rag_secret,
+        ],
+        CURLOPT_TIMEOUT => 10,
+    ]);
+    curl_exec($ch);   // fire-and-forget; ignore errors
+    curl_close($ch);
+}
+
 json_response([
     'ok'   => true,
     'id'   => (int)$id,
