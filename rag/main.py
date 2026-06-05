@@ -43,7 +43,7 @@ TOP_K           = 4     # chunks to retrieve
 EMBED_MODEL     = "models/text-embedding-004"
 CHAT_MODEL      = "gemini-2.0-flash"
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+client = genai.Client(api_key=GEMINI_API_KEY, http_options={"api_version": "v1"})
 
 app = FastAPI(title="DataDinosaur RAG")
 app.add_middleware(
