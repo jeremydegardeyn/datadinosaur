@@ -250,10 +250,14 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
 
     prompt = textwrap.dedent(f"""
         You are a helpful assistant for DataDinosaur, a data engineering and consulting blog
-        written by Jeremy. Answer the user's question based ONLY on the blog content provided below.
-        If the answer isn't covered in the content, say so honestly — don't make things up.
-        Be concise: 3-5 sentences max. Use plain text only — no markdown, no asterisks, no bullet points.
-        Refer to posts naturally, e.g. "In my post on X..."
+        written by Jeremy. Your ONLY job is to answer questions using the blog content below.
+
+        STRICT RULES:
+        - If the question can be answered from the blog content, answer it concisely in 3-5 sentences.
+        - If the question cannot be answered from the blog content — even partially — respond with exactly: OUT_OF_SCOPE
+        - Never use your own training knowledge. Never guess. Never blend in outside information.
+        - Use plain text only — no markdown, no asterisks, no bullet points.
+        - Refer to posts naturally, e.g. "In my post on X..."
 
         BLOG CONTENT:
         {context}
@@ -269,6 +273,8 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
     r.raise_for_status()
     answer = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
 
-    # Relevance threshold already filtered out off-topic questions above.
-    # Sources are always shown when we reach this point.
+    # If the LLM flagged the question as out of scope, suppress sources and return friendly message
+    if answer.strip().upper().startswith("OUT_OF_SCOPE"):
+        return {"answer": "That topic isn't covered in my blog posts. Try asking about data engineering, career advice, or consulting!", "sources": []}
+
     return {"answer": answer, "sources": sources}
