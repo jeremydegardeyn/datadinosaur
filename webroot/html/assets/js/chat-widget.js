@@ -84,7 +84,7 @@
     }
     #dd-chat-input {
       flex: 1; padding: 8px 10px; border: 1px solid #2e3247;
-      border-radius: 8px; font-size: 13px; outline: none;
+      border-radius: 8px; font-size: 16px; outline: none;
       font-family: inherit; background: #1a1d27; color: #e2e8f0;
     }
     #dd-chat-input::placeholder { color: #6b7db3; }
