@@ -13,14 +13,14 @@
     #dd-chat-btn {
       position: fixed; bottom: 24px; right: 24px; z-index: 9000;
       width: 52px; height: 52px; border-radius: 50%;
-      background: #8892a4; color: #fff; border: none;
+      background: #6b7db3; color: #fff; border: none;
       box-shadow: 0 4px 14px rgba(0,0,0,.4);
       cursor: pointer; font-size: 22px; display: flex;
       align-items: center; justify-content: center;
       text-shadow: 0 1px 3px rgba(0,0,0,.5);
       transition: transform .15s, background .15s;
     }
-    #dd-chat-btn:hover { background: #6b7280; transform: scale(1.08); }
+    #dd-chat-btn:hover { background: #556299; transform: scale(1.08); }
 
     #dd-chat-box {
       position: fixed; bottom: 88px; right: 24px; z-index: 9000;
@@ -47,9 +47,9 @@
       color: #f0f4ff; display: flex; align-items: center; justify-content: space-between;
       font-size: 14px; font-weight: 600;
     }
-    #dd-chat-header span { color: #8892a4; font-size: 11px; font-weight: 400; }
+    #dd-chat-header span { color: #6b7db3; font-size: 11px; font-weight: 400; }
     #dd-chat-close {
-      background: none; border: none; color: #8892a4;
+      background: none; border: none; color: #6b7db3;
       cursor: pointer; font-size: 18px; line-height: 1; padding: 0;
     }
     #dd-chat-close:hover { color: #f0f4ff; }
@@ -65,18 +65,18 @@
       font-size: 13px; line-height: 1.6; word-break: break-word;
     }
     .dd-msg.bot  { background: #22263a; color: #e2e8f0; align-self: flex-start; border: 1px solid #2e3247; }
-    .dd-msg.user { background: #8892a4; color: #fff; align-self: flex-end; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+    .dd-msg.user { background: #6b7db3; color: #fff; align-self: flex-end; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
     .dd-msg.error { background: #2d1515; color: #f87171; border: 1px solid #7f1d1d; }
 
     .dd-sources {
       margin-top: 8px; padding-top: 6px; border-top: 1px solid #2e3247;
-      font-size: 11px; color: #8892a4;
+      font-size: 11px; color: #6b7db3;
     }
     .dd-sources a {
       display: block; color: #f59e0b; text-decoration: underline;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .dd-sources a:hover { color: #8892a4; }
+    .dd-sources a:hover { color: #6b7db3; }
 
     #dd-chat-footer {
       padding: 10px 12px; border-top: 1px solid #2e3247;
@@ -87,21 +87,21 @@
       border-radius: 8px; font-size: 13px; outline: none;
       font-family: inherit; background: #1a1d27; color: #e2e8f0;
     }
-    #dd-chat-input::placeholder { color: #8892a4; }
-    #dd-chat-input:focus { border-color: #8892a4; }
+    #dd-chat-input::placeholder { color: #6b7db3; }
+    #dd-chat-input:focus { border-color: #6b7db3; }
     #dd-chat-send {
-      padding: 8px 14px; background: #8892a4; color: #fff;
+      padding: 8px 14px; background: #6b7db3; color: #fff;
       border: none; border-radius: 8px; cursor: pointer;
       font-size: 13px; font-weight: 600;
       text-shadow: 0 1px 2px rgba(0,0,0,.5);
       transition: background .15s;
     }
-    #dd-chat-send:hover { background: #6b7280; }
-    #dd-chat-send:disabled { background: #2e3247; color: #8892a4; cursor: default; }
+    #dd-chat-send:hover { background: #556299; }
+    #dd-chat-send:disabled { background: #2e3247; color: #6b7db3; cursor: default; }
 
     .dd-typing span {
       display: inline-block; width: 6px; height: 6px; margin: 0 1px;
-      background: #8892a4; border-radius: 50%;
+      background: #6b7db3; border-radius: 50%;
       animation: dd-bounce .9s infinite ease-in-out;
     }
     .dd-typing span:nth-child(2) { animation-delay: .15s; }
