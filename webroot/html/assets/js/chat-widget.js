@@ -65,7 +65,7 @@
       font-size: 13px; line-height: 1.6; word-break: break-word;
     }
     .dd-msg.bot  { background: #22263a; color: #e2e8f0; align-self: flex-start; border: 1px solid #2e3247; }
-    .dd-msg.user { background: #e8960a; color: #fff; align-self: flex-end; }
+    .dd-msg.user { background: #6366f1; color: #fff; align-self: flex-end; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
     .dd-msg.error { background: #2d1515; color: #f87171; border: 1px solid #7f1d1d; }
 
     .dd-sources {
