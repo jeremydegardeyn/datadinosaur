@@ -8,8 +8,14 @@ $drafts         = $total_posts - $published;
 $pending_cmts   = (int)$pdo->query("SELECT COUNT(*) FROM blog_comments WHERE status='pending'")->fetchColumn();
 $new_inquiries  = (int)$pdo->query("SELECT COUNT(*) FROM contact_inquiries WHERE status='new'")->fetchColumn();
 
-// Recent posts
-$posts_stmt = $pdo->query("SELECT id, title, slug, status, visible, pinned, published_at, views FROM blog_posts ORDER BY published_at DESC LIMIT 20");
+// Posts (paginated)
+$posts_per_page  = 15;
+$posts_page      = max(1, (int)($_GET['posts_page'] ?? 1));
+$posts_offset    = ($posts_page - 1) * $posts_per_page;
+$posts_pages     = (int)ceil($total_posts / $posts_per_page) ?: 1;
+$posts_page      = min($posts_page, $posts_pages);
+$posts_stmt = $pdo->prepare("SELECT id, title, slug, status, visible, pinned, published_at, views FROM blog_posts ORDER BY published_at DESC LIMIT ? OFFSET ?");
+$posts_stmt->execute([$posts_per_page, $posts_offset]);
 $posts = $posts_stmt->fetchAll();
 
 // Pending comments
@@ -103,6 +109,17 @@ $inquiries = $inq_stmt->fetchAll();
         <?php endforeach; ?>
       </tbody>
     </table>
+    <?php if ($posts_pages > 1): ?>
+    <div class="admin-pagination">
+      <?php if ($posts_page > 1): ?>
+        <a href="?posts_page=<?= $posts_page - 1 ?>" class="btn btn-ghost btn-sm">&larr; Prev</a>
+      <?php endif; ?>
+      <span class="pagination-info">Page <?= $posts_page ?> of <?= $posts_pages ?></span>
+      <?php if ($posts_page < $posts_pages): ?>
+        <a href="?posts_page=<?= $posts_page + 1 ?>" class="btn btn-ghost btn-sm">Next &rarr;</a>
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
   </section>
 
   <!-- Pending comments -->
