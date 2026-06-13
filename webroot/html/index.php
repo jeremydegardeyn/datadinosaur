@@ -94,7 +94,7 @@ $canonical_url   = $base_url . $raw_path;
 $meta_desc       = $config['site']['description'];
 $og_title        = $config['site']['name'];
 $og_type         = 'website';
-$og_image        = $base_url . '/assets/images/data_dinosaur_small.png';
+$og_image        = $base_url . '/assets/images/data_dinosaur_og.png';
 $seo_noindex     = false;
 $json_ld         = null;
 

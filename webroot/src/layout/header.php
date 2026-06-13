@@ -18,9 +18,11 @@
 <meta property="og:description" content="<?= e($meta_desc) ?>">
 <meta property="og:url"         content="<?= e($canonical_url) ?>">
 <meta property="og:image"       content="<?= e($og_image) ?>">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
 
 <!-- Twitter Card -->
-<meta name="twitter:card"        content="summary">
+<meta name="twitter:card"        content="summary_large_image">
 <meta name="twitter:title"       content="<?= e($og_title) ?>">
 <meta name="twitter:description" content="<?= e($meta_desc) ?>">
 <meta name="twitter:image"       content="<?= e($og_image) ?>">
