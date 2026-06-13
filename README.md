@@ -274,12 +274,65 @@ GOATCOUNTER_API_TOKEN=from-goatcounter-settings-api
 # APP_SECRET, RAG_SECRET, RAG_URL are shared with the rest of the stack
 ```
 
-### Connecting a client
+### Deploying
+
+The MCP server is a service in the Compose stack (`mcp/`). On the VM:
 
 ```bash
-claude mcp add --transport http datadinosaur https://my.datadinosaur.com/mcp \
-  --header "Authorization: Bearer <MCP_TOKEN>"
+cd ~/datadinosaur
+git pull
+docker compose up -d --build mcp     # rebuild just the MCP container
 ```
+
+`nginx` also proxies `/mcp`, so if you change the nginx config restart it too:
+`docker compose up -d nginx`.
+
+Verify it's up and the auth layer is live — an unauthenticated request should
+return **401**:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -X POST https://my.datadinosaur.com/mcp
+# → 401
+```
+
+### Connecting a client
+
+The MCP server is hosted on the VM; you register it on whatever machine runs the
+Claude **client** (your laptop, a colleague's, etc.). The dependencies live on
+the server, so clients need nothing but network access + the token.
+
+1. Install the CLI if you don't have the `claude` command:
+
+   ```bash
+   npm install -g @anthropic-ai/claude-code
+   ```
+
+2. Add the server. Use `-s user` so it's available from every directory (the
+   default is project-local). Keep it **on one line** — a `\` line-continuation
+   does not work in PowerShell and silently drops the `--header`:
+
+   ```bash
+   claude mcp add -s user --transport http datadinosaur https://my.datadinosaur.com/mcp --header "Authorization: Bearer <MCP_TOKEN>"
+   ```
+
+3. Confirm and refresh:
+
+   ```bash
+   claude mcp list      # expect: datadinosaur ✓ Connected
+   ```
+
+   Then start a **fresh** `claude` session — MCP servers load at session start,
+   so they won't appear mid-conversation.
+
+### Troubleshooting
+
+| Symptom | Cause / fix |
+|---|---|
+| `claude: command not found` | CLI not installed — `npm install -g @anthropic-ai/claude-code` (and ensure the npm global bin is on PATH). |
+| Added to "local config [project: …]" | Missing `-s user` — it was added project-scoped. Re-add with `-s user`. |
+| `Headers: {}` / 401 even with a token | The `--header` got dropped (usually a `\` line break in PowerShell). Re-add on one line. |
+| `HTTP 421 Misdirected Request` after auth passes | MCP SDK DNS-rebinding protection rejecting the proxied `Host`. The server allow-lists `PUBLIC_HOST` / `PUBLIC_ORIGIN` (default `my.datadinosaur.com`) via `TransportSecuritySettings`; set those env vars if the domain changes. |
+| `Failed to connect` | Container not running or nginx not proxying — check `docker compose logs mcp` and that `/mcp` returns 401. |
 
 ---
 
