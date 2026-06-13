@@ -131,6 +131,10 @@ def embed_query(text: str) -> list[float]:
 class AskRequest(BaseModel):
     question: str
 
+class SearchRequest(BaseModel):
+    query: str
+    top_k: int = TOP_K
+
 def check_auth(x_rag_secret: Optional[str]):
     if x_rag_secret != RAG_SECRET:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -196,6 +200,43 @@ def ingest(x_rag_secret: Optional[str] = Header(None)):
         pg.commit()
 
     return {"ok": True, "posts": len(posts), "chunks": total_chunks}
+
+
+@app.post("/search")
+def search(body: SearchRequest, x_rag_secret: Optional[str] = Header(None)):
+    """Raw retrieval: return the top-k matching blog chunks with no LLM
+    generation step. Lets an agent (the MCP server) reason over the source
+    material itself, and avoids a Gemini generate call on every query."""
+    check_auth(x_rag_secret)
+
+    query = body.query.strip()
+    if not query:
+        raise HTTPException(status_code=400, detail="query is required")
+    if len(query) > 500:
+        raise HTTPException(status_code=400, detail="query too long")
+
+    k = max(1, min(20, body.top_k))
+    q_vec = embed_query(query)
+
+    with pg_conn() as pg:
+        with pg.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            cur.execute("""
+                SELECT post_title, post_slug, chunk_idx, content,
+                       1 - (embedding <=> %s::vector) AS score
+                FROM post_chunks
+                ORDER BY embedding <=> %s::vector
+                LIMIT %s
+            """, (str(q_vec), str(q_vec), k))
+            rows = cur.fetchall()
+
+    results = [{
+        "title":   r["post_title"],
+        "url":     f"https://my.datadinosaur.com/blog/{r['post_slug']}",
+        "chunk":   r["content"],
+        "score":   round(float(r["score"]), 4),
+    } for r in rows]
+
+    return {"query": query, "results": results}
 
 
 @app.post("/ask")

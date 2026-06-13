@@ -16,6 +16,7 @@ services:
       - ./nginx/certbot/www:/var/www/certbot:ro
     depends_on:
       - php
+      - mcp
     networks:
       - app-net
 
@@ -71,6 +72,19 @@ services:
     depends_on:
       - db
       - pgvector
+    networks:
+      - app-net
+
+  mcp:
+    build: ./mcp
+    restart: always
+    env_file:
+      - .env
+    environment:
+      RAG_URL:  http://rag:8000
+      SITE_URL: https://my.datadinosaur.com
+    depends_on:
+      - rag
     networks:
       - app-net
 

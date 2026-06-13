@@ -14,6 +14,19 @@ function require_admin(): void
     }
 }
 
+/**
+ * Machine auth: a request carrying a valid X-API-Token header matching
+ * APP_SECRET. Used by trusted server-to-server callers (the publish skill,
+ * the MCP server) so they can hit admin endpoints without a browser session.
+ * Token auth is not cookie-based, so CSRF checks are skipped for these calls.
+ */
+function is_api_request(): bool
+{
+    $token    = $_SERVER['HTTP_X_API_TOKEN'] ?? '';
+    $expected = getenv('APP_SECRET') ?: '';
+    return $token !== '' && $expected !== '' && hash_equals($expected, $token);
+}
+
 function admin_login(string $username, string $password): bool
 {
     $expected_user = getenv('ADMIN_USERNAME') ?: 'admin';

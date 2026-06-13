@@ -230,6 +230,59 @@ curl -X POST https://my.datadinosaur.com/api/rag/ingest \
 
 ---
 
+## MCP Server
+
+An **MCP (Model Context Protocol) server** exposes the blog's own data and admin
+actions as tools, so any MCP client (Claude Code, desktop, mobile) can query and
+manage the site remotely.
+
+### Tools
+
+| Tool | What it does |
+|---|---|
+| `search_blog` | Semantic search over posts (pgvector retrieval, no LLM step) |
+| `list_posts` | List posts with status / pin / visibility / views |
+| `list_comments` | List comments by status (`pending` / `approved` / `spam`) |
+| `create_post` | Publish a new post (Markdown), auto-slug + RAG re-index |
+| `update_post` | Partial update — send only the fields to change |
+| `toggle_pin` / `toggle_visibility` | Pin/hide a post |
+| `moderate_comment` | Approve / spam / delete a comment |
+| `get_traffic` / `top_pages` | GoatCounter analytics over a period |
+
+### Architecture
+
+```
+MCP client ──HTTPS, Bearer MCP_TOKEN──► nginx /mcp ──► mcp container (:3333)
+                                                          │
+   blog admin/CRUD ─X-API-Token (APP_SECRET)→ PHP /api/blog, /api/publish
+   semantic search ─X-Rag-Secret→ rag /search (pgvector)
+   analytics       ─Bearer→ GoatCounter API
+```
+
+The MCP server is a Python container (`mcp/`) speaking **Streamable HTTP**. It
+reuses the existing `X-API-Token` machine-auth (same token the publish skill
+uses) to reach admin endpoints without a browser session — those endpoints skip
+CSRF for token calls since token auth isn't cookie-based. Client auth is a
+bearer token (`MCP_TOKEN`) enforced as edge middleware in the app.
+
+### Environment variables
+
+```env
+MCP_TOKEN=generate-with-openssl-rand-hex-32   # clients send Authorization: Bearer <this>
+GOATCOUNTER_CODE=datadinosaur
+GOATCOUNTER_API_TOKEN=from-goatcounter-settings-api
+# APP_SECRET, RAG_SECRET, RAG_URL are shared with the rest of the stack
+```
+
+### Connecting a client
+
+```bash
+claude mcp add --transport http datadinosaur https://my.datadinosaur.com/mcp \
+  --header "Authorization: Bearer <MCP_TOKEN>"
+```
+
+---
+
 ## Revenue Path
 
 1. **Consulting leads** — contact form routes to `jeremy@datadinosaur.com`.
