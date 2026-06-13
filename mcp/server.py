@@ -177,15 +177,23 @@ def _gc_get(path: str, params: dict) -> dict:
 
 @mcp.tool()
 def get_traffic(days: int = 7) -> dict:
-    """Total pageviews and unique visitors over the last N days, from
-    GoatCounter."""
+    """Total visits and visitors over the last N days, from GoatCounter.
+    Aggregated from the per-path /stats/hits endpoint: the /stats/total route
+    404s on this hosted instance, while /stats/hits is the same data we already
+    read for top_pages and is known-good here."""
     start = (date.today() - timedelta(days=days)).isoformat()
     end   = date.today().isoformat()
-    data  = _gc_get("/api/v0/stats/total", {"start": start, "end": end})
+    # limit=200 comfortably covers the whole site (a handful of pages); `more`
+    # flags if GoatCounter truncated and the totals are a floor.
+    data  = _gc_get("/api/v0/stats/hits", {"start": start, "end": end, "limit": 200})
     if "error" in data:
         return data
+    hits = data.get("hits", [])
     return {"start": start, "end": end,
-            "pageviews": data.get("total"), "unique_visitors": data.get("total_unique")}
+            "pageviews": sum(h.get("count", 0) for h in hits),
+            "visitors": data.get("total"),
+            "paths_counted": len(hits),
+            "truncated": data.get("more", False)}
 
 @mcp.tool()
 def top_pages(days: int = 7, limit: int = 10) -> dict:
