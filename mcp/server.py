@@ -34,6 +34,7 @@ from typing import Optional
 import httpx
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
@@ -54,7 +55,21 @@ GOATCOUNTER_BASE      = f"https://{GOATCOUNTER_CODE}.goatcounter.com" if GOATCOU
 API_HEADERS = {"X-API-Token": APP_SECRET}
 RAG_HEADERS = {"X-Rag-Secret": RAG_SECRET, "Content-Type": "application/json"}
 
-mcp = FastMCP("datadinosaur", stateless_http=True)
+# DNS-rebinding protection defaults to localhost-only, which rejects the
+# proxied Host header (HTTP 421). Allow our own domain through; the bearer
+# token enforced below is the real access gate. PUBLIC_HOST/PUBLIC_ORIGIN let
+# this be overridden without code changes.
+PUBLIC_HOST   = os.getenv("PUBLIC_HOST", "my.datadinosaur.com")
+PUBLIC_ORIGIN = os.getenv("PUBLIC_ORIGIN", "https://my.datadinosaur.com")
+
+mcp = FastMCP(
+    "datadinosaur",
+    stateless_http=True,
+    transport_security=TransportSecuritySettings(
+        allowed_hosts=[PUBLIC_HOST],
+        allowed_origins=[PUBLIC_ORIGIN],
+    ),
+)
 
 
 # ── HTTP helpers ──────────────────────────────────────────────────────────────
