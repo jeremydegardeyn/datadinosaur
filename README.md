@@ -118,6 +118,10 @@ All site settings are in [`webroot/config.yaml`](webroot/config.yaml).
 
 - Login: navigate to any admin page (e.g., `/admin`) and you'll be prompted.
 - Write posts in Markdown (with live preview tab).
+- Inline images: in the editor, click **Insert image**, or drag-and-drop / paste an
+  image into the content box. It uploads to `assets/uploads/` and inserts the
+  Markdown `![alt](url)` at the cursor. Accepts JPG/PNG/GIF/WebP up to 5 MB;
+  files are validated as real images and stored under generated names.
 - Moderate comments from the dashboard.
 - View consulting inquiries from the dashboard.
 

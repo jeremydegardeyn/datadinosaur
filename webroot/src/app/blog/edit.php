@@ -73,6 +73,9 @@ $page_title = ($is_new ? 'New Post' : 'Edit: ' . $post['title']) . ' — Admin';
         <div class="editor-tabs">
           <button type="button" class="editor-tab active" data-tab="write">Write</button>
           <button type="button" class="editor-tab" data-tab="preview">Preview</button>
+          <button type="button" class="editor-img-btn" id="insertImageBtn">🖼 Insert image</button>
+          <span class="editor-img-hint" id="imgUploadStatus">or drag &amp; drop / paste an image</span>
+          <input type="file" id="imageUpload" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
         </div>
         <textarea name="content" id="postContent" rows="28" required
                   class="md-editor"

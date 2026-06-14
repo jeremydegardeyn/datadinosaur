@@ -23,6 +23,10 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Uploaded blog images (keep the dir, not the content)
+webroot/html/assets/uploads/*
+!webroot/html/assets/uploads/.gitkeep
+
 # Temp
 *.tmp
 *.bak

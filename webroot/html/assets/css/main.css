@@ -455,6 +455,10 @@ select { cursor: pointer; }
 .editor-tabs { display: flex; gap: 0; margin-bottom: -1px; }
 .editor-tab { padding: .45rem 1rem; background: var(--surface2); border: 1px solid var(--border); border-bottom: none; cursor: pointer; font-size: .85rem; color: var(--text-muted); border-radius: var(--radius) var(--radius) 0 0; }
 .editor-tab.active { background: var(--surface); color: var(--heading); border-bottom: 1px solid var(--surface); }
+.editor-img-btn { margin-left: auto; padding: .45rem .9rem; background: var(--surface2); border: 1px solid var(--border); border-bottom: none; cursor: pointer; font-size: .85rem; color: var(--text-muted); border-radius: var(--radius) var(--radius) 0 0; }
+.editor-img-btn:hover { color: var(--heading); }
+.editor-img-hint { align-self: center; padding: 0 .75rem; font-size: .75rem; color: var(--text-muted); }
+.md-editor.drag-over { outline: 2px dashed var(--accent); outline-offset: -4px; }
 .md-editor { border-radius: 0 var(--radius) var(--radius) var(--radius); font-family: 'SF Mono', Consolas, monospace; font-size: .9rem; resize: vertical; }
 .md-preview { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; min-height: 300px; }
 .comment-moderation { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin-bottom: .75rem; }

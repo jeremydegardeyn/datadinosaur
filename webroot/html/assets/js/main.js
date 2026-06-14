@@ -84,6 +84,75 @@ if (editorTabs.length && postContent && mdPreview) {
   });
 }
 
+/* ---- Image upload in post editor (button / drag-drop / paste) ---- */
+const imgBtn    = document.getElementById('insertImageBtn');
+const imgInput  = document.getElementById('imageUpload');
+const imgStatus = document.getElementById('imgUploadStatus');
+
+if (postContent && imgInput) {
+  const csrf = () => {
+    const f = document.getElementById('editForm');
+    const i = f && f.querySelector('[name=csrf_token]');
+    return i ? i.value : '';
+  };
+
+  function insertAtCursor(text) {
+    const start = postContent.selectionStart;
+    const end   = postContent.selectionEnd;
+    const v     = postContent.value;
+    postContent.value = v.slice(0, start) + text + v.slice(end);
+    const pos = start + text.length;
+    postContent.selectionStart = postContent.selectionEnd = pos;
+    postContent.focus();
+  }
+
+  async function uploadImage(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    if (imgStatus) imgStatus.textContent = 'Uploading…';
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('csrf_token', csrf());
+    try {
+      const res  = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.ok && data.url) {
+        const alt = (file.name || 'image').replace(/\.[^.]+$/, '');
+        insertAtCursor(`\n![${alt}](${data.url})\n`);
+        if (imgStatus) imgStatus.textContent = 'Inserted ✓';
+      } else {
+        if (imgStatus) imgStatus.textContent = data.error || 'Upload failed';
+      }
+    } catch (e) {
+      if (imgStatus) imgStatus.textContent = 'Upload failed';
+    }
+    setTimeout(() => { if (imgStatus) imgStatus.textContent = 'or drag & drop / paste an image'; }, 4000);
+  }
+
+  if (imgBtn) imgBtn.addEventListener('click', () => imgInput.click());
+  imgInput.addEventListener('change', () => { if (imgInput.files[0]) uploadImage(imgInput.files[0]); imgInput.value = ''; });
+
+  postContent.addEventListener('dragover', e => { e.preventDefault(); postContent.classList.add('drag-over'); });
+  postContent.addEventListener('dragleave', () => postContent.classList.remove('drag-over'));
+  postContent.addEventListener('drop', e => {
+    e.preventDefault();
+    postContent.classList.remove('drag-over');
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) uploadImage(file);
+  });
+
+  postContent.addEventListener('paste', e => {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        uploadImage(item.getAsFile());
+        break;
+      }
+    }
+  });
+}
+
 /* ---- Auto-generate slug from title ---- */
 const postTitle = document.getElementById('postTitle');
 const postSlug  = document.getElementById('postSlug');
