@@ -1,6 +1,83 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * Render post Markdown to HTML (safe mode) with two image enhancements layered
+ * on top of standard Markdown:
+ *
+ *   Caption — use the image title:   ![alt](url "My caption")
+ *             renders the image in a <figure> with a <figcaption>.
+ *
+ *   Sizing / alignment — append an attribute block:
+ *             ![alt](url){width=400}            (pixels)
+ *             ![alt](url){width=60%}            (percentage)
+ *             ![alt](url "Cap"){width=400,align=center}
+ *
+ * These are post-processed on Parsedown's output (raw HTML in posts is escaped
+ * by safe mode, so we can't inject <figure> from the Markdown directly).
+ */
+function render_post_html(string $markdown): string
+{
+    $pd = new Parsedown();
+    $pd->setSafeMode(true);
+    return enhance_post_images($pd->text($markdown));
+}
+
+function enhance_post_images(string $html): string
+{
+    // 1) Image-only paragraphs -> <figure> (with optional caption + sizing).
+    $html = preg_replace_callback(
+        '#<p>\s*<img\b([^>]*)>\s*(?:\{([^}]*)\})?\s*</p>#i',
+        function ($m) {
+            [$img, $caption, $style, $class] = dd_img_parts($m[1], $m[2] ?? '');
+            $fig = '<figure class="' . $class . '"><img' . $img . $style . '>';
+            if ($caption !== '') $fig .= '<figcaption>' . $caption . '</figcaption>';
+            return $fig . '</figure>';
+        },
+        $html
+    );
+
+    // 2) Any remaining inline images -> apply sizing in place (no figure).
+    $html = preg_replace_callback(
+        '#<img\b([^>]*)>\s*(?:\{([^}]*)\})?#i',
+        function ($m) {
+            [$img, , $style] = dd_img_parts($m[1], $m[2] ?? '');
+            return '<img' . $img . $style . '>';
+        },
+        $html
+    );
+
+    return $html;
+}
+
+/** Split an <img> attribute string + {attrs} block into reusable parts. */
+function dd_img_parts(string $imgAttrs, string $extra): array
+{
+    // Pull the title out to use as a caption.
+    $caption = '';
+    if (preg_match('/\stitle="([^"]*)"/i', $imgAttrs, $tm)) {
+        $caption  = $tm[1];
+        $imgAttrs = preg_replace('/\stitle="[^"]*"/i', '', $imgAttrs);
+    }
+
+    $style = [];
+    $class = 'post-image';
+    foreach (array_filter(array_map('trim', explode(',', $extra))) as $pair) {
+        if (strpos($pair, '=') === false) continue;
+        [$k, $v] = array_map('trim', explode('=', $pair, 2));
+        $k = strtolower($k);
+        if ($k === 'width') {
+            $v = preg_match('/^\d{1,4}%$/', $v) ? $v : (int)$v . 'px';
+            $style[] = 'width:' . $v;
+        } elseif ($k === 'align' && in_array($v, ['left', 'right', 'center'], true)) {
+            $class .= ' post-image-' . $v;
+        }
+    }
+    $styleAttr = $style ? ' style="' . implode(';', $style) . '"' : '';
+    // Drop a trailing self-closing slash so we can re-emit a clean tag.
+    return [rtrim($imgAttrs, " /"), $caption, $styleAttr, $class];
+}
+
 function get_posts(int $page = 1, int $per_page = 8, ?int $category_id = null): array
 {
     $pdo    = db_connect();

@@ -461,6 +461,17 @@ select { cursor: pointer; }
 .md-editor.drag-over { outline: 2px dashed var(--accent); outline-offset: -4px; }
 .md-editor { border-radius: 0 var(--radius) var(--radius) var(--radius); font-family: 'SF Mono', Consolas, monospace; font-size: .9rem; resize: vertical; }
 .md-preview { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; min-height: 300px; }
+
+/* ---- Inline post images (figure + caption + alignment) ---- */
+.post-image { margin: 1.75rem 0; text-align: center; }
+.post-image img { max-width: 100%; height: auto; border-radius: var(--radius); }
+.post-image figcaption { margin-top: .5rem; font-size: .82rem; color: var(--text-muted); font-style: italic; }
+.post-image-center { text-align: center; }
+.post-image-left  { float: left;  margin: .5rem 1.5rem 1rem 0; max-width: 50%; }
+.post-image-right { float: right; margin: .5rem 0 1rem 1.5rem; max-width: 50%; }
+@media (max-width: 600px) {
+  .post-image-left, .post-image-right { float: none; max-width: 100%; margin: 1.75rem 0; }
+}
 .comment-moderation { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin-bottom: .75rem; }
 .comment-moderation-meta { font-size: .8rem; color: var(--text-muted); margin-bottom: .4rem; }
 .comment-actions { display: flex; gap: .5rem; margin-top: .75rem; }

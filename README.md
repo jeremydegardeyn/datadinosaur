@@ -121,7 +121,12 @@ All site settings are in [`webroot/config.yaml`](webroot/config.yaml).
 - Inline images: in the editor, click **Insert image**, or drag-and-drop / paste an
   image into the content box. It uploads to `assets/uploads/` and inserts the
   Markdown `![alt](url)` at the cursor. Accepts JPG/PNG/GIF/WebP up to 5 MB;
-  files are validated as real images and stored under generated names.
+  files are validated as real images and stored under generated names. Add as
+  many as you like, anywhere in the post.
+  - Caption: `![alt](url "My caption")` renders the image in a figure with the
+    caption below it.
+  - Size / align: `![alt](url){width=400}` (pixels) or `{width=60%}`; add
+    `align=left|right|center`, e.g. `![alt](url "Cap"){width=400,align=center}`.
 - Moderate comments from the dashboard.
 - View consulting inquiries from the dashboard.
 

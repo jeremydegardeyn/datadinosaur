@@ -8,7 +8,4 @@ if (!is_admin()) {
 $body    = json_decode(file_get_contents('php://input'), true);
 $content = $body['content'] ?? '';
 
-$parsedown = new Parsedown();
-$parsedown->setSafeMode(true);
-
-json_response(['html' => $parsedown->text($content)]);
+json_response(['html' => render_post_html($content)]);

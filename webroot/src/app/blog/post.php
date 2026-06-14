@@ -28,9 +28,7 @@ $json_ld       = json_encode([
     ],
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-$parsedown = new Parsedown();
-$parsedown->setSafeMode(true);
-$html_content = $parsedown->text($post['content']);
+$html_content = render_post_html($post['content']);
 
 $comments = get_comments((int)$post['id'], true);
 $rt = reading_time($post['content']);
