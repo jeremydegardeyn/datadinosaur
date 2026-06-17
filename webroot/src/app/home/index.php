@@ -89,7 +89,8 @@ $json_ld = json_encode([
               <circle cx="270" cy="298" r="2.9" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.03s" dur="0.1s" fill="freeze"/></circle>
               <circle cx="270" cy="299" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.03s" dur="0.1s" fill="freeze"/></circle>
               <circle cx="275" cy="296" r="3"   fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.03s" dur="0.1s" fill="freeze"/></circle>
-              <!-- chomp 3 (~6.57s) — right third (shoulder into stem) -->
+              <!-- chomp 3 (~6.57s) — right third (shoulder into stem) + an extra centre bite -->
+              <circle cx="276" cy="296" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
               <circle cx="280" cy="293" r="3.1" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
               <circle cx="285" cy="291" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
               <circle cx="291" cy="290" r="3.4" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
