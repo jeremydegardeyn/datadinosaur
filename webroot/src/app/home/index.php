@@ -76,15 +76,22 @@ $json_ld = json_encode([
                  so the bitten edge slopes off with no leftover overhang. -->
             <mask id="dino-eat-mask">
               <rect x="233" y="278" width="64" height="82" fill="#fff"/>
-              <circle cx="258" cy="300" r="3"   fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="5.47s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="265" cy="299" r="2.9" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="5.62s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="270" cy="298" r="2.9" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.01s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="275" cy="296" r="3"   fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.16s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="264" cy="300" r="3.5" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.3s"  dur="0.1s" fill="freeze"/></circle>
-              <circle cx="270" cy="299" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.42s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="280" cy="293" r="3.1" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.55s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="285" cy="291" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.66s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="291" cy="290" r="3.4" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.77s" dur="0.1s" fill="freeze"/></circle>
+              <!-- Bites vanish only on each mouth-CLOSE of the 3 chomps (jaw returns
+                   to 0 deg at cycle keyTimes .29/.38/.47 -> 5.74s / 6.28s / 6.82s).
+                   Grouped by depth: top (shallowest) third on chomp 1, middle third
+                   on chomp 2, deepest third on chomp 3. -->
+              <!-- chomp 1 (mouth closed @ 5.74s) — top third -->
+              <circle cx="291" cy="290" r="3.4" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="5.74s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="285" cy="291" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="5.74s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="280" cy="293" r="3.1" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="5.74s" dur="0.1s" fill="freeze"/></circle>
+              <!-- chomp 2 (mouth closed @ 6.28s) — middle third -->
+              <circle cx="275" cy="296" r="3"   fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.28s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="270" cy="298" r="2.9" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.28s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="265" cy="299" r="2.9" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.28s" dur="0.1s" fill="freeze"/></circle>
+              <!-- chomp 3 (mouth closed @ 6.82s) — deepest third -->
+              <circle cx="270" cy="299" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.82s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="264" cy="300" r="3.5" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.82s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="258" cy="300" r="3"   fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.82s" dur="0.1s" fill="freeze"/></circle>
             </mask>
           </defs>
           <g id="hero-dino-graphic">
