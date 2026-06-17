@@ -94,6 +94,18 @@ $json_ld = json_encode([
               <circle cx="280" cy="293" r="3.1" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
               <circle cx="285" cy="291" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
               <circle cx="291" cy="290" r="3.4" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
+              <!-- the "a" counter, punched as a movable hole so the jump physics can bob it -->
+              <path id="a2-counter" class="letter-dot" data-dot-scale="0.45" fill="#000" d="M263.7,318.7c-4.2,0-7.8,3.3-7.8,7.6c0,4.3,3.7,7.7,7.8,7.7c4.2,0,7.8-3.4,7.8-7.7C271.5,322,267.9,318.7,263.7,318.7z"/>
+            </mask>
+            <!-- Counter holes for the other two "a"s, punched as movable mask shapes so the
+                 jump-in physics can bob them (the .letter-dot path) like the i/r tittles. -->
+            <mask id="dino-a1-cmask">
+              <rect x="138" y="294" width="64" height="62" fill="#fff"/>
+              <path id="a1-counter" class="letter-dot" data-dot-scale="0.45" fill="#000" d="M168,318.7c-4.2,0-7.8,3.3-7.8,7.6c0,4.3,3.7,7.7,7.8,7.7c4.2,0,7.8-3.4,7.8-7.7C175.8,322,172.2,318.7,168,318.7z"/>
+            </mask>
+            <mask id="dino-a3-cmask">
+              <rect x="542" y="294" width="64" height="62" fill="#fff"/>
+              <path id="a3-counter" class="letter-dot" data-dot-scale="0.45" fill="#000" d="M570.1,318.7c-4.2,0-7.8,3.3-7.8,7.6c0,4.3,3.7,7.7,7.8,7.7c4.2,0,7.8-3.4,7.8-7.7C577.9,322,574.3,318.7,570.1,318.7z"/>
             </mask>
           </defs>
           <g id="hero-dino-graphic">
@@ -111,12 +123,12 @@ $json_ld = json_encode([
           <!-- "Data" + "inosaur" text — each letter wrapped for physics -->
           <g id="hero-text">
             <g class="hero-letter"><path class="st0" d="M103.9,354.4l0.4-93c17,6.8,35.3,23,35.3,42.8C139.6,326.8,126.9,348.5,103.9,354.4z"/></g>
-            <g class="hero-letter"><path class="st0" d="M181.9,350.4c-2.8,2.8-8.6,2.7-12.4,2.7c-16.3,0-26.7-9.5-26.7-26.2c0-15.1,9.5-28.2,25.4-28.2
-              c2.2,0,5.3,0.9,7.1,1.9l0.5-4.7l17.5-0.1V352C193.3,352,181.7,350.7,181.9,350.4z"/><path class="letter-dot a-counter" data-dot-scale="0.45" d="M168,318.7c-4.2,0-7.8,3.3-7.8,7.6c0,4.3,3.7,7.7,7.8,7.7c4.2,0,7.8-3.4,7.8-7.7C175.8,322,172.2,318.7,168,318.7z"/></g>
+            <g class="hero-letter" data-dot="#a1-counter"><path class="st0" mask="url(#dino-a1-cmask)" d="M181.9,350.4c-2.8,2.8-8.6,2.7-12.4,2.7c-16.3,0-26.7-9.5-26.7-26.2c0-15.1,9.5-28.2,25.4-28.2
+              c2.2,0,5.3,0.9,7.1,1.9l0.5-4.7l17.5-0.1V352C193.3,352,181.7,350.7,181.9,350.4z"/></g>
             <g class="hero-letter"><path class="st0 dd-t" d="M227.7,303.1l-0.8,49.6l-17.2-0.3l0.6-49.1l-10.8-1.1v-19.7h11l-0.5-11.3l18,1l-0.6,10.3h9.7
               l0.4,20.3L227.7,303.1z"/></g>
-            <g class="hero-letter"><path class="st0 dd-a" mask="url(#dino-eat-mask)" d="M277.6,350.4c-2.8,2.8-8.6,2.7-12.4,2.7c-16.3,0-26.7-9.5-26.7-26.2c0-15.1,9.5-28.2,25.4-28.2
-              c2.2,0,5.3,0.9,7.1,1.9l0.5-4.7l17.5-0.1V352C289,352,277.4,350.7,277.6,350.4z"/><path class="letter-dot a-counter" data-dot-scale="0.45" d="M263.7,318.7c-4.2,0-7.8,3.3-7.8,7.6c0,4.3,3.7,7.7,7.8,7.7c4.2,0,7.8-3.4,7.8-7.7C271.5,322,267.9,318.7,263.7,318.7z"/></g>
+            <g class="hero-letter" data-dot="#a2-counter"><path class="st0 dd-a" mask="url(#dino-eat-mask)" d="M277.6,350.4c-2.8,2.8-8.6,2.7-12.4,2.7c-16.3,0-26.7-9.5-26.7-26.2c0-15.1,9.5-28.2,25.4-28.2
+              c2.2,0,5.3,0.9,7.1,1.9l0.5-4.7l17.5-0.1V352C289,352,277.4,350.7,277.6,350.4z"/></g>
             <g class="hero-letter">
               <path class="st1" d="M383.9,353.1l-15.2-3l0.1-54.3l18.4,1.1L383.9,353.1z"/>
               <path class="st1 letter-dot" d="M378.3,290.6c-4.4,0-8.1-3.5-8.1-8.1c0-4.4,3.7-8,8.1-8c4.4,0,8.2,3.5,8.2,8C386.5,287.1,382.7,290.6,378.3,290.6z"/>
@@ -128,8 +140,8 @@ $json_ld = json_encode([
             <g class="hero-letter"><path class="st1" d="M516.3,353.4c-5.6,0-11.5-0.3-17-1.6v-13.4l12.4-0.6v-3.8c-8.7-8.2-12.5-10.5-12.5-23.3
               c0-14.3,11.5-18.5,23.8-18.5c4.9,0,9.9,0.5,14.6,1.6v15.4l-11.6,1c10,7.2,13.7,12.2,13.7,24.9
               C539.6,349.2,528.4,353.4,516.3,353.4z"/></g>
-            <g class="hero-letter"><path class="st1" d="M584,350.4c-2.8,2.8-8.6,2.7-12.4,2.7c-16.3,0-26.7-9.5-26.7-26.2c0-15.1,9.5-28.2,25.4-28.2
-              c2.2,0,5.3,0.9,7.1,1.9l0.5-4.7l17.5-0.1V352C595.4,352,583.8,350.7,584,350.4z"/><path class="letter-dot a-counter" data-dot-scale="0.45" d="M570.1,318.7c-4.2,0-7.8,3.3-7.8,7.6c0,4.3,3.7,7.7,7.8,7.7c4.2,0,7.8-3.4,7.8-7.7C577.9,322,574.3,318.7,570.1,318.7z"/></g>
+            <g class="hero-letter" data-dot="#a3-counter"><path class="st1" mask="url(#dino-a3-cmask)" d="M584,350.4c-2.8,2.8-8.6,2.7-12.4,2.7c-16.3,0-26.7-9.5-26.7-26.2c0-15.1,9.5-28.2,25.4-28.2
+              c2.2,0,5.3,0.9,7.1,1.9l0.5-4.7l17.5-0.1V352C595.4,352,583.8,350.7,584,350.4z"/></g>
             <g class="hero-letter"><path class="st1" d="M625.4,353c-19.6,0-21.4-16-21.4-31.5c0-8.5,0.6-17.1,0.3-25.6l39.5-2.2c1,9.4,2.7,19.4,2.7,29
               C646.4,336.3,642,353,625.4,353z"/></g>
             <g class="hero-letter">
@@ -206,7 +218,7 @@ $json_ld = json_encode([
 <?php endif; ?>
 
 <script src="/assets/js/hero-animation.js?v=1" defer></script>
-<script src="/assets/js/hero-letter-physics.js?v=2" defer></script>
+<script src="/assets/js/hero-letter-physics.js?v=3" defer></script>
 <script src="/assets/js/hero-chomp-bits.js?v=4" defer></script>
 
 <!-- CTA banner -->

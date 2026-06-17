@@ -43,7 +43,10 @@
       // max height letter reaches on a full jump (used to derive tilt from position)
       var maxH = (c.jumpV * c.jumpV) / (2 * GRAVITY);
 
-      var dotEl = el.querySelector('.letter-dot') || null;
+      // i/r tittles live inside the group; the "a" counters are mask shapes in
+      // <defs>, referenced via the group's data-dot id.
+      var dotEl = el.querySelector('.letter-dot')
+        || (el.getAttribute('data-dot') ? document.querySelector(el.getAttribute('data-dot')) : null);
       // Per-dot bob strength. The "a" counters carry data-dot-scale to bob more
       // gently than the i/r tittles (which default to full strength).
       var dotScale = dotEl ? (parseFloat(dotEl.getAttribute('data-dot-scale')) || 1) : 1;
