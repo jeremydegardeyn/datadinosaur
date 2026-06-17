@@ -37,6 +37,11 @@
 
   var backP = [], frontP = [];
 
+  // Drop everything if the tab goes hidden, so we never come back to a backlog.
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { backP.length = 0; frontP.length = 0; }
+  });
+
   function burst() {
     var m = spot();
     for (var i = 0; i < 18; i++) {
@@ -67,17 +72,30 @@
     ctx.globalAlpha = 1;
   }
 
+  // Schedule the three bursts per chomp off document.timeline — the same clock
+  // the SVG/CSS animations use. It pauses when the tab is hidden, so the bits
+  // stay in sync with the jaw and never accumulate a backlog (unlike setInterval,
+  // which keeps firing in the background while rAF is paused).
+  var BEGIN = 4000, PERIOD = 6000;       // SVG chomp: begins 4s, loops every 6s
+  var OFFS  = [1470, 2010, 2550];        // first bits at 5.47s, then +0.54s, +1.08s
+  var clock = function () {
+    return (document.timeline && document.timeline.currentTime != null)
+      ? document.timeline.currentTime : performance.now();
+  };
+  var lastCycle = -1, fired = [false, false, false];
+
   (function loop() {
     requestAnimationFrame(loop);
     step(cb, backP);
     step(cf, frontP);
-  })();
 
-  function cycle() {
-    burst();
-    setTimeout(burst, 540);
-    setTimeout(burst, 1080);
-  }
-  // Matches the SVG chomp: head down at 4s, jaw bites ~5.2–6.7s; first bits at 5.47s.
-  setTimeout(function () { cycle(); setInterval(cycle, 6000); }, 5470);
+    if (document.hidden) return;
+    var t = clock() - BEGIN;
+    if (t < 0) return;
+    var cyc = Math.floor(t / PERIOD), phase = t - cyc * PERIOD;
+    if (cyc !== lastCycle) { lastCycle = cyc; fired = [false, false, false]; }
+    for (var i = 0; i < OFFS.length; i++) {
+      if (!fired[i] && phase >= OFFS[i]) { fired[i] = true; burst(); }
+    }
+  })();
 })();
