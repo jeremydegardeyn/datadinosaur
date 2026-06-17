@@ -200,9 +200,12 @@
           p.spinAngle += 5;
         }
 
-        // Dot rides higher than the body during flight
+        // Dot rides higher than the body during flight. cos(rot) keeps the lift
+        // world-vertical so it still rides UP as the letter passes upside-down,
+        // instead of getting carried downward with the flip.
         if (p.dotEl) {
-          var dotExtra = p.y * 0.45 * dotScaleFor(p, p.bouncesDone);  // negative = higher up; zero at floor
+          var dotExtra = p.y * 0.45 * dotScaleFor(p, p.bouncesDone)  // negative = higher up; zero at floor
+                         * Math.cos(p.rot * Math.PI / 180);
           p.dotEl.setAttribute('transform', 'translate(0 ' + dotExtra.toFixed(2) + ')');
         }
 
