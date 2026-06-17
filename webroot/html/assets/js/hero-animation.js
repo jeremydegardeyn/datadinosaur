@@ -73,6 +73,6 @@
   setTimeout(function () {
     canvas.style.transition = 'opacity 4s ease';
     canvas.style.opacity    = '0';
-  }, 3000);
+  }, 2500);
 
 })();
