@@ -72,30 +72,28 @@
     ctx.globalAlpha = 1;
   }
 
-  // Schedule the three bursts per chomp off document.timeline — the same clock
-  // the SVG/CSS animations use. It pauses when the tab is hidden, so the bits
-  // stay in sync with the jaw and never accumulate a backlog (unlike setInterval,
-  // which keeps firing in the background while rAF is paused).
-  var BEGIN = 4000, PERIOD = 6000;       // SVG chomp: begins 4s, loops every 6s
-  var OFFS  = [1470, 2010, 2550];        // first bits at 5.47s, then +0.54s, +1.08s
-  var clock = function () {
-    return (document.timeline && document.timeline.currentTime != null)
-      ? document.timeline.currentTime : performance.now();
-  };
-  var lastCycle = -1, fired = [false, false, false];
-
+  // Just render — no scheduling here. Particles age and clear on their own.
   (function loop() {
     requestAnimationFrame(loop);
     step(cb, backP);
     step(cf, frontP);
-
-    if (document.hidden) return;
-    var t = clock() - BEGIN;
-    if (t < 0) return;
-    var cyc = Math.floor(t / PERIOD), phase = t - cyc * PERIOD;
-    if (cyc !== lastCycle) { lastCycle = cyc; fired = [false, false, false]; }
-    for (var i = 0; i < OFFS.length; i++) {
-      if (!fired[i] && phase >= OFFS[i]) { fired[i] = true; burst(); }
-    }
   })();
+
+  // Trigger the three bursts per chomp off the jaw animation's OWN SMIL clock,
+  // not a wall clock. begin/repeat events fire from the same timeline that drives
+  // the visible jaw, so the spray can never drift from the chomp — and when the
+  // tab is hidden the animation pauses, so no events fire and nothing backs up.
+  // (The earlier document.timeline polling drifted because that clock and the
+  // SMIL/CSS clocks pause differently when the tab is backgrounded.)
+  var jaw  = document.getElementById('dino-jaw-anim');
+  var OFFS = [1470, 2010, 2550];   // bite offsets within the 6s cycle (begin = 4s)
+  function chomp() {
+    OFFS.forEach(function (ms) {
+      setTimeout(function () { if (!document.hidden) burst(); }, ms);
+    });
+  }
+  if (jaw && jaw.addEventListener) {
+    jaw.addEventListener('beginEvent', chomp);   // first cycle
+    jaw.addEventListener('repeatEvent', chomp);  // every loop after
+  }
 })();
