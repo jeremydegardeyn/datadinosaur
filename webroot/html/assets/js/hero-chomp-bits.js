@@ -86,7 +86,7 @@
   // (The earlier document.timeline polling drifted because that clock and the
   // SMIL/CSS clocks pause differently when the tab is backgrounded.)
   var jaw  = document.getElementById('dino-jaw-anim');
-  var OFFS = [1740, 2280, 2820];   // burst on each mouth-CLOSE (cycle keyTimes .29/.38/.47)
+  var OFFS = [1490, 2030, 2570];   // burst on each chomp snap (~0.25s before the keyframed close)
   function chomp() {
     OFFS.forEach(function (ms) {
       setTimeout(function () { if (!document.hidden) burst(); }, ms);
