@@ -222,16 +222,16 @@ h1,h2,h3,h4,h5 {
 .dd-a { transform-origin: 50% 100%; animation: ddChompA 6s 4s infinite ease-in-out; }
 @keyframes ddChompT {
   0%,8%   { transform: rotate(0deg)  scaleY(1); }
-  18%     { transform: rotate(-4deg) scaleY(.99); }
-  24.5%   { transform: rotate(-4deg) scaleY(.99); }
-  27%     { transform: rotate(-8deg) scaleY(.97); }
-  30%     { transform: rotate(-4deg) scaleY(.99); }
-  33.5%   { transform: rotate(-4deg) scaleY(.99); }
-  36%     { transform: rotate(-10deg) scaleY(.96); }
-  39%     { transform: rotate(-4deg) scaleY(.99); }
-  42.5%   { transform: rotate(-4deg) scaleY(.99); }
-  45%     { transform: rotate(-7deg) scaleX(1.02) scaleY(.97); }
-  48%     { transform: rotate(-4deg) scaleY(.99); }
+  18%     { transform: rotate(-3deg) scaleY(.995); }
+  24.5%   { transform: rotate(-3deg) scaleY(.995); }
+  27%     { transform: rotate(-5.5deg) scaleY(.985); }
+  30%     { transform: rotate(-3deg) scaleY(.995); }
+  33.5%   { transform: rotate(-3deg) scaleY(.995); }
+  36%     { transform: rotate(-4deg) scaleY(.99); }
+  39%     { transform: rotate(-3deg) scaleY(.995); }
+  42.5%   { transform: rotate(-3deg) scaleY(.995); }
+  45%     { transform: rotate(-6deg) scaleX(1.015) scaleY(.985); }
+  48%     { transform: rotate(-3deg) scaleY(.995); }
   58%,100%{ transform: rotate(0deg)  scaleY(1); }
 }
 @keyframes ddChompA {
