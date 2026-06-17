@@ -76,8 +76,8 @@
   // the SVG/CSS animations use. It pauses when the tab is hidden, so the bits
   // stay in sync with the jaw and never accumulate a backlog (unlike setInterval,
   // which keeps firing in the background while rAF is paused).
-  var BEGIN = 4000, PERIOD = 6000;       // SVG chomp: begins 4s, loops every 6s
-  var OFFS  = [1470, 2010, 2550];        // first bits at 5.47s, then +0.54s, +1.08s
+  var BEGIN = 4500, PERIOD = 6000;       // SVG chomp: begins 4.5s, loops every 6s
+  var OFFS  = [1470, 2010, 2550];        // first bits at 5.97s, then +0.54s, +1.08s
   var clock = function () {
     return (document.timeline && document.timeline.currentTime != null)
       ? document.timeline.currentTime : performance.now();
