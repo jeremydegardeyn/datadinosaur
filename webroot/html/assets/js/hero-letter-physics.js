@@ -26,6 +26,11 @@
 
   function easeOut(t) { return 1 - (1 - t) * (1 - t); }
   function randSign() { return Math.random() < 0.5 ? 1 : -1; }
+  // Bob strength for a given jump index, clamped to the per-dot list.
+  function dotScaleFor(p, idx) {
+    var a = p.dotScales;
+    return a[Math.min(Math.max(idx, 0), a.length - 1)];
+  }
 
   function init() {
     var els = document.querySelectorAll('.hero-letter');
@@ -47,14 +52,18 @@
       // <defs>, referenced via the group's data-dot id.
       var dotEl = el.querySelector('.letter-dot')
         || (el.getAttribute('data-dot') ? document.querySelector(el.getAttribute('data-dot')) : null);
-      // Per-dot bob strength. The "a" counters carry data-dot-scale to bob more
-      // gently than the i/r tittles (which default to full strength).
-      var dotScale = dotEl ? (parseFloat(dotEl.getAttribute('data-dot-scale')) || 1) : 1;
+      // Per-dot bob strength, as a per-jump list (e.g. "0.22,0.45,0.22" = gentle
+      // on jumps 1 and 3). A single value applies to every jump. Defaults to full
+      // strength for the i/r tittles.
+      var dsAttr = dotEl ? dotEl.getAttribute('data-dot-scale') : null;
+      var dotScales = dsAttr ? dsAttr.split(',').map(function (v) {
+        var n = parseFloat(v); return isNaN(n) ? 1 : n;
+      }) : [1];
 
       particles.push({
         el  : el,
         dotEl: dotEl,
-        dotScale: dotScale,
+        dotScales: dotScales,
         cx  : cx, cy : cy, bot : bot,
         maxH: maxH,
         y   : 0,  vy : 0,
@@ -134,7 +143,7 @@
             var squishCurve = (p.squishF < SQUISH_F * 0.3)
               ? (p.squishF / (SQUISH_F * 0.3))
               : (1 - (p.squishF - SQUISH_F * 0.3) / (SQUISH_F * 0.7));
-            var dotPush = squishCurve * 12 * p.dotScale;
+            var dotPush = squishCurve * 12 * dotScaleFor(p, p.bouncesDone - 1);
             p.dotEl.setAttribute('transform', 'translate(0 ' + dotPush.toFixed(2) + ')');
           }
 
@@ -171,7 +180,7 @@
 
         // Dot rides higher than the body during flight
         if (p.dotEl) {
-          var dotExtra = p.y * 0.45 * p.dotScale;  // negative = higher up; zero at floor
+          var dotExtra = p.y * 0.45 * dotScaleFor(p, p.bouncesDone);  // negative = higher up; zero at floor
           p.dotEl.setAttribute('transform', 'translate(0 ' + dotExtra.toFixed(2) + ')');
         }
 

@@ -95,13 +95,13 @@ $json_ld = json_encode([
               <circle cx="285" cy="291" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
               <circle cx="291" cy="290" r="3.4" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
               <!-- the "a" counter, punched as a movable hole so the jump physics can bob it -->
-              <path id="a2-counter" class="letter-dot" data-dot-scale="0.45" fill="#000" d="M263.7,318.7c-4.2,0-7.8,3.3-7.8,7.6c0,4.3,3.7,7.7,7.8,7.7c4.2,0,7.8-3.4,7.8-7.7C271.5,322,267.9,318.7,263.7,318.7z"/>
+              <path id="a2-counter" class="letter-dot" data-dot-scale="0.45,0.22" fill="#000" d="M263.7,318.7c-4.2,0-7.8,3.3-7.8,7.6c0,4.3,3.7,7.7,7.8,7.7c4.2,0,7.8-3.4,7.8-7.7C271.5,322,267.9,318.7,263.7,318.7z"/>
             </mask>
             <!-- Counter holes for the other two "a"s, punched as movable mask shapes so the
                  jump-in physics can bob them (the .letter-dot path) like the i/r tittles. -->
             <mask id="dino-a1-cmask">
               <rect x="138" y="294" width="64" height="62" fill="#fff"/>
-              <path id="a1-counter" class="letter-dot" data-dot-scale="0.45" fill="#000" d="M168,318.7c-4.2,0-7.8,3.3-7.8,7.6c0,4.3,3.7,7.7,7.8,7.7c4.2,0,7.8-3.4,7.8-7.7C175.8,322,172.2,318.7,168,318.7z"/>
+              <path id="a1-counter" class="letter-dot" data-dot-scale="0.22,0.45,0.22" fill="#000" d="M168,318.7c-4.2,0-7.8,3.3-7.8,7.6c0,4.3,3.7,7.7,7.8,7.7c4.2,0,7.8-3.4,7.8-7.7C175.8,322,172.2,318.7,168,318.7z"/>
             </mask>
             <mask id="dino-a3-cmask">
               <rect x="542" y="294" width="64" height="62" fill="#fff"/>
@@ -218,7 +218,7 @@ $json_ld = json_encode([
 <?php endif; ?>
 
 <script src="/assets/js/hero-animation.js?v=1" defer></script>
-<script src="/assets/js/hero-letter-physics.js?v=3" defer></script>
+<script src="/assets/js/hero-letter-physics.js?v=4" defer></script>
 <script src="/assets/js/hero-chomp-bits.js?v=4" defer></script>
 
 <!-- CTA banner -->
