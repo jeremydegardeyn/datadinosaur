@@ -61,7 +61,7 @@ $json_ld = json_encode([
              role="img" aria-label="DataDinosaur" style="overflow:visible">
           <style>.st0{fill:#e2e8f0;}.st1{fill:#39B54A;}</style>
           <!-- Dinosaur graphic — head raises and the lower jaw chomps the falling
-               numbers 3x, looping. Begins at 5s so the jumping letters settle first.
+               numbers 3x, looping. Begins at 4s so the jumping letters settle first.
                The lower jaw is the same logo path masked out of the base and clipped
                onto a neck hinge, so the resting/looping state is the exact logo. -->
           <defs>
@@ -76,22 +76,22 @@ $json_ld = json_encode([
                  so the bitten edge slopes off with no leftover overhang. -->
             <mask id="dino-eat-mask">
               <rect x="233" y="278" width="64" height="82" fill="#fff"/>
-              <circle cx="258" cy="300" r="3"   fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.47s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="265" cy="299" r="2.9" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.62s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="270" cy="298" r="2.9" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="7.01s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="275" cy="296" r="3"   fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="7.16s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="280" cy="293" r="3.1" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="7.55s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="285" cy="291" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="7.66s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="291" cy="290" r="3.4" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="7.77s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="258" cy="300" r="3"   fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="5.47s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="265" cy="299" r="2.9" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="5.62s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="270" cy="298" r="2.9" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.01s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="275" cy="296" r="3"   fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.16s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="280" cy="293" r="3.1" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.55s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="285" cy="291" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.66s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="291" cy="290" r="3.4" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.77s" dur="0.1s" fill="freeze"/></circle>
             </mask>
           </defs>
           <g id="hero-dino-graphic">
-            <animateTransform attributeName="transform" type="rotate" dur="6s" begin="5s" repeatCount="indefinite"
+            <animateTransform attributeName="transform" type="rotate" dur="6s" begin="4s" repeatCount="indefinite"
               keyTimes="0;0.08;0.18;0.50;0.60;1"
               values="0 330 330;0 330 330;-6 330 330;-6 330 330;0 330 330;0 330 330"/>
             <path class="st1" mask="url(#dino-jaw-mask)" d="M314.8,231.6l-19.6-9.4c-5.8-3.2-12-4.5-17.9,0.4c-10.7,8.8-20.7,18.4-29.7,28.8c-4.5,5.3-7.6,11-8.2,18c-0.5,4.8,1,8.6,4.4,11.9c3.5,3.3,7.6,5.5,12.1,7.3c0.5,0.1,21.6-21.4,21.6-21.4s-0.2,23.1,0,23.4c2,2.7,6.1,2.8,8.1,0.2c0.5-0.7,1-1.5,1.4-2.3c4-7.4,7.1-15.3,10.3-23.1c0.9-2.3,1.9-4.7,2.9-7.3c4.9,1.7,9.6,3.3,14.6,4.9l0,6.6c-3.1,1.4-6.2,2.8-9.2,4.1c-2.3,1-4.8,2.5-6.2,4.4c-2.9,3.6-1.7,8.2,2,11.2c0,0-1.5-8,2.8-9.2c3.7-1,5.3,1.7,5.1,3.5c2-0.9,2.8-2.4,2-4.3c-0.4-1.1-0.9-2-1.4-3.1c1.2-0.6,3-1.4,4.9-2.1l-0.3,80.5c30.2-7.9,47.1-36.4,47.1-66.3C361.5,262,337.2,240.6,314.8,231.6z M274.5,242.5c-1,1.7-3.3,2.2-5,1.1c-1.7-1-2.3-3.2-1.3-4.9c1-1.7,3.3-2.2,5-1.1C274.9,238.6,275.4,240.9,274.5,242.5z"/>
             <g id="hero-dino-jaw">
-              <animateTransform attributeName="transform" type="rotate" dur="6s" begin="5s" repeatCount="indefinite"
+              <animateTransform attributeName="transform" type="rotate" dur="6s" begin="4s" repeatCount="indefinite"
                 keyTimes="0;0.20;0.245;0.29;0.335;0.38;0.425;0.47;1"
                 values="0 300 258;0 300 258;13 300 258;0 300 258;13 300 258;0 300 258;13 300 258;0 300 258;0 300 258"/>
               <path class="st1" clip-path="url(#dino-jaw-clip)" d="M314.8,231.6l-19.6-9.4c-5.8-3.2-12-4.5-17.9,0.4c-10.7,8.8-20.7,18.4-29.7,28.8c-4.5,5.3-7.6,11-8.2,18c-0.5,4.8,1,8.6,4.4,11.9c3.5,3.3,7.6,5.5,12.1,7.3c0.5,0.1,21.6-21.4,21.6-21.4s-0.2,23.1,0,23.4c2,2.7,6.1,2.8,8.1,0.2c0.5-0.7,1-1.5,1.4-2.3c4-7.4,7.1-15.3,10.3-23.1c0.9-2.3,1.9-4.7,2.9-7.3c4.9,1.7,9.6,3.3,14.6,4.9l0,6.6c-3.1,1.4-6.2,2.8-9.2,4.1c-2.3,1-4.8,2.5-6.2,4.4c-2.9,3.6-1.7,8.2,2,11.2c0,0-1.5-8,2.8-9.2c3.7-1,5.3,1.7,5.1,3.5c2-0.9,2.8-2.4,2-4.3c-0.4-1.1-0.9-2-1.4-3.1c1.2-0.6,3-1.4,4.9-2.1l-0.3,80.5c30.2-7.9,47.1-36.4,47.1-66.3C361.5,262,337.2,240.6,314.8,231.6z"/>
