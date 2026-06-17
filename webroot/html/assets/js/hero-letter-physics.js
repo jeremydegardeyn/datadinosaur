@@ -100,13 +100,14 @@
     function applyTransform(p) {
       var tf;
       if (p.squishF > 0) {
-        // squish anchored at bottom-centre, no y offset (letter is at floor).
-        // Prefix any committed flip rotation so a flipped letter stays flipped
-        // through its landing squash.
-        tf = 'rotate(' + p.baseRot.toFixed(2) + ' ' + p.cx + ' ' + p.cy + ')' +
-             ' translate(' + p.cx    + ' ' + p.bot + ')' +
+        // Orient the letter first (inner rotate), then squash vertically about the
+        // world ground point (outer scale). Order matters: the squash is applied in
+        // world space, so it always presses DOWN into the floor — even when the
+        // letter is flipped upside-down — instead of flipping with the letter.
+        tf = 'translate(' + p.cx    + ' ' + p.bot + ')' +
              ' scale('   + p.sx.toFixed(3) + ' ' + p.sy.toFixed(3) + ')' +
-             ' translate(' + (-p.cx) + ' ' + (-p.bot) + ')';
+             ' translate(' + (-p.cx) + ' ' + (-p.bot) + ')' +
+             ' rotate(' + p.baseRot.toFixed(2) + ' ' + p.cx + ' ' + p.cy + ')';
       } else if (p.cfg.type === 'loop') {
         tf = 'translate(' + p.x.toFixed(2) + ' ' + p.y.toFixed(2) + ')' +
              ' rotate('   + p.spinAngle.toFixed(2) + ' ' + p.cx + ' ' + p.cy + ')';
@@ -155,7 +156,9 @@
             var squishCurve = (p.squishF < SQUISH_F * 0.3)
               ? (p.squishF / (SQUISH_F * 0.3))
               : (1 - (p.squishF - SQUISH_F * 0.3) / (SQUISH_F * 0.7));
-            var dotPush = squishCurve * 12 * dotScaleFor(p, p.bouncesDone - 1);
+            // cos(baseRot) flips the push to world-down when the letter is inverted.
+            var dotPush = squishCurve * 12 * dotScaleFor(p, p.bouncesDone - 1)
+                          * Math.cos(p.baseRot * Math.PI / 180);
             p.dotEl.setAttribute('transform', 'translate(0 ' + dotPush.toFixed(2) + ')');
           }
 
