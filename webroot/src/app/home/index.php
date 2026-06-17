@@ -132,7 +132,7 @@ $json_ld = json_encode([
           <!-- Invisible anchor at the chomp point; JS reads its on-screen position
                to spawn the white "chomp bits" so the spray tracks the real mouth
                regardless of how the SVG is scaled. -->
-          <circle id="hero-chomp-origin" cx="293" cy="294" r="0.01" fill="none"/>
+          <circle id="hero-chomp-origin" cx="264" cy="297" r="0.01" fill="none"/>
         </svg>
         <canvas id="hero-chomp-front" aria-hidden="true"></canvas>
         <p class="hero-tagline-anim" id="hero-tagline">Taking Bytes Out of Big Data</p>

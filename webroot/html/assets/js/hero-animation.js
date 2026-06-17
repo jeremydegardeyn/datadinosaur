@@ -36,7 +36,7 @@
   /* fade canvas in */
   canvas.style.opacity    = '0';
   canvas.style.transition = 'opacity 1s ease';
-  setTimeout(function () { canvas.style.opacity = '1'; }, 50);
+  setTimeout(function () { canvas.style.opacity = '0.55'; }, 50);
 
   /* ── draw loop — runs until canvas is fully invisible ── */
   function draw() {
