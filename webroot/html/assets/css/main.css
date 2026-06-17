@@ -213,6 +213,11 @@ h1,h2,h3,h4,h5 {
 
 #hero-chomp-front { z-index: 3; }
 
+/* The "a" counters are split out as their own elements (rather than path holes)
+   so the jump-in physics can bob them like the i/r tittles. Fill them with the
+   hero background so they still read as see-through holes. */
+.a-counter { fill: #13172a; }
+
 /* When the dino head bumps the "t" and last "a" it holds a pushed squish, then
    pulses with each of the 3 chomps, then releases. Anchored at each glyph's
    own bottom-centre (fill-box) so they press down / lean rather than drift.

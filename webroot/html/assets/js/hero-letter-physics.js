@@ -44,10 +44,14 @@
       var maxH = (c.jumpV * c.jumpV) / (2 * GRAVITY);
 
       var dotEl = el.querySelector('.letter-dot') || null;
+      // Per-dot bob strength. The "a" counters carry data-dot-scale to bob more
+      // gently than the i/r tittles (which default to full strength).
+      var dotScale = dotEl ? (parseFloat(dotEl.getAttribute('data-dot-scale')) || 1) : 1;
 
       particles.push({
         el  : el,
         dotEl: dotEl,
+        dotScale: dotScale,
         cx  : cx, cy : cy, bot : bot,
         maxH: maxH,
         y   : 0,  vy : 0,
@@ -127,7 +131,7 @@
             var squishCurve = (p.squishF < SQUISH_F * 0.3)
               ? (p.squishF / (SQUISH_F * 0.3))
               : (1 - (p.squishF - SQUISH_F * 0.3) / (SQUISH_F * 0.7));
-            var dotPush = squishCurve * 12;
+            var dotPush = squishCurve * 12 * p.dotScale;
             p.dotEl.setAttribute('transform', 'translate(0 ' + dotPush.toFixed(2) + ')');
           }
 
@@ -164,7 +168,7 @@
 
         // Dot rides higher than the body during flight
         if (p.dotEl) {
-          var dotExtra = p.y * 0.45;  // negative = higher up; zero at floor
+          var dotExtra = p.y * 0.45 * p.dotScale;  // negative = higher up; zero at floor
           p.dotEl.setAttribute('transform', 'translate(0 ' + dotExtra.toFixed(2) + ')');
         }
 
