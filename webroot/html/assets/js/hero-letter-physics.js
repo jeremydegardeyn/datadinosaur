@@ -12,7 +12,7 @@
   // type 'loop'     : drifts sideways in arc + slow spin
   var CFG = [
     { type:'straight', jumpV:-6.5, bounceMax:2 },             // D
-    { type:'tilt',     jumpV:-7.5, rotAmp:11, bounceMax:3 },  // a  ← 3 jumps
+    { type:'tilt',     jumpV:-7.5, rotAmp:11, bounceMax:3, flips:[0,180,-180] },  // a  ← 3 jumps; flips on jump 2, back on 3
     { type:'straight', jumpV:-5.5, bounceMax:2 },             // t
     { type:'tilt',     jumpV:-7.0, rotAmp: 9, bounceMax:2 },  // a
     { type:'straight', jumpV:-8.5, bounceMax:3 },             // i  — lightest
@@ -79,6 +79,10 @@
         sx : 1, sy : 1,
         nextVy     : 0,
         launched   : false,
+        baseRot    : 0,    // committed rotation carried between jumps (for flips)
+        flipDelta  : 0,    // this jump's flip rotation (0 = none)
+        flightT    : 0,    // frames elapsed in the current jump's flight
+        flightDur  : 1,    // estimated frames from take-off to landing
         cfg : c,
       });
     }
@@ -96,8 +100,11 @@
     function applyTransform(p) {
       var tf;
       if (p.squishF > 0) {
-        // squish anchored at bottom-centre, no y offset (letter is at floor)
-        tf = 'translate(' + p.cx    + ' ' + p.bot + ')' +
+        // squish anchored at bottom-centre, no y offset (letter is at floor).
+        // Prefix any committed flip rotation so a flipped letter stays flipped
+        // through its landing squash.
+        tf = 'rotate(' + p.baseRot.toFixed(2) + ' ' + p.cx + ' ' + p.cy + ')' +
+             ' translate(' + p.cx    + ' ' + p.bot + ')' +
              ' scale('   + p.sx.toFixed(3) + ' ' + p.sy.toFixed(3) + ')' +
              ' translate(' + (-p.cx) + ' ' + (-p.bot) + ')';
       } else if (p.cfg.type === 'loop') {
@@ -114,6 +121,11 @@
       // Slight random variation in jump height so they don't feel mechanical
       p.vy        = p.cfg.jumpV * (0.90 + Math.random() * 0.20);
       p.tiltSign  = randSign();  // fresh random lean direction every jump
+      // This jump's flip rotation (deg), if the letter defines one for this jump.
+      p.flipDelta = (p.cfg.flips && p.cfg.flips[p.bouncesDone]) || 0;
+      // Estimate flight length (take-off to landing) so a flip spreads evenly over it.
+      p.flightT   = 0;
+      p.flightDur = Math.max(1, (2 * Math.abs(p.vy)) / GRAVITY);
     }
 
     function frame(ts) {
@@ -161,15 +173,22 @@
         p.vy += GRAVITY;
         if (p.vy > 12) p.vy = 12;
         p.y  += p.vy;
+        p.flightT++;
 
-        if (c.type === 'straight') {
-          p.rot = 0;  // stays perfectly upright
+        if (p.flipDelta !== 0) {
+          // Spin a full flip evenly across this jump's flight, on top of the
+          // committed orientation; lands at baseRot+flipDelta (committed below).
+          var fp = easeOut(Math.min(p.flightT / p.flightDur, 1));
+          p.rot = p.baseRot + p.flipDelta * fp;
+
+        } else if (c.type === 'straight') {
+          p.rot = p.baseRot;  // upright (or held flipped)
 
         } else if (c.type === 'tilt') {
           // Rotation derived from height — peaks at top, zero at floor.
           // tiltSign is randomised each jump so it never leans the same way twice.
           var frac = Math.max(0, -p.y) / p.maxH;  // 0 at floor, 1 at peak
-          p.rot = c.rotAmp * p.tiltSign * frac;
+          p.rot = p.baseRot + c.rotAmp * p.tiltSign * frac;
 
         } else if (c.type === 'loop') {
           var airFrac = Math.max(0, -p.y) / Math.abs(p.cfg.jumpV * 6);
@@ -188,7 +207,9 @@
         if (p.y >= 0) {
           p.y = 0;
           if (c.type === 'loop') { p.x = 0; p.spinAngle *= 0.1; }
-          p.rot = 0;
+          p.baseRot += p.flipDelta;   // commit this jump's flip (0 for non-flippers)
+          p.flipDelta = 0;
+          p.rot = p.baseRot;
           p.bouncesDone++;
           p.squishF = 1;
           p.sx = 1.38; p.sy = 0.52;
