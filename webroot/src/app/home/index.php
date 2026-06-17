@@ -55,19 +55,47 @@ $json_ld = json_encode([
     <div class="hero-logo">
       <div class="hero-dino-wrap">
         <canvas id="hero-matrix" aria-hidden="true"></canvas>
+        <canvas id="hero-chomp-back" aria-hidden="true"></canvas>
         <svg class="hero-dino-svg" viewBox="98 218 596 138"
              xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
              role="img" aria-label="DataDinosaur" style="overflow:visible">
           <style>.st0{fill:#e2e8f0;}.st1{fill:#39B54A;}</style>
-          <!-- Dinosaur "D" graphic — static -->
+          <!-- Dinosaur graphic — head raises and the lower jaw chomps the falling
+               numbers 3x, looping. Begins at 4s so the jumping letters settle first.
+               The lower jaw is the same logo path masked out of the base and clipped
+               onto a neck hinge, so the resting/looping state is the exact logo. -->
+          <defs>
+            <clipPath id="dino-jaw-clip"><polygon points="253,295 282,257 305,252 302,265 296,277 291,290 287,302 278,306 265,303 256,297"/></clipPath>
+            <mask id="dino-jaw-mask">
+              <rect x="225" y="214" width="160" height="146" fill="#fff"/>
+              <polygon points="255,293 281,259 302,255 300,265 295,277 290,289 286,300 278,304 267,301 258,296" fill="#000"/>
+            </mask>
+            <!-- Progressive, one-time bites taken out of the top of the last "a"
+                 as the dino chomps. fill="freeze" so they stay gone after the
+                 first chomp cycle; the bites ramp up to the right into the stem
+                 so the bitten edge slopes off with no leftover overhang. -->
+            <mask id="dino-eat-mask">
+              <rect x="233" y="278" width="64" height="82" fill="#fff"/>
+              <circle cx="258" cy="300" r="3"   fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="5.47s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="265" cy="299" r="2.9" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="5.62s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="270" cy="298" r="2.9" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.01s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="275" cy="296" r="3"   fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.16s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="280" cy="293" r="3.1" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.55s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="285" cy="291" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.66s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="291" cy="290" r="3.4" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.77s" dur="0.1s" fill="freeze"/></circle>
+            </mask>
+          </defs>
           <g id="hero-dino-graphic">
-            <path class="st1" d="M314.8,231.6l-19.6-9.4c-5.8-3.2-12-4.5-17.9,0.4c-10.7,8.8-20.7,18.4-29.7,28.8
-              c-4.5,5.3-7.6,11-8.2,18c-0.5,4.8,1,8.6,4.4,11.9c3.5,3.3,7.6,5.5,12.1,7.3c0.5,0.1,21.6-21.4,21.6-21.4
-              s-0.2,23.1,0,23.4c2,2.7,6.1,2.8,8.1,0.2c0.5-0.7,1-1.5,1.4-2.3c4-7.4,7.1-15.3,10.3-23.1c0.9-2.3,1.9-4.7,2.9-7.3
-              c4.9,1.7,9.6,3.3,14.6,4.9l0,6.6c-3.1,1.4-6.2,2.8-9.2,4.1c-2.3,1-4.8,2.5-6.2,4.4c-2.9,3.6-1.7,8.2,2,11.2
-              c0,0-1.5-8,2.8-9.2c3.7-1,5.3,1.7,5.1,3.5c2-0.9,2.8-2.4,2-4.3c-0.4-1.1-0.9-2-1.4-3.1c1.2-0.6,3-1.4,4.9-2.1
-              l-0.3,80.5c30.2-7.9,47.1-36.4,47.1-66.3C361.5,262,337.2,240.6,314.8,231.6z
-              M274.5,242.5c-1,1.7-3.3,2.2-5,1.1c-1.7-1-2.3-3.2-1.3-4.9c1-1.7,3.3-2.2,5-1.1C274.9,238.6,275.4,240.9,274.5,242.5z"/>
+            <animateTransform attributeName="transform" type="rotate" dur="6s" begin="4s" repeatCount="indefinite"
+              keyTimes="0;0.08;0.18;0.50;0.60;1"
+              values="0 330 330;0 330 330;-6 330 330;-6 330 330;0 330 330;0 330 330"/>
+            <path class="st1" mask="url(#dino-jaw-mask)" d="M314.8,231.6l-19.6-9.4c-5.8-3.2-12-4.5-17.9,0.4c-10.7,8.8-20.7,18.4-29.7,28.8c-4.5,5.3-7.6,11-8.2,18c-0.5,4.8,1,8.6,4.4,11.9c3.5,3.3,7.6,5.5,12.1,7.3c0.5,0.1,21.6-21.4,21.6-21.4s-0.2,23.1,0,23.4c2,2.7,6.1,2.8,8.1,0.2c0.5-0.7,1-1.5,1.4-2.3c4-7.4,7.1-15.3,10.3-23.1c0.9-2.3,1.9-4.7,2.9-7.3c4.9,1.7,9.6,3.3,14.6,4.9l0,6.6c-3.1,1.4-6.2,2.8-9.2,4.1c-2.3,1-4.8,2.5-6.2,4.4c-2.9,3.6-1.7,8.2,2,11.2c0,0-1.5-8,2.8-9.2c3.7-1,5.3,1.7,5.1,3.5c2-0.9,2.8-2.4,2-4.3c-0.4-1.1-0.9-2-1.4-3.1c1.2-0.6,3-1.4,4.9-2.1l-0.3,80.5c30.2-7.9,47.1-36.4,47.1-66.3C361.5,262,337.2,240.6,314.8,231.6z M274.5,242.5c-1,1.7-3.3,2.2-5,1.1c-1.7-1-2.3-3.2-1.3-4.9c1-1.7,3.3-2.2,5-1.1C274.9,238.6,275.4,240.9,274.5,242.5z"/>
+            <g id="hero-dino-jaw">
+              <animateTransform attributeName="transform" type="rotate" dur="6s" begin="4s" repeatCount="indefinite"
+                keyTimes="0;0.20;0.245;0.29;0.335;0.38;0.425;0.47;1"
+                values="0 300 258;0 300 258;13 300 258;0 300 258;13 300 258;0 300 258;13 300 258;0 300 258;0 300 258"/>
+              <path class="st1" clip-path="url(#dino-jaw-clip)" d="M314.8,231.6l-19.6-9.4c-5.8-3.2-12-4.5-17.9,0.4c-10.7,8.8-20.7,18.4-29.7,28.8c-4.5,5.3-7.6,11-8.2,18c-0.5,4.8,1,8.6,4.4,11.9c3.5,3.3,7.6,5.5,12.1,7.3c0.5,0.1,21.6-21.4,21.6-21.4s-0.2,23.1,0,23.4c2,2.7,6.1,2.8,8.1,0.2c0.5-0.7,1-1.5,1.4-2.3c4-7.4,7.1-15.3,10.3-23.1c0.9-2.3,1.9-4.7,2.9-7.3c4.9,1.7,9.6,3.3,14.6,4.9l0,6.6c-3.1,1.4-6.2,2.8-9.2,4.1c-2.3,1-4.8,2.5-6.2,4.4c-2.9,3.6-1.7,8.2,2,11.2c0,0-1.5-8,2.8-9.2c3.7-1,5.3,1.7,5.1,3.5c2-0.9,2.8-2.4,2-4.3c-0.4-1.1-0.9-2-1.4-3.1c1.2-0.6,3-1.4,4.9-2.1l-0.3,80.5c30.2-7.9,47.1-36.4,47.1-66.3C361.5,262,337.2,240.6,314.8,231.6z"/>
+            </g>
           </g>
           <!-- "Data" + "inosaur" text — each letter wrapped for physics -->
           <g id="hero-text">
@@ -75,9 +103,9 @@ $json_ld = json_encode([
             <g class="hero-letter"><path class="st0" d="M181.9,350.4c-2.8,2.8-8.6,2.7-12.4,2.7c-16.3,0-26.7-9.5-26.7-26.2c0-15.1,9.5-28.2,25.4-28.2
               c2.2,0,5.3,0.9,7.1,1.9l0.5-4.7l17.5-0.1V352C193.3,352,181.7,350.7,181.9,350.4z
               M168,318.7c-4.2,0-7.8,3.3-7.8,7.6c0,4.3,3.7,7.7,7.8,7.7c4.2,0,7.8-3.4,7.8-7.7C175.8,322,172.2,318.7,168,318.7z"/></g>
-            <g class="hero-letter"><path class="st0" d="M227.7,303.1l-0.8,49.6l-17.2-0.3l0.6-49.1l-10.8-1.1v-19.7h11l-0.5-11.3l18,1l-0.6,10.3h9.7
+            <g class="hero-letter"><path class="st0 dd-t" d="M227.7,303.1l-0.8,49.6l-17.2-0.3l0.6-49.1l-10.8-1.1v-19.7h11l-0.5-11.3l18,1l-0.6,10.3h9.7
               l0.4,20.3L227.7,303.1z"/></g>
-            <g class="hero-letter"><path class="st0" d="M277.6,350.4c-2.8,2.8-8.6,2.7-12.4,2.7c-16.3,0-26.7-9.5-26.7-26.2c0-15.1,9.5-28.2,25.4-28.2
+            <g class="hero-letter"><path class="st0 dd-a" mask="url(#dino-eat-mask)" d="M277.6,350.4c-2.8,2.8-8.6,2.7-12.4,2.7c-16.3,0-26.7-9.5-26.7-26.2c0-15.1,9.5-28.2,25.4-28.2
               c2.2,0,5.3,0.9,7.1,1.9l0.5-4.7l17.5-0.1V352C289,352,277.4,350.7,277.6,350.4z
               M263.7,318.7c-4.2,0-7.8,3.3-7.8,7.6c0,4.3,3.7,7.7,7.8,7.7c4.2,0,7.8-3.4,7.8-7.7C271.5,322,267.9,318.7,263.7,318.7z"/></g>
             <g class="hero-letter">
@@ -101,7 +129,12 @@ $json_ld = json_encode([
               <path class="st1 letter-dot" d="M679.8,309.7c-3.9,0-7.3-3.3-7.3-7.3c0-3.9,3.4-7.2,7.3-7.2c3.7,0,8.2,1.8,8.2,6.1C688.1,305.3,684,309.7,679.8,309.7z"/>
             </g>
           </g>
+          <!-- Invisible anchor at the chomp point; JS reads its on-screen position
+               to spawn the white "chomp bits" so the spray tracks the real mouth
+               regardless of how the SVG is scaled. -->
+          <circle id="hero-chomp-origin" cx="293" cy="294" r="0.01" fill="none"/>
         </svg>
+        <canvas id="hero-chomp-front" aria-hidden="true"></canvas>
         <p class="hero-tagline-anim" id="hero-tagline">Taking Bytes Out of Big Data</p>
       </div>
     </div>
@@ -166,6 +199,7 @@ $json_ld = json_encode([
 
 <script src="/assets/js/hero-animation.js?v=1" defer></script>
 <script src="/assets/js/hero-letter-physics.js?v=1" defer></script>
+<script src="/assets/js/hero-chomp-bits.js?v=1" defer></script>
 
 <!-- CTA banner -->
 <section class="cta-banner">

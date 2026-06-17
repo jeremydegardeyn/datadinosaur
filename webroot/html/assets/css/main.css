@@ -192,13 +192,64 @@ h1,h2,h3,h4,h5 {
   /* opacity driven by JS */
 }
 
+/* chomp-bit canvases — back sits behind the dino/letters, front in front, so
+   bits fly out with depth on either side of the chomp. */
+#hero-chomp-back,
+#hero-chomp-front {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+#hero-chomp-back  { z-index: 1; }
+
 .hero-dino-svg {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   width: 100%;
   height: auto;
   overflow: visible;   /* allow dino group to rotate outside viewBox bounds */
   filter: drop-shadow(0 4px 22px rgba(57,181,74,.3));
+}
+
+#hero-chomp-front { z-index: 3; }
+
+/* When the dino head bumps the "t" and last "a" it holds a pushed squish, then
+   pulses with each of the 3 chomps, then releases. Anchored at each glyph's
+   own bottom-centre (fill-box) so they press down / lean rather than drift.
+   Begins at 4s, after the jump-in physics has settled. */
+.dd-t, .dd-a { transform-box: fill-box; }
+.dd-t { transform-origin: 50% 100%; animation: ddChompT 6s 4s infinite ease-in-out; }
+.dd-a { transform-origin: 50% 100%; animation: ddChompA 6s 4s infinite ease-in-out; }
+@keyframes ddChompT {
+  0%,8%   { transform: rotate(0deg)  scaleY(1); }
+  18%     { transform: rotate(-4deg) scaleY(.99); }
+  24.5%   { transform: rotate(-4deg) scaleY(.99); }
+  27%     { transform: rotate(-8deg) scaleY(.97); }
+  30%     { transform: rotate(-4deg) scaleY(.99); }
+  33.5%   { transform: rotate(-4deg) scaleY(.99); }
+  36%     { transform: rotate(-10deg) scaleY(.96); }
+  39%     { transform: rotate(-4deg) scaleY(.99); }
+  42.5%   { transform: rotate(-4deg) scaleY(.99); }
+  45%     { transform: rotate(-7deg) scaleX(1.02) scaleY(.97); }
+  48%     { transform: rotate(-4deg) scaleY(.99); }
+  58%,100%{ transform: rotate(0deg)  scaleY(1); }
+}
+@keyframes ddChompA {
+  0%,8%   { transform: scale(1,1); }
+  18%     { transform: scale(1.02,.95); }
+  24.5%   { transform: scale(1.02,.95); }
+  27%     { transform: scale(1.05,.90); }
+  30%     { transform: scale(1.02,.95); }
+  33.5%   { transform: scale(1.02,.95); }
+  36%     { transform: scale(1.06,.88); }
+  39%     { transform: scale(1.02,.95); }
+  42.5%   { transform: scale(1.02,.95); }
+  45%     { transform: scale(1.04,.91); }
+  48%     { transform: scale(1.02,.95); }
+  58%,100%{ transform: scale(1,1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dd-t, .dd-a { animation: none; }
 }
 
 .hero-tagline-anim {
