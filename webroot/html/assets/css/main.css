@@ -218,8 +218,8 @@ h1,h2,h3,h4,h5 {
    own bottom-centre (fill-box) so they press down / lean rather than drift.
    Begins at 4s, after the jump-in physics has settled. */
 .dd-t, .dd-a { transform-box: fill-box; }
-.dd-t { transform-origin: 50% 100%; animation: ddChompT 6s 4s infinite ease-in-out; }
-.dd-a { transform-origin: 50% 100%; animation: ddChompA 6s 4s infinite ease-in-out; }
+.dd-t { transform-origin: 50% 100%; animation: ddChompT 6s 5s infinite ease-in-out; }
+.dd-a { transform-origin: 50% 100%; animation: ddChompA 6s 5s infinite ease-in-out; }
 @keyframes ddChompT {
   0%,8%   { transform: rotate(0deg)  scaleY(1); }
   18%     { transform: rotate(-4deg) scaleY(.99); }
