@@ -111,7 +111,12 @@ $json_ld = json_encode([
           <g id="hero-dino-graphic">
             <animateTransform attributeName="transform" type="rotate" dur="6s" begin="4s" repeatCount="indefinite"
               keyTimes="0;0.08;0.18;0.50;0.60;1"
-              values="0 330 330;0 330 330;-6 330 330;-6 330 330;0 330 330;0 330 330"/>
+              values="0 330 330;0 330 330;-5 330 330;-5 330 330;0 330 330;0 330 330"/>
+            <!-- A small down-right drift layered on the tilt so the head plants a bit
+                 lower toward the letters without swinging left off the hinge. -->
+            <animateTransform attributeName="transform" type="translate" additive="sum" dur="6s" begin="4s" repeatCount="indefinite"
+              keyTimes="0;0.08;0.18;0.50;0.60;1"
+              values="0 0;0 0;1 4;1 4;0 0;0 0"/>
             <path class="st1" mask="url(#dino-jaw-mask)" d="M314.8,231.6l-19.6-9.4c-5.8-3.2-12-4.5-17.9,0.4c-10.7,8.8-20.7,18.4-29.7,28.8c-4.5,5.3-7.6,11-8.2,18c-0.5,4.8,1,8.6,4.4,11.9c3.5,3.3,7.6,5.5,12.1,7.3c0.5,0.1,21.6-21.4,21.6-21.4s-0.2,23.1,0,23.4c2,2.7,6.1,2.8,8.1,0.2c0.5-0.7,1-1.5,1.4-2.3c4-7.4,7.1-15.3,10.3-23.1c0.9-2.3,1.9-4.7,2.9-7.3c4.9,1.7,9.6,3.3,14.6,4.9l0,6.6c-3.1,1.4-6.2,2.8-9.2,4.1c-2.3,1-4.8,2.5-6.2,4.4c-2.9,3.6-1.7,8.2,2,11.2c0,0-1.5-8,2.8-9.2c3.7-1,5.3,1.7,5.1,3.5c2-0.9,2.8-2.4,2-4.3c-0.4-1.1-0.9-2-1.4-3.1c1.2-0.6,3-1.4,4.9-2.1l-0.3,80.5c30.2-7.9,47.1-36.4,47.1-66.3C361.5,262,337.2,240.6,314.8,231.6z M274.5,242.5c-1,1.7-3.3,2.2-5,1.1c-1.7-1-2.3-3.2-1.3-4.9c1-1.7,3.3-2.2,5-1.1C274.9,238.6,275.4,240.9,274.5,242.5z"/>
             <g id="hero-dino-jaw">
               <animateTransform id="dino-jaw-anim" attributeName="transform" type="rotate" dur="6s" begin="4s" repeatCount="indefinite"
