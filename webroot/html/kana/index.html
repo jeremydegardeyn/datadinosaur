@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kana Sensei — stroke-order trainer</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">仮名先生</span>
+      <span class="tag">Kana Sensei · stroke-order trainer</span>
+    </div>
+    <div class="progress">
+      <span id="mastered">—</span>
+      <span id="accuracy">—</span>
+      <button id="resetBtn" class="ghostbtn" title="Reset progress">⟲</button>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="seg drills">
+      <span class="seg-label">Drill</span>
+      <button data-drill="write" class="active">Sound → Write</button>
+      <button data-drill="read">Read (type sound)</button>
+      <button data-drill="hira2kata">ひ → カ</button>
+      <button data-drill="kata2hira">カ → ひ</button>
+    </div>
+    <div class="seg scripts" id="scriptRow">
+      <span class="seg-label">Script</span>
+      <button data-script="hiragana" class="active">ひらがな</button>
+      <button data-script="katakana">カタカナ</button>
+      <button data-script="both">Both</button>
+    </div>
+  </div>
+
+  <main class="game">
+    <section class="panel pad-panel">
+      <div class="cue">
+        <span class="cue-label" id="cueLabel">Draw the hiragana for</span>
+        <div class="cue-row">
+          <span id="cueMain" class="cue-romaji">…</span>
+          <span id="cueSub" class="cue-sub"></span>
+          <button id="speakBtn" class="iconbtn" title="Hear it">🔊</button>
+        </div>
+      </div>
+
+      <div class="pad-wrap" id="padWrap">
+        <canvas id="pad" width="360" height="360"></canvas>
+        <div id="reveal" class="reveal"></div>
+      </div>
+
+      <div class="type-wrap hidden" id="typeWrap">
+        <input id="answerInput" type="text" inputmode="latin" autocomplete="off"
+               autocapitalize="off" spellcheck="false" placeholder="type the romaji, e.g. ka" />
+        <div id="readResult" class="read-result"></div>
+      </div>
+
+      <div class="tools">
+        <button id="undoBtn" class="toolbtn">Undo</button>
+        <button id="clearBtn" class="toolbtn">Clear</button>
+        <button id="hintBtn" class="toolbtn">Hint ✦</button>
+        <button id="checkBtn" class="toolbtn primary">Check</button>
+        <button id="nextBtn" class="toolbtn primary hidden">Next →</button>
+      </div>
+    </section>
+
+    <section class="panel side">
+      <div id="feedback" class="feedback hidden">
+        <div class="score-row">
+          <div id="scoreRing" class="score"><span id="scoreNum">0</span></div>
+          <ul id="msgs" class="msgs"></ul>
+        </div>
+        <div id="chips" class="chips"></div>
+      </div>
+
+      <div class="sensei">
+        <div class="sensei-head">
+          <span>🧠 AI Sensei</span>
+          <div>
+            <button id="senseiBtn" class="toolbtn">Mnemonic</button>
+            <button id="finishBtn" class="toolbtn">Review session</button>
+          </div>
+        </div>
+        <div id="senseiCard" class="sensei-card hidden">
+          <div id="senseiBody"></div>
+        </div>
+        <p class="hint-text">Mnemonics are AI-authored but pre-generated and served statically —
+          no runtime model, no API, works offline. Drawing, grading, and review all run
+          entirely on-device.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="credit">
+    Kana stroke data from <a href="https://kanjivg.tagaini.net" target="_blank" rel="noopener">KanjiVG</a>
+    © Ulrich Apel, modified (resampled to point arrays), used under
+    <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a>.
+  </footer>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
