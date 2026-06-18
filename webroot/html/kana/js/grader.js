@@ -59,6 +59,29 @@ function normalizeGlyph(strokes) {
   return strokes.map((s) => s.map(([x, y]) => [(x - minX) * scale + tx, (y - minY) * scale + ty]));
 }
 
+function pathLength(stroke) {
+  let L = 0;
+  for (let i = 1; i < stroke.length; i++) {
+    L += Math.hypot(stroke[i][0] - stroke[i - 1][0], stroke[i][1] - stroke[i - 1][1]);
+  }
+  return L;
+}
+
+// Drop accidental specks — a tap or a 2px twitch the user can't even see, which
+// would otherwise count as a stroke and trigger a false stroke-count penalty.
+// Threshold is relative to the glyph's own size, so it's scale-independent.
+function dropTinyStrokes(strokes) {
+  const multi = strokes.filter((s) => s.length >= 2);
+  if (!multi.length) return [];
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const s of multi) for (const [x, y] of s) {
+    if (x < minX) minX = x; if (y < minY) minY = y;
+    if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+  }
+  const diag = Math.hypot(maxX - minX, maxY - minY) || 1;
+  return multi.filter((s) => pathLength(s) >= 0.03 * diag);
+}
+
 const meanDist = (a, b) => {
   let sum = 0;
   for (let i = 0; i < a.length; i++) sum += Math.hypot(a[i][0] - b[i][0], a[i][1] - b[i][1]);
@@ -83,8 +106,9 @@ function strokeMatch(user, tmpl) {
  * @returns grade report
  */
 export function grade(templateStrokes, userStrokesRaw) {
+  const cleaned = dropTinyStrokes(userStrokesRaw); // ignore accidental specks
   const countExpected = templateStrokes.length;
-  const countDrawn = userStrokesRaw.length;
+  const countDrawn = cleaned.length;
 
   if (countDrawn === 0) {
     return { score: 0, pass: false, countExpected, countDrawn, strokes: [], issues: ['empty'],
@@ -92,7 +116,7 @@ export function grade(templateStrokes, userStrokesRaw) {
   }
 
   const tmpl = normalizeGlyph(templateStrokes.map((s) => resample(s)));
-  const user = normalizeGlyph(userStrokesRaw.map((s) => resample(s)));
+  const user = normalizeGlyph(cleaned.map((s) => resample(s)));
 
   // Greedy assignment: for each template stroke (in order), claim the nearest
   // not-yet-used user stroke. Tells us which user stroke "is" each template one,
@@ -136,8 +160,8 @@ export function grade(templateStrokes, userStrokesRaw) {
   // Score: shape average is the backbone; order/direction/count chip away at it.
   const matched = strokes.length || 1;
   let score = (shapeSum / matched) * 100;
-  if (issues.has('count')) score *= 0.5;
-  if (issues.has('order')) score *= 0.7;
+  if (issues.has('count')) score *= 0.6;
+  if (issues.has('order')) score *= 0.75;
   if (issues.has('direction')) score *= 0.85;
   score = Math.round(Math.max(0, Math.min(100, score)));
 
