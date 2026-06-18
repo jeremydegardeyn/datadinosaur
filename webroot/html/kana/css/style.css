@@ -30,7 +30,11 @@ body {
 .brand { display: flex; align-items: baseline; gap: 12px; }
 .logo { font-size: 26px; font-weight: 700; letter-spacing: 2px; }
 .tag { color: var(--muted); font-size: 13px; }
-.progress { display: flex; align-items: center; gap: 14px; color: var(--muted); font-size: 13px; }
+.progress { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
+.bar { width: 110px; height: 7px; border-radius: 4px; background: var(--line); overflow: hidden; display: flex; }
+.bar span { height: 100%; display: block; width: 0; transition: width .35s ease; }
+#barMastered { background: var(--green); }
+#barLearning { background: var(--amber); }
 
 /* controls bar */
 .controls {

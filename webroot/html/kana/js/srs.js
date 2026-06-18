@@ -75,6 +75,7 @@ export class SRS {
     const items = pool.map((c) => ({ char: c, ...this.state[c] }));
     const seen = items.filter((i) => i.seen > 0);
     const mastered = items.filter((i) => i.box >= 4).length;
+    const learning = items.filter((i) => i.seen > 0 && i.box < 4).length;
     const totalCorrect = seen.reduce((n, i) => n + i.correct, 0);
     const totalSeen = seen.reduce((n, i) => n + i.seen, 0);
     // weakest = most-missed, then lowest box
@@ -84,6 +85,7 @@ export class SRS {
       .filter((i) => i.seen - i.correct > 0);
     return {
       mastered,
+      learning,
       poolSize: pool.length,
       accuracy: totalSeen ? Math.round((totalCorrect / totalSeen) * 100) : null,
       weakest,

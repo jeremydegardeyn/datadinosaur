@@ -257,8 +257,12 @@ async function finishSession() {
 // ── chrome ───────────────────────────────────────────────────────────────────
 function updateProgress() {
   const s = srs.stats(pool());
+  const pct = (n) => `${(100 * n / Math.max(1, s.poolSize)).toFixed(1)}%`;
+  $('barMastered').style.width = pct(s.mastered);
+  $('barLearning').style.width = pct(s.learning);
   $('mastered').textContent = `${s.mastered}/${s.poolSize} mastered`;
-  $('accuracy').textContent = s.accuracy === null ? '—' : `${s.accuracy}% accuracy`;
+  $('learning').textContent = `${s.learning} learning`;
+  $('accuracy').textContent = s.accuracy === null ? 'new' : `${s.accuracy}% accuracy`;
 }
 
 function setDrill(d) {
