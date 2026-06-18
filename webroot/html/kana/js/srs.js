@@ -13,8 +13,9 @@ const BOX_DELAY = { 1: 1, 2: 3, 3: 7, 4: 14, 5: 30 }; // attempts-until-due per 
 export class SRS {
   constructor(allChars) {
     this.all = allChars;
-    this.clock = 0;
-    this.state = this._load();
+    const saved = this._load();              // { clock, state } (matches _save)
+    this.clock = saved.clock || 0;
+    this.state = saved.state || {};
     for (const ch of allChars) {
       if (!this.state[ch]) this.state[ch] = { box: 1, due: 0, seen: 0, correct: 0, streak: 0 };
     }
