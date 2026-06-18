@@ -234,18 +234,21 @@ h1,h2,h3,h4,h5 {
   48%     { transform: rotate(-3deg) scaleY(.995); }
   58%,100%{ transform: rotate(0deg)  scaleY(1); }
 }
+/* The held value (.91) sits the "a" top at about the lower-jaw bottom; each chomp
+   dips below it and only rebounds back up to that held level, so the "a" stays
+   pinned under the jaw through the 3 chomps, then releases to full height. */
 @keyframes ddChompA {
   0%,8%   { transform: scale(1,1); }
-  18%     { transform: scale(1.02,.95); }
-  26%     { transform: scale(1.02,.95); }
-  29%     { transform: scale(1.05,.90); }
-  32%     { transform: scale(1.02,.95); }
-  35.5%   { transform: scale(1.02,.95); }
-  38%     { transform: scale(1.06,.88); }
-  41%     { transform: scale(1.02,.95); }
-  44.5%   { transform: scale(1.02,.95); }
-  47%     { transform: scale(1.04,.91); }
-  50%     { transform: scale(1.02,.95); }
+  18%     { transform: scale(1.04,.91); }
+  26%     { transform: scale(1.04,.91); }
+  29%     { transform: scale(1.06,.86); }
+  32%     { transform: scale(1.04,.91); }
+  35.5%   { transform: scale(1.04,.91); }
+  38%     { transform: scale(1.07,.84); }
+  41%     { transform: scale(1.04,.91); }
+  44.5%   { transform: scale(1.04,.91); }
+  47%     { transform: scale(1.05,.88); }
+  50%     { transform: scale(1.04,.91); }
   58%,100%{ transform: scale(1,1); }
 }
 @media (prefers-reduced-motion: reduce) {
