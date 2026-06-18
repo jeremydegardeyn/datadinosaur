@@ -96,6 +96,7 @@ $json_ld = json_encode([
               <circle cx="281" cy="291" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
               <circle cx="287" cy="290" r="3.4" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
               <circle cx="291" cy="290" r="3.4" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="287" cy="294" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
               <!-- the "a" counter, punched as a movable hole so the jump physics can bob it -->
               <path id="a2-counter" class="letter-dot" data-dot-scale="0.45,0.22" fill="#000" d="M263.7,318.7c-4.2,0-7.8,3.3-7.8,7.6c0,4.3,3.7,7.7,7.8,7.7c4.2,0,7.8-3.4,7.8-7.7C271.5,322,267.9,318.7,263.7,318.7z"/>
             </mask>
