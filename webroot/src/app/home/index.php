@@ -82,17 +82,19 @@ $json_ld = json_encode([
                    into contiguous left-to-right thirds so every chomp removes a clearly
                    visible chunk (the deep left scoop lands on chomp 1). -->
               <!-- chomp 1 (~5.49s) — left third (deep scoop) -->
-              <circle cx="258" cy="300" r="3"   fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="5.49s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="264" cy="300" r="3.5" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="5.49s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="265" cy="299" r="2.9" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="5.49s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="254" cy="300" r="3"   fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="5.49s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="260" cy="300" r="3.5" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="5.49s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="261" cy="299" r="2.9" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="5.49s" dur="0.1s" fill="freeze"/></circle>
               <!-- chomp 2 (~6.03s) — middle third -->
-              <circle cx="270" cy="298" r="2.9" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.03s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="270" cy="299" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.03s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="275" cy="296" r="3"   fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.03s" dur="0.1s" fill="freeze"/></circle>
-              <!-- chomp 3 (~6.57s) — right third (shoulder into stem) + an extra centre bite -->
-              <circle cx="276" cy="296" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="280" cy="293" r="3.1" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
-              <circle cx="285" cy="291" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="266" cy="298" r="2.9" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.03s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="266" cy="299" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.03s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="271" cy="296" r="3"   fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.03s" dur="0.1s" fill="freeze"/></circle>
+              <!-- chomp 3 (~6.57s) — right third (shoulder into stem), with a bite back
+                   at the stem so the shifted-left cluster still meets it cleanly -->
+              <circle cx="272" cy="296" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="276" cy="293" r="3.1" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="281" cy="291" r="3.3" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
+              <circle cx="287" cy="290" r="3.4" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
               <circle cx="291" cy="290" r="3.4" fill="#000" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="6.57s" dur="0.1s" fill="freeze"/></circle>
               <!-- the "a" counter, punched as a movable hole so the jump physics can bob it -->
               <path id="a2-counter" class="letter-dot" data-dot-scale="0.45,0.22" fill="#000" d="M263.7,318.7c-4.2,0-7.8,3.3-7.8,7.6c0,4.3,3.7,7.7,7.8,7.7c4.2,0,7.8-3.4,7.8-7.7C271.5,322,267.9,318.7,263.7,318.7z"/>
@@ -157,7 +159,7 @@ $json_ld = json_encode([
           <!-- Invisible anchor at the chomp point; JS reads its on-screen position
                to spawn the white "chomp bits" so the spray tracks the real mouth
                regardless of how the SVG is scaled. -->
-          <circle id="hero-chomp-origin" cx="264" cy="297" r="0.01" fill="none"/>
+          <circle id="hero-chomp-origin" cx="260" cy="297" r="0.01" fill="none"/>
         </svg>
         <canvas id="hero-chomp-front" aria-hidden="true"></canvas>
         <p class="hero-tagline-anim" id="hero-tagline">Taking Bytes Out of Big Data</p>
