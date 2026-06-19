@@ -86,6 +86,25 @@
                                          // doesn't replay already-passed chomps
   var lastCycle = -1, fired = [false, false, false];
 
+  // The "t" and "a" chomp squish are driven here too, off the same SMIL clock,
+  // rather than CSS @keyframes — CSS animations run on the document timeline,
+  // which keeps advancing while the tab is hidden and so drifts out of sync with
+  // the jaw. Per-cycle keyframes as [pos, ...values]; smoothstep between them
+  // approximates the old ease-in-out.
+  var tEl = document.querySelector('.dd-t');
+  var aEl = document.querySelector('.dd-a');
+  var T_KF = [[0,0,1,1],[0.08,0,1,1],[0.18,-3,1,0.995],[0.245,-3,1,0.995],[0.27,-4,1,0.99],[0.30,-3,1,0.995],[0.335,-3,1,0.995],[0.36,-4,1,0.99],[0.39,-3,1,0.995],[0.425,-3,1,0.995],[0.45,-4.5,1.01,0.99],[0.48,-3,1,0.995],[0.58,0,1,1],[1,0,1,1]];
+  var A_KF = [[0,1,1],[0.08,1,1],[0.18,1.04,0.91],[0.26,1.04,0.91],[0.29,1.06,0.86],[0.32,1.04,0.91],[0.355,1.04,0.91],[0.38,1.07,0.84],[0.41,1.04,0.91],[0.445,1.04,0.91],[0.47,1.05,0.88],[0.50,1.04,0.91],[0.58,1,1],[1,1,1]];
+  function ease(x) { return x * x * (3 - 2 * x); }
+  function sample(kf, prog, out) {
+    var i = 0;
+    while (i < kf.length - 2 && prog >= kf[i + 1][0]) i++;
+    var a = kf[i], b = kf[i + 1], span = b[0] - a[0];
+    var lt = span > 0 ? ease((prog - a[0]) / span) : 0;
+    for (var k = 1; k < a.length; k++) out[k - 1] = a[k] + (b[k] - a[k]) * lt;
+  }
+  var tv = [0, 0, 0], av = [0, 0];
+
   (function loop() {
     requestAnimationFrame(loop);
     step(cb, backP);
@@ -93,6 +112,17 @@
 
     if (document.hidden || !svg || !svg.getCurrentTime) return;
     var t = svg.getCurrentTime() - BEGIN;
+
+    // squish (only once the chomp loop has begun at 4s)
+    if (t < 0) {
+      if (tEl) tEl.style.transform = '';
+      if (aEl) aEl.style.transform = '';
+    } else {
+      var prog = (t % PERIOD) / PERIOD;
+      if (tEl) { sample(T_KF, prog, tv); tEl.style.transform = 'rotate(' + tv[0].toFixed(3) + 'deg) scaleX(' + tv[1].toFixed(4) + ') scaleY(' + tv[2].toFixed(4) + ')'; }
+      if (aEl) { sample(A_KF, prog, av); aEl.style.transform = 'scale(' + av[0].toFixed(4) + ',' + av[1].toFixed(4) + ')'; }
+    }
+
     if (t < 0) return;
     var cyc = Math.floor(t / PERIOD), phase = t - cyc * PERIOD;
     if (cyc !== lastCycle) { lastCycle = cyc; fired = [false, false, false]; }

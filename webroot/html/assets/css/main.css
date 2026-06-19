@@ -213,47 +213,13 @@ h1,h2,h3,h4,h5 {
 
 #hero-chomp-front { z-index: 3; }
 
-/* When the dino head bumps the "t" and last "a" it holds a pushed squish, then
-   pulses with each of the 3 chomps, then releases. Anchored at each glyph's
-   own bottom-centre (fill-box) so they press down / lean rather than drift.
-   Begins at 4s, after the jump-in physics has settled. */
-.dd-t, .dd-a { transform-box: fill-box; }
-.dd-t { transform-origin: 50% 100%; animation: ddChompT 6s 4s infinite ease-in-out; }
-.dd-a { transform-origin: 50% 100%; animation: ddChompA 6s 4s infinite ease-in-out; }
-@keyframes ddChompT {
-  0%,8%   { transform: rotate(0deg)  scaleY(1); }
-  18%     { transform: rotate(-3deg) scaleY(.995); }
-  24.5%   { transform: rotate(-3deg) scaleY(.995); }
-  27%     { transform: rotate(-4deg) scaleY(.99); }
-  30%     { transform: rotate(-3deg) scaleY(.995); }
-  33.5%   { transform: rotate(-3deg) scaleY(.995); }
-  36%     { transform: rotate(-4deg) scaleY(.99); }
-  39%     { transform: rotate(-3deg) scaleY(.995); }
-  42.5%   { transform: rotate(-3deg) scaleY(.995); }
-  45%     { transform: rotate(-4.5deg) scaleX(1.01) scaleY(.99); }
-  48%     { transform: rotate(-3deg) scaleY(.995); }
-  58%,100%{ transform: rotate(0deg)  scaleY(1); }
-}
-/* The held value (.91) sits the "a" top at about the lower-jaw bottom; each chomp
-   dips below it and only rebounds back up to that held level, so the "a" stays
-   pinned under the jaw through the 3 chomps, then releases to full height. */
-@keyframes ddChompA {
-  0%,8%   { transform: scale(1,1); }
-  18%     { transform: scale(1.04,.91); }
-  26%     { transform: scale(1.04,.91); }
-  29%     { transform: scale(1.06,.86); }
-  32%     { transform: scale(1.04,.91); }
-  35.5%   { transform: scale(1.04,.91); }
-  38%     { transform: scale(1.07,.84); }
-  41%     { transform: scale(1.04,.91); }
-  44.5%   { transform: scale(1.04,.91); }
-  47%     { transform: scale(1.05,.88); }
-  50%     { transform: scale(1.04,.91); }
-  58%,100%{ transform: scale(1,1); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .dd-t, .dd-a { animation: none; }
-}
+/* When the dino head bumps the "t" and last "a" they hold a pushed squish, then
+   pulse with each of the 3 chomps, then release. Anchored at each glyph's own
+   bottom-centre (fill-box) so they press down / lean rather than drift. The
+   keyframe values + timing now live in hero-chomp-bits.js, which drives the
+   transform off the SVG's SMIL clock (same clock as the jaw) so they can't drift
+   out of sync when the tab is backgrounded. */
+.dd-t, .dd-a { transform-box: fill-box; transform-origin: 50% 100%; }
 
 .hero-tagline-anim {
   position: relative;
