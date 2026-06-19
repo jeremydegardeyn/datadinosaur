@@ -227,7 +227,7 @@ $json_ld = json_encode([
 
 <script src="/assets/js/hero-animation.js?v=1" defer></script>
 <script src="/assets/js/hero-letter-physics.js?v=7" defer></script>
-<script src="/assets/js/hero-chomp-bits.js?v=4" defer></script>
+<script src="/assets/js/hero-chomp-bits.js?v=5" defer></script>
 
 <!-- CTA banner -->
 <section class="cta-banner">

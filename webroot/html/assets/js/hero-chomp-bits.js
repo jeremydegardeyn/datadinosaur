@@ -72,28 +72,34 @@
     ctx.globalAlpha = 1;
   }
 
-  // Just render — no scheduling here. Particles age and clear on their own.
+  // Fire the bursts from INSIDE the rAF loop by sampling the SVG's own SMIL clock
+  // (svg.getCurrentTime()) — the exact timeline that drives the jaw, so the spray
+  // can't drift from the chomp. rAF is suspended while the tab is hidden, so we
+  // simply stop sampling then: no events fire, no timers queue, nothing builds up
+  // and floods on return. (Earlier attempts used SMIL events + setTimeout, which
+  // the browser throttled-and-flushed on return; and document.timeline, which is a
+  // different clock that drifts from SMIL.)
+  var svg    = document.querySelector('.hero-dino-svg');
+  var BEGIN  = 4, PERIOD = 6;            // jaw begins 4s, loops every 6s (seconds)
+  var OFFS   = [1.49, 2.03, 2.57];       // chomp-snap offsets within the cycle
+  var WINDOW = 0.35;                     // only fire near the offset, so a late return
+                                         // doesn't replay already-passed chomps
+  var lastCycle = -1, fired = [false, false, false];
+
   (function loop() {
     requestAnimationFrame(loop);
     step(cb, backP);
     step(cf, frontP);
-  })();
 
-  // Trigger the three bursts per chomp off the jaw animation's OWN SMIL clock,
-  // not a wall clock. begin/repeat events fire from the same timeline that drives
-  // the visible jaw, so the spray can never drift from the chomp — and when the
-  // tab is hidden the animation pauses, so no events fire and nothing backs up.
-  // (The earlier document.timeline polling drifted because that clock and the
-  // SMIL/CSS clocks pause differently when the tab is backgrounded.)
-  var jaw  = document.getElementById('dino-jaw-anim');
-  var OFFS = [1490, 2030, 2570];   // burst on each chomp snap (~0.25s before the keyframed close)
-  function chomp() {
-    OFFS.forEach(function (ms) {
-      setTimeout(function () { if (!document.hidden) burst(); }, ms);
-    });
-  }
-  if (jaw && jaw.addEventListener) {
-    jaw.addEventListener('beginEvent', chomp);   // first cycle
-    jaw.addEventListener('repeatEvent', chomp);  // every loop after
-  }
+    if (document.hidden || !svg || !svg.getCurrentTime) return;
+    var t = svg.getCurrentTime() - BEGIN;
+    if (t < 0) return;
+    var cyc = Math.floor(t / PERIOD), phase = t - cyc * PERIOD;
+    if (cyc !== lastCycle) { lastCycle = cyc; fired = [false, false, false]; }
+    for (var i = 0; i < OFFS.length; i++) {
+      if (!fired[i] && phase >= OFFS[i] && phase < OFFS[i] + WINDOW) {
+        fired[i] = true; burst();
+      }
+    }
+  })();
 })();
