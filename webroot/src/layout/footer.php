@@ -31,6 +31,6 @@
 </footer>
 
 <script src="/assets/js/main.js?v=2"></script>
-<script src="/assets/js/chat-widget.js?v=1"></script>
+<script src="/assets/js/chat-widget.js?v=2"></script>
 </body>
 </html>

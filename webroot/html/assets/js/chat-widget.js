@@ -22,6 +22,17 @@
     }
     #dd-chat-btn:hover { background: #556299; transform: scale(1.08); }
 
+    /* Dim + lightly blur the page behind the chat so it doesn't bleed through
+       (especially on mobile, where the box is a bottom sheet). Tap to close. */
+    #dd-chat-backdrop {
+      position: fixed; inset: 0; z-index: 8990;
+      background: rgba(10,12,18,.55);
+      -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+      opacity: 0; visibility: hidden;
+      transition: opacity .2s ease, visibility .2s ease;
+    }
+    #dd-chat-backdrop.open { opacity: 1; visibility: visible; }
+
     #dd-chat-box {
       position: fixed; bottom: 88px; right: 24px; z-index: 9000;
       width: 340px; max-height: 520px;
@@ -123,6 +134,11 @@
   btn.innerHTML = '💬';
   document.body.appendChild(btn);
 
+  // Backdrop (dims/blurs the page behind the open chat; tap to close)
+  const backdrop = document.createElement('div');
+  backdrop.id = 'dd-chat-backdrop';
+  document.body.appendChild(backdrop);
+
   // Box
   const box = document.createElement('div');
   box.id = 'dd-chat-box';
@@ -147,13 +163,21 @@
   const input = box.querySelector('#dd-chat-input');
   const send  = box.querySelector('#dd-chat-send');
 
-  btn.addEventListener('click', () => {
-    box.classList.toggle('open');
-    if (box.classList.contains('open')) input.focus();
-  });
-  box.querySelector('#dd-chat-close').addEventListener('click', () => {
+  function openChat() {
+    box.classList.add('open');
+    backdrop.classList.add('open');
+    input.focus();
+  }
+  function closeChat() {
     box.classList.remove('open');
+    backdrop.classList.remove('open');
+  }
+
+  btn.addEventListener('click', () => {
+    box.classList.contains('open') ? closeChat() : openChat();
   });
+  box.querySelector('#dd-chat-close').addEventListener('click', closeChat);
+  backdrop.addEventListener('click', closeChat);
 
   send.addEventListener('click', submit);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
