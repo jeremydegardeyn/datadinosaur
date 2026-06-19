@@ -13,7 +13,7 @@
  */
 
 const SAMPLES = 16;          // must match tools/build-kana.mjs
-const SHAPE_TOLERANCE = 0.22; // mean point distance (unit box) that scores ~0
+const SHAPE_TOLERANCE = 0.30; // aligned-path distance (unit box) that scores ~0
 
 // ── geometry helpers ────────────────────────────────────────────────────────
 
@@ -82,19 +82,34 @@ function dropTinyStrokes(strokes) {
   return multi.filter((s) => pathLength(s) >= 0.03 * diag);
 }
 
-const meanDist = (a, b) => {
-  let sum = 0;
-  for (let i = 0; i < a.length; i++) sum += Math.hypot(a[i][0] - b[i][0], a[i][1] - b[i][1]);
-  return sum / a.length;
-};
+// Dynamic Time Warping distance: instead of pairing points in lockstep (1st↔1st,
+// 2nd↔2nd…), it finds the best flexible alignment between the two paths. So the
+// SAME shape traced at a different pace or phase — e.g. lingering on の's loop —
+// still matches, while a genuinely different path doesn't. Normalized by the
+// sequence length so it's on the same scale as a per-point mean distance, which
+// keeps SHAPE_TOLERANCE meaningful (for a perfectly aligned pair, DTW == mean).
+function dtwDist(a, b) {
+  const n = a.length, m = b.length;
+  const d = (i, j) => Math.hypot(a[i][0] - b[j][0], a[i][1] - b[j][1]);
+  let prev = new Array(m + 1).fill(Infinity);
+  prev[0] = 0;
+  for (let i = 1; i <= n; i++) {
+    const curr = new Array(m + 1).fill(Infinity);
+    for (let j = 1; j <= m; j++) {
+      curr[j] = d(i - 1, j - 1) + Math.min(prev[j], curr[j - 1], prev[j - 1]);
+    }
+    prev = curr;
+  }
+  return prev[m] / n;
+}
 
 const reversed = (s) => [...s].reverse();
 
 // Distance between two strokes, allowing the user to have drawn it backwards.
 // Returns { dist, reversed }.
 function strokeMatch(user, tmpl) {
-  const fwd = meanDist(user, tmpl);
-  const rev = meanDist(reversed(user), tmpl);
+  const fwd = dtwDist(user, tmpl);
+  const rev = dtwDist(reversed(user), tmpl);
   return rev < fwd ? { dist: rev, reversed: true } : { dist: fwd, reversed: false };
 }
 
