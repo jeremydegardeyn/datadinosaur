@@ -130,6 +130,26 @@ if ($action === 'update' && $api && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $pdo->prepare("UPDATE blog_posts SET " . implode(', ', $sets) . " WHERE id = ?")
         ->execute($vals);
 
+    // Keep the RAG index in sync — edits to a published post change its text
+    // (including image alt text), so re-index just as publish.php does on create.
+    if ($new_status === 'published') {
+        $rag_url    = getenv('RAG_URL') ?: 'http://rag:8000';
+        $rag_secret = getenv('RAG_SECRET') ?: '';
+        $ch = curl_init($rag_url . '/ingest');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => '{}',
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'X-Rag-Secret: ' . $rag_secret,
+            ],
+            CURLOPT_TIMEOUT => 10,
+        ]);
+        curl_exec($ch);   // fire-and-forget; ignore errors
+        curl_close($ch);
+    }
+
     $slug = $_POST['slug'] ?? $current['slug'];
     json_response([
         'ok'   => true,
