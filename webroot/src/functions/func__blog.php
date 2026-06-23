@@ -25,6 +25,19 @@ function render_post_html(string $markdown): string
 
 function enhance_post_images(string $html): string
 {
+    // 0) Slideshow blocks. Author wraps a run of images between :::slideshow and
+    //    ::: markers; we pull the images out and emit one carousel component.
+    //    Runs first so the images inside aren't turned into standalone figures.
+    //        :::slideshow
+    //        ![alt](url1 "Caption 1")
+    //        ![alt](url2 "Caption 2")
+    //        :::
+    $html = preg_replace_callback(
+        '#(?:<p>\s*)?:::\s*slideshow\b(.*?):::(?:\s*</p>)?#is',
+        fn ($m) => dd_build_slideshow($m[1]),
+        $html
+    );
+
     // 1) Image-only paragraphs -> <figure> (with optional caption + sizing).
     $html = preg_replace_callback(
         '#<p>\s*<img\b([^>]*)>\s*(?:\{([^}]*)\})?\s*</p>#i',
@@ -48,6 +61,33 @@ function enhance_post_images(string $html): string
     );
 
     return $html;
+}
+
+/** Build a slideshow carousel from the HTML between the :::slideshow markers. */
+function dd_build_slideshow(string $inner): string
+{
+    if (!preg_match_all('#<img\b([^>]*)>\s*(?:\{([^}]*)\})?#i', $inner, $ms, PREG_SET_ORDER)) {
+        return '';  // no images -> drop the empty block
+    }
+    $slides = '';
+    $dots   = '';
+    $n      = count($ms);
+    foreach ($ms as $i => $m) {
+        [$img, $caption, $style] = dd_img_parts($m[1], $m[2] ?? '');
+        $active  = $i === 0 ? ' active' : '';
+        $slides .= '<figure class="dd-slide' . $active . '"><img' . $img . $style . '>';
+        if ($caption !== '') $slides .= '<figcaption>' . $caption . '</figcaption>';
+        $slides .= '</figure>';
+        $dots   .= '<button class="dd-slide-dot' . $active . '" type="button" aria-label="Go to slide '
+                 . ($i + 1) . '"></button>';
+    }
+    return '<div class="dd-slideshow" data-count="' . $n . '">'
+         . '<div class="dd-slides">' . $slides . '</div>'
+         . '<button class="dd-slide-nav dd-slide-prev" type="button" aria-label="Previous slide">&#8249;</button>'
+         . '<button class="dd-slide-nav dd-slide-next" type="button" aria-label="Next slide">&#8250;</button>'
+         . '<div class="dd-slide-dots">' . $dots . '</div>'
+         . '<div class="dd-slide-count"><span class="dd-slide-cur">1</span> / ' . $n . '</div>'
+         . '</div>';
 }
 
 /** Split an <img> attribute string + {attrs} block into reusable parts. */

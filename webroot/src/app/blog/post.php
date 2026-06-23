@@ -72,6 +72,7 @@ $rt = reading_time($post['content']);
     <a href="/contact" class="btn btn-outline">Need consulting help?</a>
   </footer>
 </article>
+<script src="/assets/js/blog-slideshow.js?v=1" defer></script>
 
 <!-- Comments -->
 <?php if ($config['blog']['comments_enabled']): ?>
