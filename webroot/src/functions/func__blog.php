@@ -18,9 +18,85 @@ declare(strict_types=1);
  */
 function render_post_html(string $markdown): string
 {
+    // Quiz blocks are parsed from the RAW Markdown first: their Q:/-/* lines
+    // would otherwise be mangled into bullet lists by Parsedown. Pull each one
+    // out, leave a plain-text placeholder, and splice the built HTML back in
+    // after rendering.
+    $quizzes  = [];
+    $markdown = preg_replace_callback(
+        '/^:::[ \t]*quiz\b(.*?)^:::[ \t]*$/ims',
+        function ($m) use (&$quizzes) {
+            $token = 'DDQUIZPLACEHOLDER' . count($quizzes) . 'X';
+            $quizzes[] = dd_build_quiz($m[1]);
+            return "\n\n" . $token . "\n\n";
+        },
+        $markdown
+    );
+
     $pd = new Parsedown();
     $pd->setSafeMode(true);
-    return enhance_post_images($pd->text($markdown));
+    $html = enhance_post_images($pd->text($markdown));
+
+    foreach ($quizzes as $i => $quizHtml) {
+        $html = str_replace('<p>DDQUIZPLACEHOLDER' . $i . 'X</p>', $quizHtml, $html);
+    }
+    return $html;
+}
+
+/**
+ * Build an interactive multiple-choice quiz from the raw text between the
+ * :::quiz markers. One question per `Q:` line; options are `-` (wrong) or `*`
+ * (correct); an optional `>` line is the explanation shown after answering.
+ * The reader gets immediate per-question feedback (see blog-quiz.js).
+ */
+function dd_build_quiz(string $raw): string
+{
+    $questions = [];
+    $q = null;
+    foreach (preg_split('/\r\n|\r|\n/', $raw) as $line) {
+        $t = trim($line);
+        if ($t === '') continue;
+
+        if (preg_match('/^Q[:.)]\s*(.+)$/i', $t, $m)) {
+            if ($q) $questions[] = $q;
+            $q = ['prompt' => $m[1], 'opts' => [], 'correct' => -1, 'explain' => ''];
+        } elseif ($q && preg_match('/^\*\s*(.+)$/', $t, $m)) {   // correct option
+            $q['correct'] = count($q['opts']);
+            $q['opts'][]  = $m[1];
+        } elseif ($q && preg_match('/^-\s*(.+)$/', $t, $m)) {    // wrong option
+            $q['opts'][]  = $m[1];
+        } elseif ($q && preg_match('/^>\s*(.+)$/', $t, $m)) {    // explanation
+            $q['explain'] = $m[1];
+        }
+    }
+    if ($q) $questions[] = $q;
+
+    // A usable question needs at least two options and a marked answer.
+    $questions = array_values(array_filter(
+        $questions,
+        fn ($x) => count($x['opts']) >= 2 && $x['correct'] >= 0
+    ));
+    if (!$questions) return '';
+
+    $h  = '<div class="dd-quiz" data-count="' . count($questions) . '">';
+    $h .= '<div class="dd-quiz-head"><span class="dd-quiz-score" aria-live="polite"></span></div>';
+    foreach ($questions as $qi => $qq) {
+        $h .= '<div class="dd-quiz-q" data-correct="' . $qq['correct'] . '">';
+        $h .= '<p class="dd-quiz-prompt"><span class="dd-quiz-num">' . ($qi + 1) . '.</span> '
+            . e($qq['prompt']) . '</p>';
+        $h .= '<div class="dd-quiz-opts">';
+        foreach ($qq['opts'] as $oi => $opt) {
+            $h .= '<button type="button" class="dd-quiz-opt" data-i="' . $oi . '">'
+                . '<span class="dd-quiz-mark" aria-hidden="true"></span>'
+                . '<span class="dd-quiz-text">' . e($opt) . '</span></button>';
+        }
+        $h .= '</div>';
+        if ($qq['explain'] !== '') {
+            $h .= '<p class="dd-quiz-explain" hidden>' . e($qq['explain']) . '</p>';
+        }
+        $h .= '</div>';
+    }
+    return $h . '</div>';
 }
 
 function enhance_post_images(string $html): string
