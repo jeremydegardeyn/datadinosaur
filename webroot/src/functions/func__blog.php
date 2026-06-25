@@ -78,7 +78,15 @@ function dd_build_quiz(string $raw): string
     ));
     if (!$questions) return '';
 
-    $h  = '<div class="dd-quiz" data-count="' . count($questions) . '">';
+    // Stable, anonymous id from the questions themselves, so the leaderboard
+    // groups attempts at the same quiz regardless of which post it lives in.
+    $sig = '';
+    foreach ($questions as $qq) {
+        $sig .= $qq['prompt'] . '|' . implode('|', $qq['opts']) . "\n";
+    }
+    $quizId = substr(sha1($sig), 0, 16);
+
+    $h  = '<div class="dd-quiz" data-count="' . count($questions) . '" data-quiz-id="' . $quizId . '">';
     $h .= '<div class="dd-quiz-head"><span class="dd-quiz-score" aria-live="polite"></span></div>';
     foreach ($questions as $qi => $qq) {
         $h .= '<div class="dd-quiz-q" data-correct="' . $qq['correct'] . '">';
@@ -96,6 +104,17 @@ function dd_build_quiz(string $raw): string
         }
         $h .= '</div>';
     }
+
+    // Results panel — filled in by blog-quiz.js once every question is answered:
+    // a "you scored X / N" line, the anonymous score histogram with the
+    // reader's bucket highlighted, and a retake button.
+    $h .= '<div class="dd-quiz-results" hidden>'
+        . '<p class="dd-quiz-youscored"></p>'
+        . '<div class="dd-quiz-hist"></div>'
+        . '<p class="dd-quiz-hist-cap"></p>'
+        . '<button type="button" class="dd-quiz-retake">Retake quiz</button>'
+        . '</div>';
+
     return $h . '</div>';
 }
 
