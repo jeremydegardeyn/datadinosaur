@@ -94,13 +94,9 @@
           if (!ok && opts[right]) opts[right].classList.add('correct');
           opts.forEach(function (b) { b.disabled = true; });
 
-          // Reveal the picked option's note; if wrong, also the correct one's.
+          // Reveal only the picked option's own explanation.
           var chosenExp = q.querySelector('.dd-quiz-opt-explain[data-for="' + chosen + '"]');
           if (chosenExp) { chosenExp.classList.add(ok ? 'is-correct' : 'is-wrong'); chosenExp.hidden = false; }
-          if (!ok) {
-            var correctExp = q.querySelector('.dd-quiz-opt-explain[data-for="' + right + '"]');
-            if (correctExp) { correctExp.classList.add('is-correct'); correctExp.hidden = false; }
-          }
           var general = q.querySelector('.dd-quiz-explain');
           if (general) general.hidden = false;
 
