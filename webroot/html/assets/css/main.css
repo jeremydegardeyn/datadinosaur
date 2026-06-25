@@ -586,8 +586,10 @@ select { cursor: pointer; }
 .dd-quiz-explain {
   margin: .6rem 0 0; padding: .6rem .8rem; font-size: .85rem;
   color: var(--text-muted); background: var(--bg);
-  border-left: 3px solid var(--primary); border-radius: 0 var(--radius) var(--radius) 0;
+  border-left: 3px solid var(--border); border-radius: 0 var(--radius) var(--radius) 0;
 }
+.dd-quiz-explain.is-correct { border-left-color: var(--success); }
+.dd-quiz-explain.is-wrong   { border-left-color: var(--danger); }
 .dd-quiz-feedback { margin-top: .6rem; display: flex; flex-direction: column; gap: .4rem; }
 .dd-quiz-feedback .dd-quiz-explain { margin: 0; }
 .dd-quiz-opt-explain {

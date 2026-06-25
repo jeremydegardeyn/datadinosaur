@@ -105,7 +105,11 @@
           var chosenExp = q.querySelector('.dd-quiz-opt-explain[data-for="' + chosen + '"]');
           if (chosenExp) { chosenExp.classList.add(ok ? 'is-correct' : 'is-wrong'); chosenExp.hidden = false; }
           var general = q.querySelector('.dd-quiz-explain');
-          if (general) general.hidden = false;
+          if (general) {
+            general.classList.remove('is-correct', 'is-wrong');
+            general.classList.add(ok ? 'is-correct' : 'is-wrong');
+            general.hidden = false;
+          }
 
           // Score the first attempt only; retries are for learning.
           if (!q._scored) {
