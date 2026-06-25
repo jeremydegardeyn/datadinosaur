@@ -73,7 +73,7 @@ $rt = reading_time($post['content']);
   </footer>
 </article>
 <script src="/assets/js/blog-slideshow.js?v=1" defer></script>
-<script src="/assets/js/blog-quiz.js?v=5" defer></script>
+<script src="/assets/js/blog-quiz.js?v=6" defer></script>
 
 <!-- Comments -->
 <?php if ($config['blog']['comments_enabled']): ?>

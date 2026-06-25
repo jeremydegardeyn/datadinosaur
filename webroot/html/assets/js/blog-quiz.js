@@ -84,32 +84,12 @@
       var opts  = [].slice.call(q.querySelectorAll('.dd-quiz-opt'));
       q._locked = false;   // true once answered correctly — no more changes
       q._scored = false;   // leaderboard score is taken from the FIRST attempt
-      q._tryBtn = null;
 
       function clearMarks() {
         opts.forEach(function (b) { b.classList.remove('correct', 'incorrect'); });
         [].forEach.call(q.querySelectorAll('.dd-quiz-opt-explain'), function (p) {
           p.hidden = true; p.classList.remove('is-correct', 'is-wrong');
         });
-        if (q._tryBtn) { q._tryBtn.remove(); q._tryBtn = null; }
-      }
-
-      function tryAgain() {
-        clearMarks();
-        opts.forEach(function (b) { b.disabled = false; });
-      }
-
-      function addTryAgain() {
-        if (q._tryBtn) return;
-        var host = q.querySelector('.dd-quiz-feedback');
-        if (!host) { host = document.createElement('div'); host.className = 'dd-quiz-feedback'; q.appendChild(host); }
-        var b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'dd-quiz-tryagain';
-        b.textContent = 'Not quite — try again';
-        b.onclick = tryAgain;
-        host.appendChild(b);
-        q._tryBtn = b;
       }
 
       opts.forEach(function (btn) {
@@ -136,9 +116,12 @@
             updateScore();
           }
 
-          opts.forEach(function (b) { b.disabled = true; });
-          if (ok) q._locked = true;
-          else    addTryAgain();   // prompt another go without changing the score
+          // Correct locks the question; a wrong pick leaves the other options
+          // live so the reader can simply click a different one to try again.
+          if (ok) {
+            q._locked = true;
+            opts.forEach(function (b) { b.disabled = true; });
+          }
 
           if (answered === total) finish();
         };
@@ -156,7 +139,6 @@
           p.hidden = true;
           p.classList.remove('is-correct', 'is-wrong');
         });
-        [].forEach.call(q.querySelectorAll('.dd-quiz-tryagain'), function (b) { b.remove(); });
         [].forEach.call(q.querySelectorAll('.dd-quiz-opt'), function (b) {
           b.disabled = false;
           b.classList.remove('correct', 'incorrect');
