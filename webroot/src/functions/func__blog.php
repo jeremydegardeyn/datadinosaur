@@ -43,6 +43,50 @@ function render_post_html(string $markdown): string
     return $html;
 }
 
+/** A run of `>` notes followed by another option are per-option explanations
+ *  (each attaches to the option it directly follows). */
+function dd_quiz_resolve_sandwiched(array &$q, array &$pending): void
+{
+    foreach ($pending as $p) {
+        if ($p['after'] >= 0) $q['oexp'][$p['after']] = $p['text'];
+        else                  $q['explain'] = $p['text'];   // note before any option
+    }
+    $pending = [];
+}
+
+/** `>` notes after the last option are a general note shown after any answer —
+ *  unless the question already has per-option notes, in which case a trailing
+ *  note belongs to that last option. This lets authors write either one
+ *  explanation after all the options OR a note under each option. */
+function dd_quiz_resolve_trailing(array &$q, array &$pending): void
+{
+    $hasPerOption = (bool) array_filter($q['oexp']);
+    foreach ($pending as $p) {
+        if ($p['after'] < 0)   $q['explain'] = $p['text'];
+        elseif ($hasPerOption) $q['oexp'][$p['after']] = $p['text'];
+        else                   $q['explain'] = $p['text'];
+    }
+    $pending = [];
+}
+
+/** Render an explanation line: escape it, but turn [label](http…) Markdown
+ *  links into anchors. Blog content is single-author and trusted. */
+function dd_quiz_explain_html(string $text): string
+{
+    $out = '';
+    $offset = 0;
+    if (preg_match_all('/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/', $text, $mm, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
+        foreach ($mm as $m) {
+            $pos  = $m[0][1];
+            $out .= e(substr($text, $offset, $pos - $offset));
+            $out .= '<a href="' . e($m[2][0]) . '" target="_blank" rel="noopener noreferrer">'
+                  . e($m[1][0]) . '</a>';
+            $offset = $pos + strlen($m[0][0]);
+        }
+    }
+    return $out . e(substr($text, $offset));
+}
+
 /**
  * Build an interactive multiple-choice quiz from the raw text between the
  * :::quiz markers. One question per `Q:` line; options are `-` (wrong) or `*`
@@ -53,30 +97,29 @@ function dd_build_quiz(string $raw): string
 {
     $questions = [];
     $q = null;
+    $pending = [];   // `>` notes awaiting resolution (per-option vs general)
     foreach (preg_split('/\r\n|\r|\n/', $raw) as $line) {
         $t = trim($line);
         if ($t === '') continue;
 
         if (preg_match('/^Q[:.)]\s*(.+)$/i', $t, $m)) {
-            if ($q) $questions[] = $q;
+            if ($q) { dd_quiz_resolve_trailing($q, $pending); $questions[] = $q; }
             $q = ['prompt' => $m[1], 'opts' => [], 'correct' => -1, 'explain' => '', 'oexp' => []];
+            $pending = [];
         } elseif ($q && preg_match('/^\*\s*(.+)$/', $t, $m)) {   // correct option
+            dd_quiz_resolve_sandwiched($q, $pending);
             $q['correct'] = count($q['opts']);
             $q['opts'][]  = $m[1];
         } elseif ($q && preg_match('/^-\s*(.+)$/', $t, $m)) {    // wrong option
+            dd_quiz_resolve_sandwiched($q, $pending);
             $q['opts'][]  = $m[1];
         } elseif ($q && preg_match('/^>\s*(.+)$/', $t, $m)) {    // explanation
-            // A `>` after an option explains THAT option (shown when it's the
-            // picked answer, or the correct one when the reader missed it). A
-            // `>` before any option is a general note shown after any answer.
-            if ($q['opts']) {
-                $q['oexp'][count($q['opts']) - 1] = $m[1];
-            } else {
-                $q['explain'] = $m[1];
-            }
+            // Resolved later: a note with another option after it is per-option;
+            // a note after the last option is a general note (see helpers below).
+            $pending[] = ['after' => count($q['opts']) - 1, 'text' => $m[1]];
         }
     }
-    if ($q) $questions[] = $q;
+    if ($q) { dd_quiz_resolve_trailing($q, $pending); $questions[] = $q; }
 
     // A usable question needs at least two options and a marked answer.
     $questions = array_values(array_filter(
@@ -115,11 +158,11 @@ function dd_build_quiz(string $raw): string
             foreach ($qq['opts'] as $oi => $opt) {
                 if (!empty($qq['oexp'][$oi])) {
                     $h .= '<p class="dd-quiz-opt-explain" data-for="' . $oi . '" hidden>'
-                        . e($qq['oexp'][$oi]) . '</p>';
+                        . dd_quiz_explain_html($qq['oexp'][$oi]) . '</p>';
                 }
             }
             if ($qq['explain'] !== '') {
-                $h .= '<p class="dd-quiz-explain" hidden>' . e($qq['explain']) . '</p>';
+                $h .= '<p class="dd-quiz-explain" hidden>' . dd_quiz_explain_html($qq['explain']) . '</p>';
             }
             $h .= '</div>';
         }
