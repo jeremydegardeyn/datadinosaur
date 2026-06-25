@@ -588,6 +588,18 @@ select { cursor: pointer; }
   color: var(--text-muted); background: var(--bg);
   border-left: 3px solid var(--primary); border-radius: 0 var(--radius) var(--radius) 0;
 }
+.dd-quiz-feedback { margin-top: .6rem; display: flex; flex-direction: column; gap: .4rem; }
+.dd-quiz-feedback .dd-quiz-explain { margin: 0; }
+.dd-quiz-opt-explain {
+  margin: 0; padding: .55rem .8rem; font-size: .85rem; color: var(--text-muted);
+  background: var(--bg); border-left: 3px solid var(--border);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.dd-quiz-opt-explain.is-correct { border-left-color: var(--success); }
+.dd-quiz-opt-explain.is-wrong   { border-left-color: var(--danger); }
+.dd-quiz-opt-explain::before { font-weight: 600; margin-right: .35rem; }
+.dd-quiz-opt-explain.is-correct::before { content: '\2713'; color: var(--success); }
+.dd-quiz-opt-explain.is-wrong::before   { content: '\2717'; color: var(--danger); }
 .dd-quiz-results { margin-top: .5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
 .dd-quiz-youscored { font-weight: 600; margin: 0 0 1rem; }
 .dd-quiz-hist {

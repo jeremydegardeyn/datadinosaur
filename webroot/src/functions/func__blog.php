@@ -59,14 +59,21 @@ function dd_build_quiz(string $raw): string
 
         if (preg_match('/^Q[:.)]\s*(.+)$/i', $t, $m)) {
             if ($q) $questions[] = $q;
-            $q = ['prompt' => $m[1], 'opts' => [], 'correct' => -1, 'explain' => ''];
+            $q = ['prompt' => $m[1], 'opts' => [], 'correct' => -1, 'explain' => '', 'oexp' => []];
         } elseif ($q && preg_match('/^\*\s*(.+)$/', $t, $m)) {   // correct option
             $q['correct'] = count($q['opts']);
             $q['opts'][]  = $m[1];
         } elseif ($q && preg_match('/^-\s*(.+)$/', $t, $m)) {    // wrong option
             $q['opts'][]  = $m[1];
         } elseif ($q && preg_match('/^>\s*(.+)$/', $t, $m)) {    // explanation
-            $q['explain'] = $m[1];
+            // A `>` after an option explains THAT option (shown when it's the
+            // picked answer, or the correct one when the reader missed it). A
+            // `>` before any option is a general note shown after any answer.
+            if ($q['opts']) {
+                $q['oexp'][count($q['opts']) - 1] = $m[1];
+            } else {
+                $q['explain'] = $m[1];
+            }
         }
     }
     if ($q) $questions[] = $q;
@@ -99,8 +106,22 @@ function dd_build_quiz(string $raw): string
                 . '<span class="dd-quiz-text">' . e($opt) . '</span></button>';
         }
         $h .= '</div>';
-        if ($qq['explain'] !== '') {
-            $h .= '<p class="dd-quiz-explain" hidden>' . e($qq['explain']) . '</p>';
+
+        // Feedback: per-option explanations (revealed for the picked answer, and
+        // for the correct one when missed) plus an optional general note.
+        $oexp = array_filter($qq['oexp']);
+        if ($oexp || $qq['explain'] !== '') {
+            $h .= '<div class="dd-quiz-feedback">';
+            foreach ($qq['opts'] as $oi => $opt) {
+                if (!empty($qq['oexp'][$oi])) {
+                    $h .= '<p class="dd-quiz-opt-explain" data-for="' . $oi . '" hidden>'
+                        . e($qq['oexp'][$oi]) . '</p>';
+                }
+            }
+            if ($qq['explain'] !== '') {
+                $h .= '<p class="dd-quiz-explain" hidden>' . e($qq['explain']) . '</p>';
+            }
+            $h .= '</div>';
         }
         $h .= '</div>';
     }

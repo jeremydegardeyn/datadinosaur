@@ -80,20 +80,30 @@
     }
 
     function wire(q) {
-      var right   = parseInt(q.getAttribute('data-correct'), 10);
-      var opts    = [].slice.call(q.querySelectorAll('.dd-quiz-opt'));
-      var explain = q.querySelector('.dd-quiz-explain');
+      var right = parseInt(q.getAttribute('data-correct'), 10);
+      var opts  = [].slice.call(q.querySelectorAll('.dd-quiz-opt'));
       q._answered = false;
       opts.forEach(function (btn) {
         btn.onclick = function () {
           if (q._answered) return;
           q._answered = true;
-          var ok = parseInt(btn.getAttribute('data-i'), 10) === right;
+          var chosen = parseInt(btn.getAttribute('data-i'), 10);
+          var ok = chosen === right;
           q.classList.add('answered');
           btn.classList.add(ok ? 'correct' : 'incorrect');
           if (!ok && opts[right]) opts[right].classList.add('correct');
           opts.forEach(function (b) { b.disabled = true; });
-          if (explain) explain.hidden = false;
+
+          // Reveal the picked option's note; if wrong, also the correct one's.
+          var chosenExp = q.querySelector('.dd-quiz-opt-explain[data-for="' + chosen + '"]');
+          if (chosenExp) { chosenExp.classList.add(ok ? 'is-correct' : 'is-wrong'); chosenExp.hidden = false; }
+          if (!ok) {
+            var correctExp = q.querySelector('.dd-quiz-opt-explain[data-for="' + right + '"]');
+            if (correctExp) { correctExp.classList.add('is-correct'); correctExp.hidden = false; }
+          }
+          var general = q.querySelector('.dd-quiz-explain');
+          if (general) general.hidden = false;
+
           answered++;
           if (ok) correct++;
           updateScore();
@@ -109,8 +119,10 @@
       if (results) results.hidden = true;
       questions.forEach(function (q) {
         q.classList.remove('answered');
-        var explain = q.querySelector('.dd-quiz-explain');
-        if (explain) explain.hidden = true;
+        [].forEach.call(q.querySelectorAll('.dd-quiz-explain, .dd-quiz-opt-explain'), function (p) {
+          p.hidden = true;
+          p.classList.remove('is-correct', 'is-wrong');
+        });
         [].forEach.call(q.querySelectorAll('.dd-quiz-opt'), function (b) {
           b.disabled = false;
           b.classList.remove('correct', 'incorrect');
