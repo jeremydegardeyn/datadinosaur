@@ -5,7 +5,7 @@ DataDinosaur RAG service
 - GET  /health   : liveness check
 """
 
-import os, re, time, textwrap
+import os, re, time, json, statistics, textwrap
 from typing import Optional
 
 import pymysql
@@ -371,3 +371,84 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
 
     audit("answered")
     return {"answer": answer, "sources": sources}
+
+
+EVAL_DATASET = os.path.join(os.path.dirname(os.path.abspath(__file__)), "eval_dataset.json")
+
+
+@app.post("/eval")
+def run_eval(x_rag_secret: Optional[str] = Header(None)):
+    """Run the gold eval dataset (eval_dataset.json) against retrieval and
+    return metrics for the admin dashboard. Retrieval only — no answer
+    generation — so it's fast and cheap. Positive cases want the expected post
+    ranked high (Hit@1/@3/@k, MRR); negative cases pass when no chunk clears the
+    relevance threshold (i.e. retrieval didn't falsely ground an off-topic ask)."""
+    check_auth(x_rag_secret)
+
+    try:
+        with open(EVAL_DATASET, encoding="utf-8") as f:
+            cfg = json.load(f)
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="eval_dataset.json not found")
+
+    top_k     = int(cfg.get("top_k", 5))
+    min_score = float(cfg.get("min_score", MIN_SCORE))
+    cases     = cfg.get("cases", [])
+
+    out_cases, recips, top_scores = [], [], []
+    pos = neg = hit1 = hit3 = hitk = neg_pass = 0
+
+    with pg_conn() as pg:
+        for c in cases:
+            q      = c["question"]
+            expect = set(c.get("expect_slugs", []))
+            q_vec  = embed_query(q)
+            with pg.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+                cur.execute("""
+                    SELECT post_slug, 1 - (embedding <=> %s::vector) AS score
+                    FROM post_chunks
+                    ORDER BY embedding <=> %s::vector
+                    LIMIT %s
+                """, (str(q_vec), str(q_vec), top_k))
+                rows = cur.fetchall()
+
+            slugs = [r["post_slug"] for r in rows]
+            top   = float(rows[0]["score"]) if rows else 0.0
+            top_scores.append(top)
+
+            rank = next((i for i, s in enumerate(slugs, 1) if s in expect), None)
+
+            if expect:
+                pos += 1
+                recips.append(1.0 / rank if rank else 0.0)
+                if rank == 1:          hit1 += 1
+                if rank and rank <= 3: hit3 += 1
+                if rank:               hitk += 1
+                passed, ctype = rank is not None, "positive"
+            else:
+                neg += 1
+                passed, ctype = top < min_score, "negative"
+                neg_pass += int(passed)
+
+            out_cases.append({
+                "question":  q,
+                "type":      ctype,
+                "expect":    sorted(expect),
+                "top_slug":  slugs[0] if slugs else None,
+                "top_score": round(top, 4),
+                "rank":      rank,
+                "pass":      passed,
+                "note":      c.get("note", ""),
+            })
+
+    summary = {
+        "top_k": top_k, "min_score": min_score,
+        "positives": pos, "negatives": neg,
+        "hit1_pct": round(hit1 / pos, 3) if pos else None,
+        "hit3_pct": round(hit3 / pos, 3) if pos else None,
+        "hitk_pct": round(hitk / pos, 3) if pos else None,
+        "mrr":      round(statistics.mean(recips), 3) if recips else None,
+        "neg_pct":  round(neg_pass / neg, 3) if neg else None,
+        "mean_top": round(statistics.mean(top_scores), 3) if top_scores else None,
+    }
+    return {"ok": True, "summary": summary, "cases": out_cases}

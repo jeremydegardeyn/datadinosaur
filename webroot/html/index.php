@@ -144,9 +144,14 @@ switch ($page) {
 
     case 'admin':
         require_admin();
-        $page_title  = 'Admin Dashboard — ' . $config['site']['name'];
         $seo_noindex = true;
-        require SRC_ROOT . '/app/admin/dashboard.php';
+        if ($action === 'rag-eval') {
+            $page_title = 'RAG Eval — ' . $config['site']['name'];
+            require SRC_ROOT . '/app/admin/rag-eval.php';
+        } else {
+            $page_title  = 'Admin Dashboard — ' . $config['site']['name'];
+            require SRC_ROOT . '/app/admin/dashboard.php';
+        }
         break;
 
     default:

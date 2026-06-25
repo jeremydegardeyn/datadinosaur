@@ -53,6 +53,7 @@ $inquiries = $inq_stmt->fetchAll();
       <button class="btn btn-ghost" id="rag-ingest-btn" onclick="ragIngest(this, '<?= e(csrf_token()) ?>')">
         &#x1F9E0; Re-index Posts
       </button>
+      <a href="/admin/rag-eval" class="btn btn-ghost">&#x1F4CA; RAG Eval</a>
       <a href="/blog/new" class="btn btn-primary">+ New Post</a>
     </div>
   </div>

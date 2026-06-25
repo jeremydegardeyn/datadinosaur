@@ -50,13 +50,19 @@ if ($action === 'ask') {
     $result = rag_request($rag_url . '/ingest', [], $rag_secret);
     json_response($result['body'], $result['status']);
 
+} elseif ($action === 'eval') {
+    // Admin-only. Embeds one query per gold case, so allow extra time.
+    require_admin();
+    $result = rag_request($rag_url . '/eval', [], $rag_secret, 90);
+    json_response($result['body'], $result['status']);
+
 } else {
     json_response(['error' => 'Not found'], 404);
 }
 
 // ── Helper ────────────────────────────────────────────────────────────────────
 
-function rag_request(string $url, array $payload, string $secret): array
+function rag_request(string $url, array $payload, string $secret, int $timeout = 30): array
 {
     $ch = curl_init($url);
     curl_setopt_array($ch, [
@@ -67,7 +73,7 @@ function rag_request(string $url, array $payload, string $secret): array
             'Content-Type: application/json',
             'X-Rag-Secret: ' . $secret,
         ],
-        CURLOPT_TIMEOUT        => 30,
+        CURLOPT_TIMEOUT        => $timeout,
     ]);
 
     $raw    = curl_exec($ch);
