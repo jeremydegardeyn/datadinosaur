@@ -82,17 +82,44 @@
     function wire(q) {
       var right = parseInt(q.getAttribute('data-correct'), 10);
       var opts  = [].slice.call(q.querySelectorAll('.dd-quiz-opt'));
-      q._answered = false;
+      q._locked = false;   // true once answered correctly — no more changes
+      q._scored = false;   // leaderboard score is taken from the FIRST attempt
+      q._tryBtn = null;
+
+      function clearMarks() {
+        opts.forEach(function (b) { b.classList.remove('correct', 'incorrect'); });
+        [].forEach.call(q.querySelectorAll('.dd-quiz-opt-explain'), function (p) {
+          p.hidden = true; p.classList.remove('is-correct', 'is-wrong');
+        });
+        if (q._tryBtn) { q._tryBtn.remove(); q._tryBtn = null; }
+      }
+
+      function tryAgain() {
+        clearMarks();
+        opts.forEach(function (b) { b.disabled = false; });
+      }
+
+      function addTryAgain() {
+        if (q._tryBtn) return;
+        var host = q.querySelector('.dd-quiz-feedback');
+        if (!host) { host = document.createElement('div'); host.className = 'dd-quiz-feedback'; q.appendChild(host); }
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'dd-quiz-tryagain';
+        b.textContent = 'Not quite — try again';
+        b.onclick = tryAgain;
+        host.appendChild(b);
+        q._tryBtn = b;
+      }
+
       opts.forEach(function (btn) {
         btn.onclick = function () {
-          if (q._answered) return;
-          q._answered = true;
+          if (q._locked) return;
           var chosen = parseInt(btn.getAttribute('data-i'), 10);
           var ok = chosen === right;
-          q.classList.add('answered');
+
+          clearMarks();
           btn.classList.add(ok ? 'correct' : 'incorrect');
-          if (!ok && opts[right]) opts[right].classList.add('correct');
-          opts.forEach(function (b) { b.disabled = true; });
 
           // Reveal only the picked option's own explanation.
           var chosenExp = q.querySelector('.dd-quiz-opt-explain[data-for="' + chosen + '"]');
@@ -100,9 +127,19 @@
           var general = q.querySelector('.dd-quiz-explain');
           if (general) general.hidden = false;
 
-          answered++;
-          if (ok) correct++;
-          updateScore();
+          // Score the first attempt only; retries are for learning.
+          if (!q._scored) {
+            q._scored = true;
+            q.classList.add('answered');
+            answered++;
+            if (ok) correct++;
+            updateScore();
+          }
+
+          opts.forEach(function (b) { b.disabled = true; });
+          if (ok) q._locked = true;
+          else    addTryAgain();   // prompt another go without changing the score
+
           if (answered === total) finish();
         };
       });
@@ -119,6 +156,7 @@
           p.hidden = true;
           p.classList.remove('is-correct', 'is-wrong');
         });
+        [].forEach.call(q.querySelectorAll('.dd-quiz-tryagain'), function (b) { b.remove(); });
         [].forEach.call(q.querySelectorAll('.dd-quiz-opt'), function (b) {
           b.disabled = false;
           b.classList.remove('correct', 'incorrect');
