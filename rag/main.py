@@ -5,7 +5,7 @@ DataDinosaur RAG service
 - GET  /health   : liveness check
 """
 
-import os, re, textwrap
+import os, re, time, textwrap
 from typing import Optional
 
 import pymysql
@@ -86,7 +86,43 @@ def ensure_schema():
                 );
             """)
             # No index needed — exact search is fast enough for a small blog
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS rag_queries (
+                    id          BIGSERIAL PRIMARY KEY,
+                    created_at  TIMESTAMPTZ DEFAULT now(),
+                    endpoint    TEXT NOT NULL,
+                    query       TEXT NOT NULL,
+                    num_results INT  NOT NULL DEFAULT 0,
+                    top_score   REAL,
+                    outcome     TEXT,
+                    sources     JSONB,
+                    latency_ms  INT
+                );
+            """)
+            cur.execute("CREATE INDEX IF NOT EXISTS rag_queries_created_idx ON rag_queries (created_at DESC);")
         conn.commit()
+
+
+def record_audit(endpoint, query, retrieved, outcome, latency_ms):
+    """Append one retrieval to the rag_queries audit log. `retrieved` is a list
+    of (slug, score) for what the vector search returned — logged regardless of
+    whether it cleared the relevance threshold, so we can see what was matched.
+    Best-effort: a logging failure must never break a user's query."""
+    try:
+        sources = psycopg2.extras.Json([
+            {"slug": s, "score": round(float(sc), 4)} for s, sc in retrieved
+        ])
+        top = round(float(retrieved[0][1]), 4) if retrieved else None
+        with pg_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO rag_queries
+                        (endpoint, query, num_results, top_score, outcome, sources, latency_ms)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (endpoint, query[:500], len(retrieved), top, outcome, sources, latency_ms))
+            conn.commit()
+    except Exception as e:
+        print(f"[audit] failed to log {endpoint} query: {e}", flush=True)
 
 
 # ── Chunking ──────────────────────────────────────────────────────────────────
@@ -216,6 +252,7 @@ def search(body: SearchRequest, x_rag_secret: Optional[str] = Header(None)):
         raise HTTPException(status_code=400, detail="query too long")
 
     k = max(1, min(20, body.top_k))
+    started = time.monotonic()
     q_vec = embed_query(query)
 
     with pg_conn() as pg:
@@ -236,6 +273,11 @@ def search(body: SearchRequest, x_rag_secret: Optional[str] = Header(None)):
         "score":   round(float(r["score"]), 4),
     } for r in rows]
 
+    record_audit("search", query,
+                 [(r["post_slug"], r["score"]) for r in rows],
+                 "ok" if rows else "no_results",
+                 int((time.monotonic() - started) * 1000))
+
     return {"query": query, "results": results}
 
 
@@ -248,6 +290,8 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
         raise HTTPException(status_code=400, detail="question is required")
     if len(question) > 500:
         raise HTTPException(status_code=400, detail="question too long")
+
+    started = time.monotonic()
 
     # Embed the query
     q_vec = embed_query(question)
@@ -264,12 +308,18 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
             """, (str(q_vec), str(q_vec), TOP_K))
             rows = cur.fetchall()
 
+    retrieved = [(r["post_slug"], r["score"]) for r in rows]
+    def audit(outcome):
+        record_audit("ask", question, retrieved, outcome, int((time.monotonic() - started) * 1000))
+
     if not rows:
+        audit("no_chunks")
         return {"answer": "I don't have enough blog content indexed yet. Check back after posts are published!", "sources": []}
 
     # Filter out chunks below the relevance threshold
     relevant_rows = [r for r in rows if r["score"] >= MIN_SCORE]
     if not relevant_rows:
+        audit("below_threshold")
         return {"answer": "That topic isn't covered in my blog posts. Try asking about data engineering, career advice, or consulting!", "sources": []}
 
     # Build context block — only from relevant chunks
@@ -316,6 +366,8 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
 
     # If the LLM flagged the question as out of scope, suppress sources and return friendly message
     if answer.strip().upper().startswith("OUT_OF_SCOPE"):
+        audit("out_of_scope")
         return {"answer": "That topic isn't covered in my blog posts. Try asking about data engineering, career advice, or consulting!", "sources": []}
 
+    audit("answered")
     return {"answer": answer, "sources": sources}

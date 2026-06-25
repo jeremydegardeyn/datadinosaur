@@ -1,0 +1,32 @@
+{
+  "top_k": 5,
+  "min_score": 0.55,
+  "cases": [
+    {
+      "question": "What sits at the hub of the DAMA wheel?",
+      "expect_slugs": ["data-management-pillar-overview"],
+      "note": "Core fact from the DAMA pillar overview slides (data governance at the hub)."
+    },
+    {
+      "question": "Is AI an official DAMA data management pillar yet?",
+      "expect_slugs": ["data-management-pillar-overview"],
+      "note": "Tests that slide alt-text content is retrievable."
+    },
+    {
+      "question": "How do you stop an AI model from hallucinating a join when querying data?",
+      "expect_slugs": ["same-ai-different-grounding-agentic-tooling-by-persona"],
+      "note": "Knowledge-graph / semantic layer point from the agentic tooling post."
+    },
+    {
+      "question": "Why use Data-as-a-Service endpoints for a customer-facing banking agent?",
+      "expect_slugs": ["same-ai-different-grounding-agentic-tooling-by-persona"],
+      "note": "Deterministic golden-path grounding."
+    },
+    {
+      "question": "What is the best recipe for homemade pizza dough?",
+      "expect_slugs": [],
+      "expect_out_of_scope": true,
+      "note": "Negative case — off-topic. Retrieval should NOT surface a strongly-relevant chunk; /ask should be out of scope."
+    }
+  ]
+}
