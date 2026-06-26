@@ -603,7 +603,8 @@ select { cursor: pointer; }
 .dd-quiz-opt-explain.is-correct::before { content: '\2713'; color: var(--success); }
 .dd-quiz-opt-explain.is-wrong::before   { content: '\2717'; color: var(--danger); }
 .dd-quiz-results { margin-top: .5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
-.dd-quiz-youscored { font-weight: 600; margin: 0 0 1rem; }
+.dd-quiz-hist-title { font-weight: 600; font-size: .95rem; margin: 0 0 .8rem; }
+.dd-quiz-youscored { font-weight: 600; margin: 0 0 1rem; color: var(--primary); }
 .dd-quiz-hist {
   display: flex; align-items: flex-end; gap: 5px;
   height: 140px; padding-top: 18px;

@@ -52,31 +52,45 @@
       if (scoreEl) scoreEl.textContent = answered ? (correct + ' / ' + total + ' correct') : '';
     }
 
-    function showResults(dist, count) {
-      if (youEl) youEl.textContent = 'You scored ' + correct + ' / ' + total + '.';
-      if (histEl) {
-        if (dist) { buildHistogram(histEl, dist, correct); histEl.hidden = false; }
-        else histEl.hidden = true;
-      }
+    // Render the histogram. `mine` is the reader's score to highlight, or -1
+    // while they're still working (just showing how everyone else has done).
+    function renderHist(dist, count, mine) {
+      if (!results || !histEl) return;
+      buildHistogram(histEl, dist, (mine == null ? -1 : mine));
       if (capEl) {
-        capEl.textContent = count
-          ? 'Where you landed among ' + count + ' ' + (count === 1 ? 'attempt' : 'attempts') + '.'
-          : '';
+        if (!count) capEl.textContent = 'Be the first to finish it.';
+        else capEl.textContent = (mine != null ? 'Your score is highlighted — ' : '') +
+          count + ' ' + (count === 1 ? 'attempt' : 'attempts') + ' so far.';
       }
-      if (results) results.hidden = false;
+      results.hidden = false;
+    }
+
+    // Read-only fetch of the current distribution, shown from page load.
+    function loadDistribution() {
+      if (!quizId || !window.fetch) return;
+      fetch('/api/quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quiz_id: quizId, total: total })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (d && d.dist) renderHist(d.dist, d.count, null); })
+        .catch(function () {});
     }
 
     function finish() {
       el.classList.add('dd-quiz-complete');
-      if (!quizId || !window.fetch) { showResults(null, 0); return; }
+      if (youEl) { youEl.textContent = 'You scored ' + correct + ' / ' + total + '.'; youEl.hidden = false; }
+      if (retakeBtn) retakeBtn.hidden = false;
+      if (!quizId || !window.fetch) return;
       fetch('/api/quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quiz_id: quizId, score: correct, total: total })
       })
         .then(function (r) { return r.json(); })
-        .then(function (d) { showResults(d && d.dist, d && d.count); })
-        .catch(function () { showResults(null, 0); });
+        .then(function (d) { if (d && d.dist) renderHist(d.dist, d.count, correct); })
+        .catch(function () {});
     }
 
     function wire(q) {
@@ -136,7 +150,11 @@
       answered = 0;
       correct  = 0;
       el.classList.remove('dd-quiz-complete');
-      if (results) results.hidden = true;
+      // Keep the distribution visible; just drop the "you scored" line, the
+      // Retake button, and the highlight (reload the plain distribution).
+      if (youEl) { youEl.textContent = ''; youEl.hidden = true; }
+      if (retakeBtn) retakeBtn.hidden = true;
+      loadDistribution();
       questions.forEach(function (q) {
         q.classList.remove('answered');
         [].forEach.call(q.querySelectorAll('.dd-quiz-explain, .dd-quiz-opt-explain'), function (p) {
@@ -156,6 +174,7 @@
     questions.forEach(wire);
     if (retakeBtn) retakeBtn.onclick = reset;
     updateScore();
+    loadDistribution();   // show the current distribution from page load
   }
 
   function init() {

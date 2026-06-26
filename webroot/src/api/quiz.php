@@ -13,9 +13,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $data   = json_decode(file_get_contents('php://input'), true) ?: [];
 $quizId = preg_replace('/[^a-f0-9]/', '', strtolower((string)($data['quiz_id'] ?? '')));
 $total  = (int)($data['total'] ?? 0);
-$score  = (int)($data['score'] ?? 0);
 
-if (strlen($quizId) < 8 || $total < 1 || $total > 50 || $score < 0 || $score > $total) {
+// A request with no score is a read-only "peek" — used to show the current
+// distribution before the reader has finished. A request with a score records
+// the completion. Either way we return the full distribution.
+$hasScore = array_key_exists('score', $data) && $data['score'] !== null && $data['score'] !== '';
+$score    = (int)($data['score'] ?? 0);
+
+if (strlen($quizId) < 8 || $total < 1 || $total > 50) {
+    json_response(['error' => 'Invalid quiz result'], 400);
+}
+if ($hasScore && ($score < 0 || $score > $total)) {
     json_response(['error' => 'Invalid quiz result'], 400);
 }
 
@@ -31,14 +39,17 @@ $pdo->exec(
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
 );
 
-// Count each visitor's attempt at a given quiz once; retakes still see the chart.
-$key  = $quizId . ':' . $total;
-$seen = $_SESSION['quiz_done'] ?? [];
-if (!in_array($key, $seen, true)) {
-    $pdo->prepare("INSERT INTO quiz_scores (quiz_id, score, total) VALUES (?, ?, ?)")
-        ->execute([$quizId, $score, $total]);
-    $seen[] = $key;
-    $_SESSION['quiz_done'] = $seen;
+// Record a completion (not a peek). Count each visitor's attempt at a given
+// quiz once; retakes still see the chart.
+if ($hasScore) {
+    $key  = $quizId . ':' . $total;
+    $seen = $_SESSION['quiz_done'] ?? [];
+    if (!in_array($key, $seen, true)) {
+        $pdo->prepare("INSERT INTO quiz_scores (quiz_id, score, total) VALUES (?, ?, ?)")
+            ->execute([$quizId, $score, $total]);
+        $seen[] = $key;
+        $_SESSION['quiz_done'] = $seen;
+    }
 }
 
 $stmt = $pdo->prepare(

@@ -173,10 +173,11 @@ function dd_build_quiz(string $raw): string
     // a "you scored X / N" line, the anonymous score histogram with the
     // reader's bucket highlighted, and a retake button.
     $h .= '<div class="dd-quiz-results" hidden>'
-        . '<p class="dd-quiz-youscored"></p>'
+        . '<p class="dd-quiz-hist-title">Score distribution</p>'
+        . '<p class="dd-quiz-youscored" hidden></p>'
         . '<div class="dd-quiz-hist"></div>'
         . '<p class="dd-quiz-hist-cap"></p>'
-        . '<button type="button" class="dd-quiz-retake">Retake quiz</button>'
+        . '<button type="button" class="dd-quiz-retake" hidden>Retake quiz</button>'
         . '</div>';
 
     return $h . '</div>';
