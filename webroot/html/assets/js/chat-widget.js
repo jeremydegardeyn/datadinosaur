@@ -89,6 +89,18 @@
     }
     .dd-sources a:hover { color: #6b7db3; }
 
+    .dd-feedback {
+      margin-top: 8px; padding-top: 6px; border-top: 1px solid #2e3247;
+      display: flex; align-items: center; gap: 8px; font-size: 11px; color: #6b7db3;
+    }
+    .dd-feedback button {
+      background: none; border: 1px solid #2e3247; border-radius: 6px;
+      color: #6b7db3; cursor: pointer; font-size: 13px; line-height: 1;
+      padding: 3px 7px; transition: background .15s, color .15s;
+    }
+    .dd-feedback button:hover { background: #2e3247; color: #f0f4ff; }
+    .dd-feedback .dd-fb-thanks { color: #10b981; }
+
     #dd-chat-footer {
       padding: 10px 12px; border-top: 1px solid #2e3247;
       display: flex; gap: 8px; background: #22263a;
@@ -191,7 +203,7 @@
       .replace(/\n/g, '<br>');
   }
 
-  function addMsg(text, cls, sources) {
+  function addMsg(text, cls, sources, queryId) {
     const el = document.createElement('div');
     el.className = 'dd-msg ' + cls;
     if (cls === 'bot') {
@@ -213,9 +225,47 @@
       el.appendChild(div);
     }
 
+    // Only grounded, in-scope answers carry a query_id — offer thumbs feedback there.
+    if (cls === 'bot' && queryId) {
+      addFeedback(el, queryId);
+    }
+
     msgs.appendChild(el);
     msgs.scrollTop = msgs.scrollHeight;
     return el;
+  }
+
+  function addFeedback(el, queryId) {
+    const fb = document.createElement('div');
+    fb.className = 'dd-feedback';
+
+    const label = document.createElement('span');
+    label.textContent = 'Was this helpful?';
+
+    const up   = document.createElement('button');
+    up.type = 'button'; up.textContent = '👍'; up.title = 'Helpful';
+    const down = document.createElement('button');
+    down.type = 'button'; down.textContent = '👎'; down.title = 'Not helpful';
+
+    function vote(rating) {
+      up.disabled = down.disabled = true;
+      up.style.display = down.style.display = 'none';
+      label.textContent = 'Thanks for the feedback!';
+      label.className = 'dd-fb-thanks';
+      fetch('/api/rag/feedback', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ query_id: queryId, rating: rating }),
+      }).catch(() => {});   // fire-and-forget; never block the reader on logging
+    }
+
+    up.addEventListener('click', () => vote('up'));
+    down.addEventListener('click', () => vote('down'));
+
+    fb.appendChild(label);
+    fb.appendChild(up);
+    fb.appendChild(down);
+    el.appendChild(fb);
   }
 
   function addTyping() {
@@ -248,7 +298,7 @@
       if (!res.ok || data.error) {
         addMsg(data.error || 'Something went wrong. Please try again.', 'dd-msg bot error');
       } else {
-        addMsg(data.answer, 'bot', data.sources);
+        addMsg(data.answer, 'bot', data.sources, data.query_id);
       }
     } catch {
       typing.remove();

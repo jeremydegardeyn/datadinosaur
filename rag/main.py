@@ -118,15 +118,22 @@ def ensure_schema():
             """)
             # Inline groundedness-guard verdict for /ask: {grounded, unsupported[], regenerated}
             cur.execute("ALTER TABLE rag_queries ADD COLUMN IF NOT EXISTS grounding JSONB;")
+            # The generated answer text, so the feedback review can show what was said.
+            cur.execute("ALTER TABLE rag_queries ADD COLUMN IF NOT EXISTS answer TEXT;")
+            # User thumbs feedback on an answered query: 'up' | 'down', plus when.
+            cur.execute("ALTER TABLE rag_queries ADD COLUMN IF NOT EXISTS feedback TEXT;")
+            cur.execute("ALTER TABLE rag_queries ADD COLUMN IF NOT EXISTS feedback_at TIMESTAMPTZ;")
             cur.execute("CREATE INDEX IF NOT EXISTS rag_queries_created_idx ON rag_queries (created_at DESC);")
         conn.commit()
 
 
-def record_audit(endpoint, query, retrieved, outcome, latency_ms, grounding=None):
+def record_audit(endpoint, query, retrieved, outcome, latency_ms, grounding=None, answer=None):
     """Append one retrieval to the rag_queries audit log. `retrieved` is a list
     of (slug, score) for what the vector search returned — logged regardless of
     whether it cleared the relevance threshold, so we can see what was matched.
-    `grounding` (when set) is the inline groundedness-guard verdict for /ask.
+    `grounding` (when set) is the inline groundedness-guard verdict for /ask;
+    `answer` is the text returned to the user. Returns the new row id (so the
+    widget can attach thumbs feedback to it), or None on failure.
     Best-effort: a logging failure must never break a user's query."""
     try:
         sources = psycopg2.extras.Json([
@@ -138,12 +145,16 @@ def record_audit(endpoint, query, retrieved, outcome, latency_ms, grounding=None
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO rag_queries
-                        (endpoint, query, num_results, top_score, outcome, sources, latency_ms, grounding)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                """, (endpoint, query[:500], len(retrieved), top, outcome, sources, latency_ms, grounding_json))
+                        (endpoint, query, num_results, top_score, outcome, sources, latency_ms, grounding, answer)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    RETURNING id
+                """, (endpoint, query[:500], len(retrieved), top, outcome, sources, latency_ms, grounding_json, answer))
+                row_id = cur.fetchone()[0]
             conn.commit()
+        return row_id
     except Exception as e:
         print(f"[audit] failed to log {endpoint} query: {e}", flush=True)
+        return None
 
 
 # ── Chunking ──────────────────────────────────────────────────────────────────
@@ -367,6 +378,10 @@ class SearchRequest(BaseModel):
     query: str
     top_k: int = TOP_K
 
+class FeedbackRequest(BaseModel):
+    query_id: int
+    rating: str          # 'up' | 'down'
+
 def check_auth(x_rag_secret: Optional[str]):
     if x_rag_secret != RAG_SECRET:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -499,9 +514,9 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
         rows = hybrid_retrieve(pg, q_vec, question, TOP_K)
 
     retrieved = [(r["post_slug"], r["score"]) for r in rows]
-    def audit(outcome, grounding=None):
-        record_audit("ask", question, retrieved, outcome,
-                     int((time.monotonic() - started) * 1000), grounding)
+    def audit(outcome, grounding=None, answer=None):
+        return record_audit("ask", question, retrieved, outcome,
+                            int((time.monotonic() - started) * 1000), grounding, answer)
 
     if not rows:
         audit("no_chunks")
@@ -558,10 +573,76 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
             answer = retry
             regenerated = True
 
-    audit("answered", grounding={
+    query_id = audit("answered", grounding={
         "grounded": grounded, "unsupported": unsupported, "regenerated": regenerated,
-    })
-    return {"answer": answer, "sources": sources}
+    }, answer=answer)
+    # query_id lets the widget attach thumbs feedback to this exact answer.
+    return {"answer": answer, "sources": sources, "query_id": query_id}
+
+
+@app.post("/feedback")
+def feedback(body: FeedbackRequest, x_rag_secret: Optional[str] = Header(None)):
+    """Record a visitor's thumbs up/down on an answered query, keyed by the
+    query_id returned from /ask. Updates the existing rag_queries audit row."""
+    check_auth(x_rag_secret)
+
+    rating = body.rating.strip().lower()
+    if rating not in ("up", "down"):
+        raise HTTPException(status_code=400, detail="rating must be 'up' or 'down'")
+
+    with pg_conn() as pg:
+        with pg.cursor() as cur:
+            cur.execute("""
+                UPDATE rag_queries
+                   SET feedback = %s, feedback_at = now()
+                 WHERE id = %s AND endpoint = 'ask'
+            """, (rating, body.query_id))
+            updated = cur.rowcount
+        pg.commit()
+
+    if not updated:
+        raise HTTPException(status_code=404, detail="query not found")
+    return {"ok": True}
+
+
+@app.post("/feedback_list")
+def feedback_list(x_rag_secret: Optional[str] = Header(None)):
+    """Admin: the thumbs-DOWN answers visitors flagged, newest first, for the
+    review tab. Each is a triage signal — bad grounding, stale index, or a
+    retrieval miss. Also returns up/down totals for context."""
+    check_auth(x_rag_secret)
+
+    with pg_conn() as pg:
+        with pg.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            cur.execute("""
+                SELECT id, created_at, feedback_at, query, answer, sources, grounding, top_score
+                FROM rag_queries
+                WHERE feedback = 'down'
+                ORDER BY feedback_at DESC NULLS LAST
+                LIMIT 200
+            """)
+            rows = cur.fetchall()
+            cur.execute("""
+                SELECT
+                    COUNT(*) FILTER (WHERE feedback = 'up')   AS up,
+                    COUNT(*) FILTER (WHERE feedback = 'down') AS down
+                FROM rag_queries
+            """)
+            counts = cur.fetchone()
+
+    items = [{
+        "id":          r["id"],
+        "created_at":  r["created_at"].isoformat()  if r["created_at"]  else None,
+        "feedback_at": r["feedback_at"].isoformat() if r["feedback_at"] else None,
+        "question":    r["query"],
+        "answer":      r["answer"],
+        "sources":     r["sources"],
+        "top_score":   round(float(r["top_score"]), 4) if r["top_score"] is not None else None,
+        "grounding":   r["grounding"],
+    } for r in rows]
+
+    return {"ok": True, "up": counts["up"], "down": counts["down"],
+            "count": len(items), "items": items}
 
 
 EVAL_DATASET = os.path.join(os.path.dirname(os.path.abspath(__file__)), "eval_dataset.json")

@@ -211,6 +211,21 @@ free tier at this blog's volume.
 neighbors — posts that were retrieved but didn't really contribute — out of the
 source links under the answer.
 
+### User feedback loop (thumbs up/down)
+
+Every grounded answer carries a `query_id` (the `rag_queries` audit row id).
+The chat widget renders a 👍/👎 under in-scope answers; a click POSTs to
+`/api/rag/feedback` → RAG `/feedback`, which stamps `feedback` + `feedback_at`
+on that row. Out-of-scope replies have no `query_id`, so they get no buttons.
+
+The admin **RAG** page (`/admin/rag-eval`) is two tabs: **Eval metrics** (the
+gold-set retrieval eval) and **User feedback** (the thumbs-DOWN answers, newest
+first, with the question, the answer that was given, and the cited sources).
+Each flagged answer is a triage signal — bad grounding (fix the source), a stale
+index (re-index), or a retrieval miss (tune ranking) — and a ready-made
+candidate for the eval set or a few-shot example. It's the offline LLM-judge's
+human counterpart: real users catching what the automation misses.
+
 ### Hybrid retrieval (dense + sparse, RRF-fused)
 
 Retrieval is **two retrievers over the same chunks**, fused — not a single

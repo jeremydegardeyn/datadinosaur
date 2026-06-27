@@ -50,10 +50,42 @@ if ($action === 'ask') {
     $result = rag_request($rag_url . '/ingest', [], $rag_secret);
     json_response($result['body'], $result['status']);
 
+} elseif ($action === 'feedback') {
+    // Public: a visitor's thumbs up/down on an answer. Light rate-limit.
+    $ip_key = 'rag_fb_' . md5($_SERVER['REMOTE_ADDR'] ?? '');
+    $now    = time();
+    $window = $_SESSION[$ip_key . '_window'] ?? 0;
+    $count  = $_SESSION[$ip_key . '_count']  ?? 0;
+    if ($now - $window > 60) {
+        $_SESSION[$ip_key . '_window'] = $now;
+        $_SESSION[$ip_key . '_count']  = 1;
+    } elseif ($count >= 30) {
+        json_response(['error' => 'Too many requests. Please wait a moment.'], 429);
+    } else {
+        $_SESSION[$ip_key . '_count'] = $count + 1;
+    }
+
+    $data   = json_decode(file_get_contents('php://input'), true);
+    $qid    = (int)($data['query_id'] ?? 0);
+    $rating = trim($data['rating'] ?? '');
+    if (!$qid || !in_array($rating, ['up', 'down'], true)) {
+        json_response(['error' => 'query_id and rating (up|down) are required'], 400);
+    }
+
+    $result = rag_request($rag_url . '/feedback',
+                          ['query_id' => $qid, 'rating' => $rating], $rag_secret);
+    json_response($result['body'], $result['status']);
+
 } elseif ($action === 'eval') {
     // Admin-only. Embeds one query per gold case, so allow extra time.
     require_admin();
     $result = rag_request($rag_url . '/eval', [], $rag_secret, 90);
+    json_response($result['body'], $result['status']);
+
+} elseif ($action === 'feedback_list') {
+    // Admin-only: the thumbs-down answers visitors flagged, for review.
+    require_admin();
+    $result = rag_request($rag_url . '/feedback_list', [], $rag_secret, 30);
     json_response($result['body'], $result['status']);
 
 } else {
