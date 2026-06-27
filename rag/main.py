@@ -630,13 +630,34 @@ def feedback_list(x_rag_secret: Optional[str] = Header(None)):
             """)
             counts = cur.fetchone()
 
+            # The audit `sources` column stores [{slug, score}]; resolve slugs to
+            # post titles so the review can show clickable, named sources.
+            slugs = {s["slug"] for r in rows for s in (r["sources"] or []) if s.get("slug")}
+            titles = {}
+            if slugs:
+                cur.execute(
+                    "SELECT DISTINCT post_slug, post_title FROM post_chunks WHERE post_slug = ANY(%s)",
+                    (list(slugs),))
+                titles = {row["post_slug"]: row["post_title"] for row in cur.fetchall()}
+
+    def cited(r):
+        out, seen = [], set()
+        for s in (r["sources"] or []):
+            slug = s.get("slug")
+            if not slug or slug in seen:
+                continue
+            seen.add(slug)
+            out.append({"title": titles.get(slug, slug),
+                        "url": f"https://my.datadinosaur.com/blog/{slug}"})
+        return out
+
     items = [{
         "id":          r["id"],
         "created_at":  r["created_at"].isoformat()  if r["created_at"]  else None,
         "feedback_at": r["feedback_at"].isoformat() if r["feedback_at"] else None,
         "question":    r["query"],
         "answer":      r["answer"],
-        "sources":     r["sources"],
+        "sources":     cited(r),
         "top_score":   round(float(r["top_score"]), 4) if r["top_score"] is not None else None,
         "grounding":   r["grounding"],
     } for r in rows]
