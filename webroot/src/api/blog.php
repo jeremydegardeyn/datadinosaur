@@ -27,6 +27,28 @@ if ($action === 'admin_list') {
     json_response(['total' => $total, 'limit' => $limit, 'offset' => $offset, 'posts' => $rows]);
 }
 
+// ---- Admin: get one post incl. raw content (token or session) ----
+// Used by the MCP server's get_post tool so an editor can read the current
+// Markdown before splicing a change and writing it back via update_post —
+// without losing images or formatting. Read-only, returns JSON.
+if ($action === 'admin_get') {
+    if (!is_admin() && !$api) json_response(['error' => 'Unauthorized'], 401);
+
+    $pdo     = db_connect();
+    $post_id = (int)($_GET['post_id'] ?? 0);
+    if (!$post_id) json_response(['error' => 'post_id is required'], 400);
+
+    $stmt = $pdo->prepare(
+        "SELECT id, title, slug, excerpt, content, category_id, status,
+                pinned, visible, published_at, updated_at, views
+         FROM blog_posts WHERE id = ?"
+    );
+    $stmt->execute([$post_id]);
+    $post = $stmt->fetch();
+    if (!$post) json_response(['error' => 'Post not found'], 404);
+    json_response(['post' => $post]);
+}
+
 // ---- Admin: list comments (token or session) ----
 // Used by the MCP server so moderate_comment has IDs to act on.
 if ($action === 'admin_comments') {

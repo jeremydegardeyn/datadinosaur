@@ -8,6 +8,7 @@ the site remotely.
 Tools
   search_blog        retrieve relevant blog chunks (pgvector, no LLM step)
   list_posts         list posts with status / pin / visibility
+  get_post           fetch one post's full record incl. raw Markdown content
   list_comments      list comments by status (for moderation)
   create_post        publish a new post
   update_post        partial-update an existing post
@@ -106,6 +107,14 @@ def list_posts(limit: int = 20, offset: int = 0) -> dict:
     visibility flags, publish date, and view count. Includes the total count
     for pagination."""
     return _api_get({"action": "admin_list", "limit": limit, "offset": offset})
+
+@mcp.tool()
+def get_post(post_id: int) -> dict:
+    """Fetch a single post's full record by id, including its raw Markdown
+    `content`. Use this before update_post to read the current body, splice in
+    your change, and write the whole content field back — so edits never lose
+    images, captions, or :::slideshow / :::quiz blocks."""
+    return _api_get({"action": "admin_get", "post_id": post_id})
 
 @mcp.tool()
 def list_comments(status: str = "pending") -> dict:

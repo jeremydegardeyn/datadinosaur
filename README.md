@@ -325,6 +325,7 @@ manage the site remotely.
 |---|---|
 | `search_blog` | Hybrid search over posts (dense + keyword, RRF-fused; no LLM step) |
 | `list_posts` | List posts with status / pin / visibility / views |
+| `get_post` | Fetch one post's full record incl. raw Markdown (read before editing) |
 | `list_comments` | List comments by status (`pending` / `approved` / `spam`) |
 | `create_post` | Publish a new post (Markdown), auto-slug + RAG re-index |
 | `update_post` | Partial update — send only the fields to change |
