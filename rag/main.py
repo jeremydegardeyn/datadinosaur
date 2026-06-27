@@ -38,8 +38,10 @@ PG_PASSWORD     = os.environ["PG_PASSWORD"]
 
 CHUNK_SIZE      = 400   # words per chunk
 CHUNK_OVERLAP   = 50
-TOP_K           = 4     # chunks to retrieve
+TOP_K           = 4     # chunks to send to the LLM after fusion
 MIN_SCORE       = 0.55  # minimum cosine similarity to consider a chunk relevant
+CANDIDATES      = 50    # how many to pull from EACH retriever (dense + sparse) before fusing
+RRF_K           = 60    # reciprocal-rank-fusion constant; larger = flatter weighting of rank
 EMBED_MODEL     = "gemini-embedding-001"
 CHAT_MODEL      = "gemini-2.5-flash"
 
@@ -85,7 +87,19 @@ def ensure_schema():
                     UNIQUE (post_id, chunk_idx)
                 );
             """)
-            # No index needed — exact search is fast enough for a small blog
+            # Sparse (keyword/BM25-style) half of hybrid search. A GENERATED column
+            # means Postgres maintains the tsvector itself — adding it backfills every
+            # existing row, so no re-ingest is required to turn hybrid search on.
+            cur.execute("""
+                ALTER TABLE post_chunks
+                ADD COLUMN IF NOT EXISTS content_tsv tsvector
+                GENERATED ALWAYS AS (to_tsvector('english', content)) STORED;
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS post_chunks_tsv_idx
+                ON post_chunks USING GIN (content_tsv);
+            """)
+            # No vector index needed — exact search is fast enough for a small blog
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS rag_queries (
                     id          BIGSERIAL PRIMARY KEY,
@@ -160,6 +174,84 @@ def embed_query(text: str) -> list[float]:
     r = http.post(url, json=payload, timeout=30)
     r.raise_for_status()
     return r.json()["embedding"]["values"]
+
+
+# ── Retrieval (hybrid: dense + sparse, fused with RRF) ──────────────────────────
+#
+# Two retrievers run independently over the SAME chunks:
+#   dense  — cosine similarity on Gemini embeddings (semantic meaning)
+#   sparse — Postgres full-text search / ts_rank (exact terms: pgvector, BM25,
+#            error codes, product names — the things embeddings blur together)
+#
+# Each returns its own top-`CANDIDATES` ranking. We fuse them with Reciprocal
+# Rank Fusion: a chunk's fused score is the sum of 1/(RRF_K + rank) across the
+# lists it appears in. RRF needs only ranks (not comparable raw scores), so it
+# cleanly combines a 0–1 cosine score with an unbounded ts_rank. A chunk that
+# both retrievers like floats to the top; a chunk only one retriever finds can
+# still surface. Final order is by RRF; the `score` column stays plain cosine
+# similarity so the MIN_SCORE relevance gate and the audit log are unchanged.
+HYBRID_SQL = """
+WITH q AS (
+    SELECT %(qvec)s::vector AS qvec,
+           websearch_to_tsquery('english', %(qtext)s) AS tsq
+),
+dense AS (
+    SELECT id,
+           ROW_NUMBER() OVER (ORDER BY embedding <=> (SELECT qvec FROM q)) AS rnk
+    FROM post_chunks
+    ORDER BY embedding <=> (SELECT qvec FROM q)
+    LIMIT %(cand)s
+),
+sparse AS (
+    SELECT id,
+           ROW_NUMBER() OVER (
+               ORDER BY ts_rank(content_tsv, (SELECT tsq FROM q)) DESC
+           ) AS rnk
+    FROM post_chunks
+    WHERE content_tsv @@ (SELECT tsq FROM q)
+    ORDER BY ts_rank(content_tsv, (SELECT tsq FROM q)) DESC
+    LIMIT %(cand)s
+),
+fused AS (
+    SELECT COALESCE(d.id, s.id) AS id,
+           COALESCE(1.0 / (%(rrf_k)s + d.rnk), 0.0)
+         + COALESCE(1.0 / (%(rrf_k)s + s.rnk), 0.0) AS rrf_score,
+           d.rnk AS dense_rank,
+           s.rnk AS sparse_rank
+    FROM dense d
+    FULL OUTER JOIN sparse s ON d.id = s.id
+)
+SELECT pc.post_title, pc.post_slug, pc.chunk_idx, pc.content,
+       1 - (pc.embedding <=> (SELECT qvec FROM q)) AS score,
+       f.rrf_score, f.dense_rank, f.sparse_rank
+FROM fused f
+JOIN post_chunks pc ON pc.id = f.id
+ORDER BY f.rrf_score DESC
+LIMIT %(final)s
+"""
+
+
+def hybrid_retrieve(pg, q_vec, query_text, limit_final, candidates=CANDIDATES):
+    """Run dense + sparse retrieval and return the RRF-fused top `limit_final`
+    rows. Each row carries the true cosine `score` (recomputed for sparse-only
+    hits via the join back to post_chunks), the `rrf_score`, and the component
+    `dense_rank` / `sparse_rank` (NULL if that retriever didn't surface it)."""
+    with pg.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        cur.execute(HYBRID_SQL, {
+            "qvec":  str(q_vec),
+            "qtext": query_text,
+            "cand":  candidates,
+            "rrf_k": RRF_K,
+            "final": limit_final,
+        })
+        return cur.fetchall()
+
+
+def match_kind(row) -> str:
+    """Which retriever(s) surfaced this row — for transparency in /search."""
+    if row["dense_rank"] and row["sparse_rank"]:
+        return "both"
+    return "semantic" if row["dense_rank"] else "keyword"
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -256,21 +348,15 @@ def search(body: SearchRequest, x_rag_secret: Optional[str] = Header(None)):
     q_vec = embed_query(query)
 
     with pg_conn() as pg:
-        with pg.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-            cur.execute("""
-                SELECT post_title, post_slug, chunk_idx, content,
-                       1 - (embedding <=> %s::vector) AS score
-                FROM post_chunks
-                ORDER BY embedding <=> %s::vector
-                LIMIT %s
-            """, (str(q_vec), str(q_vec), k))
-            rows = cur.fetchall()
+        rows = hybrid_retrieve(pg, q_vec, query, k)
 
     results = [{
-        "title":   r["post_title"],
-        "url":     f"https://my.datadinosaur.com/blog/{r['post_slug']}",
-        "chunk":   r["content"],
-        "score":   round(float(r["score"]), 4),
+        "title":     r["post_title"],
+        "url":       f"https://my.datadinosaur.com/blog/{r['post_slug']}",
+        "chunk":     r["content"],
+        "score":     round(float(r["score"]), 4),       # cosine similarity
+        "rrf_score": round(float(r["rrf_score"]), 5),   # fused rank score (ordering)
+        "matched":   match_kind(r),                     # semantic | keyword | both
     } for r in rows]
 
     record_audit("search", query,
@@ -296,17 +382,9 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
     # Embed the query
     q_vec = embed_query(question)
 
-    # Retrieve top-k chunks via cosine similarity
+    # Retrieve top-k chunks via hybrid search (dense + sparse, RRF-fused)
     with pg_conn() as pg:
-        with pg.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-            cur.execute("""
-                SELECT post_title, post_slug, content,
-                       1 - (embedding <=> %s::vector) AS score
-                FROM post_chunks
-                ORDER BY embedding <=> %s::vector
-                LIMIT %s
-            """, (str(q_vec), str(q_vec), TOP_K))
-            rows = cur.fetchall()
+        rows = hybrid_retrieve(pg, q_vec, question, TOP_K)
 
     retrieved = [(r["post_slug"], r["score"]) for r in rows]
     def audit(outcome):
@@ -403,14 +481,7 @@ def run_eval(x_rag_secret: Optional[str] = Header(None)):
             q      = c["question"]
             expect = set(c.get("expect_slugs", []))
             q_vec  = embed_query(q)
-            with pg.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-                cur.execute("""
-                    SELECT post_slug, 1 - (embedding <=> %s::vector) AS score
-                    FROM post_chunks
-                    ORDER BY embedding <=> %s::vector
-                    LIMIT %s
-                """, (str(q_vec), str(q_vec), top_k))
-                rows = cur.fetchall()
+            rows   = hybrid_retrieve(pg, q_vec, q, top_k)
 
             slugs = [r["post_slug"] for r in rows]
             top   = float(rows[0]["score"]) if rows else 0.0

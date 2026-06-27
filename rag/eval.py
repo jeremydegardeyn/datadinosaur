@@ -3,7 +3,9 @@ DataDinosaur RAG retrieval eval.
 
 Runs a gold set of questions (eval_dataset.json) against the live /search
 endpoint and reports retrieval quality: per-question rank of the expected
-post, plus aggregate Hit@1, Hit@3, Hit@k, MRR, and mean top score. Negative
+post, plus aggregate Hit@1, Hit@3, Hit@k, MRR, and mean top score. /search is
+hybrid (dense + sparse, RRF-fused), so these numbers reflect the fused ranking
+exactly as production serves it. Negative
 cases (expect_slugs: []) check that off-topic questions do NOT surface a
 strongly-relevant chunk and that /ask flags them out of scope.
 

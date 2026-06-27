@@ -23,6 +23,11 @@
       "note": "Deterministic golden-path grounding."
     },
     {
+      "question": "What are the DAMA knowledge areas?",
+      "expect_slugs": ["data-management-pillar-overview"],
+      "note": "Hybrid keyword case — the exact acronym 'DAMA' is a token sparse/BM25 retrieval nails even when dense embeddings paraphrase it away. Good before/after signal for hybrid search."
+    },
+    {
       "question": "What is the best recipe for homemade pizza dough?",
       "expect_slugs": [],
       "expect_out_of_scope": true,

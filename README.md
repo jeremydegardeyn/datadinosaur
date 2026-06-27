@@ -18,7 +18,9 @@ datadinosaur/
 ├── rag/                        # RAG service (see RAG section below)
 │   ├── Dockerfile
 │   ├── requirements.txt
-│   └── main.py                 # FastAPI app — /ingest + /ask
+│   ├── eval.py                 # Retrieval eval runner (Hit@k, MRR)
+│   ├── eval_dataset.json       # Gold question set for eval
+│   └── main.py                 # FastAPI app — /ingest, /search, /ask, /eval
 ├── database/
 │   ├── schema.sql              # Table definitions (auto-loaded)
 │   └── seed.sql                # Seed blog posts (auto-loaded)
@@ -166,7 +168,10 @@ main.py (FastAPI)
       │
       ├─ 1. Embed question → Gemini Embeddings API (gemini-embedding-001, 3072-dim)
       │
-      ├─ 2. Cosine similarity search → pgvector (top 4 matching blog chunks)
+      ├─ 2. Hybrid retrieval → pgvector
+      │       ├─ dense:  cosine similarity on embeddings (top 50)
+      │       ├─ sparse: Postgres full-text / ts_rank   (top 50)
+      │       └─ fuse:   Reciprocal Rank Fusion → top 4 chunks
       │
       ├─ 3. Build prompt: system instructions + retrieved chunks + question
       │
@@ -176,14 +181,43 @@ main.py (FastAPI)
          Answer + source post links returned to widget
 ```
 
+### Hybrid retrieval (dense + sparse, RRF-fused)
+
+Retrieval is **two retrievers over the same chunks**, fused — not a single
+cosine search. This is the "retrieve wide, rank narrow" pattern:
+
+| Retriever | Mechanism | Catches |
+|---|---|---|
+| **Dense** | Cosine similarity on Gemini embeddings | Semantic meaning, paraphrases, synonyms |
+| **Sparse** | Postgres full-text search (`to_tsvector` / `ts_rank`, GIN-indexed) | Exact tokens embeddings blur — `pgvector`, `BM25`, acronyms, error codes, product names |
+
+Each returns its own top-`CANDIDATES` (50) ranking. **Reciprocal Rank Fusion**
+combines them: a chunk's fused score is `Σ 1/(RRF_K + rank)` over the lists it
+appears in (`RRF_K = 60`). RRF needs only *ranks*, not comparable raw scores, so
+it cleanly merges a 0–1 cosine score with an unbounded `ts_rank`. A chunk both
+retrievers like floats to the top; a chunk only one finds can still surface.
+Only the fused **top 4** reach the LLM — wide recall, narrow context.
+
+It all runs in **one SQL statement** (`HYBRID_SQL` in `main.py`): two CTEs rank
+the candidates, a `FULL OUTER JOIN` fuses them, and a join back to `post_chunks`
+recomputes the true cosine `score` for every survivor (including sparse-only
+hits). That cosine `score` — not the RRF score — still drives the `MIN_SCORE`
+(0.55) relevance gate and the audit log, so out-of-scope gating is unchanged;
+only the *ordering* improved. `/search` additionally returns `rrf_score` and a
+`matched` flag (`semantic` / `keyword` / `both`) per result for transparency.
+
+The sparse side is a **`GENERATED` `tsvector` column** (`content_tsv`) that
+Postgres maintains automatically. Adding it backfills every existing row, so
+**enabling hybrid search needs no re-ingest** — just rebuild the container.
+
 ### Components
 
 | Component | Technology | Purpose |
 |---|---|---|
 | Chat widget | Vanilla JS (`chat-widget.js`) | Floating UI, sends questions, renders answers |
 | PHP proxy | `src/api/rag.php` | Rate limiting (10 req/min/IP), auth, forwards to Python |
-| RAG service | Python FastAPI (`rag/main.py`) | Embedding, retrieval, generation |
-| Vector store | pgvector on Postgres 16 | Stores 3072-dim embeddings, cosine similarity search |
+| RAG service | Python FastAPI (`rag/main.py`) | Embedding, hybrid retrieval, generation |
+| Vector store | pgvector on Postgres 16 | 3072-dim embeddings (cosine) + `tsvector` full-text index, fused with RRF |
 | Source of truth | MySQL `blog_posts` table | Posts read at ingest time |
 | Embeddings | `gemini-embedding-001` via AI Studio | Converts text to 3072-dim vectors |
 | Generation | `gemini-2.5-flash` via AI Studio | Answers questions using retrieved context |
@@ -237,6 +271,23 @@ curl -X POST https://my.datadinosaur.com/api/rag/ingest \
   -H "Cookie: <admin session cookie>"
 ```
 
+### Upgrading an existing deploy to hybrid search
+
+Hybrid retrieval adds a `GENERATED` `tsvector` column + GIN index, created by
+`ensure_schema()` on startup. Because the column is generated, Postgres
+backfills every existing chunk automatically — **no re-ingest needed**:
+
+```bash
+cd ~/datadinosaur && git pull
+docker compose up -d --build rag   # restart applies the schema change on startup
+```
+
+Then check it before/after with the eval (retrieval-only, no LLM cost):
+
+```bash
+docker compose exec rag python eval.py   # Hit@1/@3/@k, MRR, out-of-scope rate
+```
+
 ---
 
 ## MCP Server
@@ -249,7 +300,7 @@ manage the site remotely.
 
 | Tool | What it does |
 |---|---|
-| `search_blog` | Semantic search over posts (pgvector retrieval, no LLM step) |
+| `search_blog` | Hybrid search over posts (dense + keyword, RRF-fused; no LLM step) |
 | `list_posts` | List posts with status / pin / visibility / views |
 | `list_comments` | List comments by status (`pending` / `approved` / `spam`) |
 | `create_post` | Publish a new post (Markdown), auto-slug + RAG re-index |
