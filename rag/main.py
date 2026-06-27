@@ -318,7 +318,8 @@ def ingest(x_rag_secret: Optional[str] = Header(None)):
                         ON CONFLICT (post_id, chunk_idx) DO UPDATE
                             SET content   = EXCLUDED.content,
                                 embedding = EXCLUDED.embedding,
-                                post_title = EXCLUDED.post_title
+                                post_title = EXCLUDED.post_title,
+                                post_slug  = EXCLUDED.post_slug
                     """, (
                         post["id"], post["slug"], post["title"],
                         idx, chunk, str(vec),

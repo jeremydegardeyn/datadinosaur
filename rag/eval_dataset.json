@@ -28,6 +28,26 @@
       "note": "Hybrid keyword case — the exact acronym 'DAMA' is a token sparse/BM25 retrieval nails even when dense embeddings paraphrase it away. Good before/after signal for hybrid search."
     },
     {
+      "question": "Which Beam trigger fires on a fixed processing-time interval?",
+      "expect_slugs": ["apache-beam-streaming-windowing-quiz"],
+      "note": "Keyword case — answer is the exact symbol 'AfterProcessingTime'. Dense embeddings treat trigger names as near-identical; sparse disambiguates on the literal token."
+    },
+    {
+      "question": "What is Model Armor used for in the banking agent build?",
+      "expect_slugs": ["same-ai-different-grounding-agentic-tooling-by-persona"],
+      "note": "Keyword case — 'Model Armor' is a GCP product name embeddings don't recognize as a unit; sparse matches the exact phrase."
+    },
+    {
+      "question": "Why are CRDs and operators a reason to choose Kubernetes over Cloud Run?",
+      "expect_slugs": ["cloud-run-is-fine-when-you-actually-need-kubernetes"],
+      "note": "Keyword case — 'CRD' is an acronym embeddings dilute among generic Kubernetes terms; sparse pins it."
+    },
+    {
+      "question": "What does save_main_session do in a Dataflow Flex Template?",
+      "expect_slugs": ["finally-found-a-way-to-make-a-monolithic-beam-pipeline-modular"],
+      "note": "Keyword case — 'save_main_session' is a code symbol, ideal for sparse. Uses the CURRENT slug, so it fails until the ingest slug-refresh fix is deployed and posts are re-ingested."
+    },
+    {
       "question": "What is the best recipe for homemade pizza dough?",
       "expect_slugs": [],
       "expect_out_of_scope": true,
