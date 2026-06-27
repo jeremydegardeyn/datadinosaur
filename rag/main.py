@@ -113,27 +113,31 @@ def ensure_schema():
                     latency_ms  INT
                 );
             """)
+            # Inline groundedness-guard verdict for /ask: {grounded, unsupported[], regenerated}
+            cur.execute("ALTER TABLE rag_queries ADD COLUMN IF NOT EXISTS grounding JSONB;")
             cur.execute("CREATE INDEX IF NOT EXISTS rag_queries_created_idx ON rag_queries (created_at DESC);")
         conn.commit()
 
 
-def record_audit(endpoint, query, retrieved, outcome, latency_ms):
+def record_audit(endpoint, query, retrieved, outcome, latency_ms, grounding=None):
     """Append one retrieval to the rag_queries audit log. `retrieved` is a list
     of (slug, score) for what the vector search returned — logged regardless of
     whether it cleared the relevance threshold, so we can see what was matched.
+    `grounding` (when set) is the inline groundedness-guard verdict for /ask.
     Best-effort: a logging failure must never break a user's query."""
     try:
         sources = psycopg2.extras.Json([
             {"slug": s, "score": round(float(sc), 4)} for s, sc in retrieved
         ])
         top = round(float(retrieved[0][1]), 4) if retrieved else None
+        grounding_json = psycopg2.extras.Json(grounding) if grounding is not None else None
         with pg_conn() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO rag_queries
-                        (endpoint, query, num_results, top_score, outcome, sources, latency_ms)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, (endpoint, query[:500], len(retrieved), top, outcome, sources, latency_ms))
+                        (endpoint, query, num_results, top_score, outcome, sources, latency_ms, grounding)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """, (endpoint, query[:500], len(retrieved), top, outcome, sources, latency_ms, grounding_json))
             conn.commit()
     except Exception as e:
         print(f"[audit] failed to log {endpoint} query: {e}", flush=True)
@@ -252,6 +256,99 @@ def match_kind(row) -> str:
     if row["dense_rank"] and row["sparse_rank"]:
         return "both"
     return "semantic" if row["dense_rank"] else "keyword"
+
+
+# ── Generation + groundedness guard ─────────────────────────────────────────────
+
+def gemini_generate(prompt: str, json_mode: bool = False) -> str:
+    """One Gemini chat completion. json_mode asks for a JSON response (used by the
+    verifier). Returns the raw text of the first candidate."""
+    cfg = {"temperature": 0}
+    if json_mode:
+        cfg["responseMimeType"] = "application/json"
+    url = f"{GEMINI_BASE}/models/{CHAT_MODEL}:generateContent?key={GEMINI_API_KEY}"
+    r = http.post(url, json={"contents": [{"parts": [{"text": prompt}]}],
+                             "generationConfig": cfg}, timeout=30)
+    r.raise_for_status()
+    return r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+
+def build_ask_prompt(context: str, question: str, forbidden: Optional[list[str]] = None) -> str:
+    """The grounded-answer prompt. When `forbidden` is set (a corrective retry after
+    the groundedness guard flagged claims), the model is told to omit them."""
+    forbidden_block = ""
+    if forbidden:
+        bullets = "\n".join(f"        - {f}" for f in forbidden)
+        forbidden_block = (
+            "\n        A previous draft made claims the blog content does NOT support. "
+            "Rewrite the answer and OMIT these entirely — do not restate or rephrase them:\n"
+            f"{bullets}\n"
+        )
+    return textwrap.dedent(f"""
+        You are a helpful assistant for DataDinosaur, a data engineering and consulting blog
+        written by Jeremy. Your ONLY job is to answer questions using the blog content below.
+
+        STRICT RULES:
+        - If the question can be answered from the blog content, answer it concisely in 2-4 sentences.
+        - If the question cannot be answered from the blog content — even partially — respond with exactly: OUT_OF_SCOPE
+        - Never use your own training knowledge. Never guess. Never blend in outside information.
+        - Answer only what the content directly states about the specific subject of the question.
+          Do NOT attach properties of the surrounding system — where it runs, how it scales, what
+          other components exist — to that subject unless the text explicitly says they belong to it.
+          When a sentence lists several things together, do not assume a trailing detail describes
+          the one you were asked about.
+        - Don't pad the answer with related-but-unasked details just because they appear nearby.
+        - Use plain text only — no markdown, no asterisks, no bullet points.
+        - Refer to posts naturally, e.g. "In my post on X..."
+{forbidden_block}
+        BLOG CONTENT:
+        {context}
+
+        USER QUESTION:
+        {question}
+
+        ANSWER:
+    """).strip()
+
+
+def verify_grounding(answer: str, context: str) -> tuple[bool, list[str]]:
+    """Strict groundedness check: is every claim in `answer` EXPLICITLY and
+    UNAMBIGUOUSLY supported by `context`? Returns (grounded, unsupported_phrases).
+    Fail-open: any error or unparseable verdict returns (True, []) so a flaky
+    judge never blanks a good answer."""
+    rubric = textwrap.dedent(f"""
+        You are a strict fact-checker for a blog Q&A system. You are given CONTEXT
+        (excerpts from blog posts) and an ANSWER generated from it.
+
+        Flag any statement in the ANSWER that is not EXPLICITLY and UNAMBIGUOUSLY
+        supported by the CONTEXT. Treat as UNSUPPORTED:
+        - a claim that welds together two facts the context lists separately;
+        - a claim that attributes a property (where something runs, how it scales,
+          what it connects to) to a subject the context does not directly tie it to;
+        - anything stated more specifically or more confidently than the context warrants.
+
+        Judge ONLY support by the CONTEXT — not whether the claim is true in general.
+
+        Return ONLY minified JSON:
+        {{"grounded": true|false, "unsupported": ["<verbatim phrase from the answer>", ...]}}
+        If everything is supported, return {{"grounded": true, "unsupported": []}}.
+
+        CONTEXT:
+        {context}
+
+        ANSWER:
+        {answer}
+    """).strip()
+    try:
+        verdict = json.loads(gemini_generate(rubric, json_mode=True))
+        grounded = bool(verdict.get("grounded", True))
+        unsupported = [str(u) for u in verdict.get("unsupported", []) if str(u).strip()]
+        # Trust the explicit boolean; an empty list with grounded=false means
+        # "uneasy but couldn't point at a phrase" — nothing to correct, so fail open.
+        return grounded, unsupported
+    except Exception as e:
+        print(f"[verify] grounding check failed, failing open: {e}", flush=True)
+        return True, []
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -388,8 +485,9 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
         rows = hybrid_retrieve(pg, q_vec, question, TOP_K)
 
     retrieved = [(r["post_slug"], r["score"]) for r in rows]
-    def audit(outcome):
-        record_audit("ask", question, retrieved, outcome, int((time.monotonic() - started) * 1000))
+    def audit(outcome, grounding=None):
+        record_audit("ask", question, retrieved, outcome,
+                     int((time.monotonic() - started) * 1000), grounding)
 
     if not rows:
         audit("no_chunks")
@@ -418,43 +516,28 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
 
     context = "\n\n---\n\n".join(context_parts)
 
-    prompt = textwrap.dedent(f"""
-        You are a helpful assistant for DataDinosaur, a data engineering and consulting blog
-        written by Jeremy. Your ONLY job is to answer questions using the blog content below.
-
-        STRICT RULES:
-        - If the question can be answered from the blog content, answer it concisely in 2-4 sentences.
-        - If the question cannot be answered from the blog content — even partially — respond with exactly: OUT_OF_SCOPE
-        - Never use your own training knowledge. Never guess. Never blend in outside information.
-        - Answer only what the content directly states about the specific subject of the question.
-          Do NOT attach properties of the surrounding system — where it runs, how it scales, what
-          other components exist — to that subject unless the text explicitly says they belong to it.
-          When a sentence lists several things together, do not assume a trailing detail describes
-          the one you were asked about.
-        - Don't pad the answer with related-but-unasked details just because they appear nearby.
-        - Use plain text only — no markdown, no asterisks, no bullet points.
-        - Refer to posts naturally, e.g. "In my post on X..."
-
-        BLOG CONTENT:
-        {context}
-
-        USER QUESTION:
-        {question}
-
-        ANSWER:
-    """).strip()
-
-    url = f"{GEMINI_BASE}/models/{CHAT_MODEL}:generateContent?key={GEMINI_API_KEY}"
-    r   = http.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=30)
-    r.raise_for_status()
-    answer = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+    answer = gemini_generate(build_ask_prompt(context, question))
 
     # If the LLM flagged the question as out of scope, suppress sources and return friendly message
     if answer.strip().upper().startswith("OUT_OF_SCOPE"):
         audit("out_of_scope")
         return {"answer": "That topic isn't covered in my blog posts. Try asking about data engineering, career advice, or consulting!", "sources": []}
 
-    audit("answered")
+    # Groundedness guard: verify the answer against the retrieved context before
+    # returning. If a claim isn't unambiguously supported, regenerate once with it
+    # forbidden. Fail-open — if the check errors or can't point at a phrase, the
+    # original answer stands (a flaky judge must never blank a good answer).
+    grounded, unsupported = verify_grounding(answer, context)
+    regenerated = False
+    if not grounded and unsupported:
+        retry = gemini_generate(build_ask_prompt(context, question, forbidden=unsupported))
+        if retry and not retry.strip().upper().startswith("OUT_OF_SCOPE"):
+            answer = retry
+            regenerated = True
+
+    audit("answered", grounding={
+        "grounded": grounded, "unsupported": unsupported, "regenerated": regenerated,
+    })
     return {"answer": answer, "sources": sources}
 
 

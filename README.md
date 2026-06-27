@@ -175,11 +175,34 @@ main.py (FastAPI)
       │
       ├─ 3. Build prompt: system instructions + retrieved chunks + question
       │
-      └─ 4. Generate answer → Gemini 2.5 Flash
-              │
+      ├─ 4. Generate answer → Gemini 2.5 Flash
+      │
+      └─ 5. Groundedness guard → Gemini 2.5 Flash (verify vs. context)
+              │  if a claim isn't unambiguously supported, regenerate once
               ▼
          Answer + source post links returned to widget
 ```
+
+### Groundedness guard
+
+`/ask` doesn't return the first draft blind. After generation, a second Flash
+call (temperature 0, JSON mode) **verifies the answer against the retrieved
+context**: is every claim *explicitly and unambiguously* supported? It flags
+claims that weld together separately-listed facts, attribute a system property
+(where it runs, how it scales) to a subject the text doesn't tie it to, or
+overstate confidence. If anything is flagged, `/ask` **regenerates once** with
+those phrases forbidden, then returns.
+
+It is **fail-open**: if the verifier errors or can't point at a specific phrase,
+the original answer stands — a flaky judge must never blank a good answer. The
+verdict (`{grounded, unsupported[], regenerated}`) is written to the `grounding`
+column of `rag_queries`, so you can watch the catch/regenerate rate over time.
+This is the same LLM-judge idea as the offline eval, run inline on every answer.
+
+Two honest limits: it raises *faithfulness* but can't manufacture grounding
+that isn't there — a fact mentioned once, ambiguously, in the source is still
+the ceiling. And it adds one (sometimes two) Flash calls per answer; fine on the
+free tier at this blog's volume.
 
 ### Hybrid retrieval (dense + sparse, RRF-fused)
 
@@ -220,7 +243,7 @@ Postgres maintains automatically. Adding it backfills every existing row, so
 | Vector store | pgvector on Postgres 16 | 3072-dim embeddings (cosine) + `tsvector` full-text index, fused with RRF |
 | Source of truth | MySQL `blog_posts` table | Posts read at ingest time |
 | Embeddings | `gemini-embedding-001` via AI Studio | Converts text to 3072-dim vectors |
-| Generation | `gemini-2.5-flash` via AI Studio | Answers questions using retrieved context |
+| Generation | `gemini-2.5-flash` via AI Studio | Answers from retrieved context, then a second call verifies groundedness (regenerates once if a claim isn't supported) |
 
 ### Ingestion
 
