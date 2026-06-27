@@ -289,15 +289,15 @@ def build_ask_prompt(context: str, question: str, forbidden: Optional[list[str]]
         written by Jeremy. Your ONLY job is to answer questions using the blog content below.
 
         STRICT RULES:
-        - If the question can be answered from the blog content, answer it concisely in 2-4 sentences.
+        - If the question can be answered from the blog content, answer it in a few sentences (2-5).
         - If the question cannot be answered from the blog content — even partially — respond with exactly: OUT_OF_SCOPE
-        - Never use your own training knowledge. Never guess. Never blend in outside information.
-        - Answer only what the content directly states about the specific subject of the question.
-          Do NOT attach properties of the surrounding system — where it runs, how it scales, what
-          other components exist — to that subject unless the text explicitly says they belong to it.
-          When a sentence lists several things together, do not assume a trailing detail describes
-          the one you were asked about.
-        - Don't pad the answer with related-but-unasked details just because they appear nearby.
+        - Stay grounded in the blog content: never use your own training knowledge and never invent
+          specifics. You MAY paraphrase and synthesize a subject's role or purpose from the content,
+          as long as it stays faithful to what the posts actually say.
+        - But do NOT state where something runs, how it scales, or what infrastructure or other
+          components it uses, unless the content explicitly ties that to the subject you were asked
+          about. When a sentence lists several things together, don't assume a trailing detail (like
+          "scale-to-zero on Cloud Run") describes the one you were asked about.
         - Use plain text only — no markdown, no asterisks, no bullet points.
         - Refer to posts naturally, e.g. "In my post on X..."
 {forbidden_block}
@@ -320,14 +320,18 @@ def verify_grounding(answer: str, context: str) -> tuple[bool, list[str]]:
         You are a strict fact-checker for a blog Q&A system. You are given CONTEXT
         (excerpts from blog posts) and an ANSWER generated from it.
 
-        Flag any statement in the ANSWER that is not EXPLICITLY and UNAMBIGUOUSLY
-        supported by the CONTEXT. Treat as UNSUPPORTED:
-        - a claim that welds together two facts the context lists separately;
-        - a claim that attributes a property (where something runs, how it scales,
-          what it connects to) to a subject the context does not directly tie it to;
+        Flag only CONCRETE FACTUAL claims in the ANSWER that the CONTEXT does not
+        directly support. In particular, treat as UNSUPPORTED:
+        - attributing a property to a subject the context doesn't tie to it — where it
+          runs, how it scales, what infrastructure or components it uses, named metrics,
+          versions, or numbers;
+        - a trailing detail from a list applied to the wrong item (e.g. saying a screening
+          tool "runs on Cloud Run" because Cloud Run appears elsewhere in the same list);
         - anything stated more specifically or more confidently than the context warrants.
 
-        Judge ONLY support by the CONTEXT — not whether the claim is true in general.
+        Do NOT flag a faithful paraphrase or a reasonable synthesis of a subject's role
+        or purpose drawn from the context — that is supported. Judge support by the
+        CONTEXT only, not whether a claim is true in general.
 
         Return ONLY minified JSON:
         {{"grounded": true|false, "unsupported": ["<verbatim phrase from the answer>", ...]}}
