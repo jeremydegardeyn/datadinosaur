@@ -204,6 +204,13 @@ that isn't there — a fact mentioned once, ambiguously, in the source is still
 the ceiling. And it adds one (sometimes two) Flash calls per answer; fine on the
 free tier at this blog's volume.
 
+**Relevant sources only.** The answer grounds on all retrieved chunks, but the
+**cited** sources are filtered: a post is only listed if its best chunk's fused
+(RRF) score is at least `SOURCE_RRF_RATIO` (0.6) of the top result's, capped at
+`MAX_SOURCES` (3). The top match is always cited. This keeps weak top-k
+neighbors — posts that were retrieved but didn't really contribute — out of the
+source links under the answer.
+
 ### Hybrid retrieval (dense + sparse, RRF-fused)
 
 Retrieval is **two retrievers over the same chunks**, fused — not a single

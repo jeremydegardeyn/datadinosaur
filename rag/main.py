@@ -42,6 +42,9 @@ TOP_K           = 4     # chunks to send to the LLM after fusion
 MIN_SCORE       = 0.55  # minimum cosine similarity to consider a chunk relevant
 CANDIDATES      = 50    # how many to pull from EACH retriever (dense + sparse) before fusing
 RRF_K           = 60    # reciprocal-rank-fusion constant; larger = flatter weighting of rank
+SOURCE_RRF_RATIO = 0.6  # cite a post only if its best chunk's fused score is >= this
+                        # fraction of the top result's — keeps weak neighbors out of sources
+MAX_SOURCES      = 3    # hard cap on cited posts per answer
 EMBED_MODEL     = "gemini-embedding-001"
 CHAT_MODEL      = "gemini-2.5-flash"
 
@@ -510,7 +513,13 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
         audit("below_threshold")
         return {"answer": "That topic isn't covered in my blog posts. Try asking about data engineering, career advice, or consulting!", "sources": []}
 
-    # Build context block — only from relevant chunks
+    # Context uses ALL relevant chunks (more grounding is fine). Sources, though,
+    # should only name posts that actually contributed — relevant_rows are
+    # RRF-ordered, so the first is the strongest match; cite a post only if its
+    # best chunk's fused score is close to the top, so weak top-k neighbors don't
+    # show up as "sources". The top post is always cited.
+    source_cutoff = float(relevant_rows[0]["rrf_score"]) * SOURCE_RRF_RATIO
+
     context_parts = []
     sources = []
     seen_slugs = set()
@@ -518,12 +527,15 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
         context_parts.append(
             f"[From: \"{row['post_title']}\"]\n{row['content']}"
         )
-        if row["post_slug"] not in seen_slugs:
-            sources.append({
-                "title": row["post_title"],
-                "url":   f"https://my.datadinosaur.com/blog/{row['post_slug']}",
-            })
-            seen_slugs.add(row["post_slug"])
+        if row["post_slug"] in seen_slugs:
+            continue
+        if sources and (float(row["rrf_score"]) < source_cutoff or len(sources) >= MAX_SOURCES):
+            continue
+        sources.append({
+            "title": row["post_title"],
+            "url":   f"https://my.datadinosaur.com/blog/{row['post_slug']}",
+        })
+        seen_slugs.add(row["post_slug"])
 
     context = "\n\n---\n\n".join(context_parts)
 
