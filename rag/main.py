@@ -396,14 +396,21 @@ def ingest(x_rag_secret: Optional[str] = Header(None)):
     if not posts:
         return {"ok": True, "posts": 0, "chunks": 0}
 
+    published_ids = [post["id"] for post in posts]
     total_chunks = 0
 
     with pg_conn() as pg:
         with pg.cursor() as cur:
             for post in posts:
+                # Replace this post's chunks wholesale. Upserting alone left
+                # orphans whenever a post got shorter — removed text lived on in
+                # the higher chunk_idx rows and kept being retrieved (this is how
+                # a deleted "Model Armor" paragraph haunted the index). Deleting
+                # first guarantees the index matches the current post exactly.
+                cur.execute("DELETE FROM post_chunks WHERE post_id = %s", (post["id"],))
+
                 text   = html_to_text(post["content"])
                 chunks = chunk_text(text)
-
                 if not chunks:
                     continue
 
@@ -416,16 +423,16 @@ def ingest(x_rag_secret: Optional[str] = Header(None)):
                     cur.execute("""
                         INSERT INTO post_chunks (post_id, post_slug, post_title, chunk_idx, content, embedding)
                         VALUES (%s, %s, %s, %s, %s, %s)
-                        ON CONFLICT (post_id, chunk_idx) DO UPDATE
-                            SET content   = EXCLUDED.content,
-                                embedding = EXCLUDED.embedding,
-                                post_title = EXCLUDED.post_title,
-                                post_slug  = EXCLUDED.post_slug
                     """, (
                         post["id"], post["slug"], post["title"],
                         idx, chunk, str(vec),
                     ))
                     total_chunks += 1
+
+            # Prune posts that are no longer eligible (unpublished, hidden, or
+            # deleted): they're never visited in the loop above, so drop any
+            # chunk whose post_id isn't in the current published+visible set.
+            cur.execute("DELETE FROM post_chunks WHERE post_id <> ALL(%s)", (published_ids,))
 
         pg.commit()
 

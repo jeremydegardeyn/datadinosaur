@@ -252,7 +252,7 @@ Blog post content is chunked (~400 words with 50-word overlap), embedded, and st
 - **Automatically** when a post is published (hooked into `publish.php`)
 - **Manually** via the **Re-index Posts** button on the admin dashboard
 
-Re-indexing is idempotent — safe to run any time. All published posts are re-processed on each run using `ON CONFLICT DO UPDATE`.
+Re-indexing is idempotent and **self-healing**: each run replaces every published post's chunks wholesale (delete-then-insert) and prunes chunks for posts that are no longer published or visible. This keeps the index honest when a post is shortened, edited, unpublished, or deleted — earlier versions used `ON CONFLICT DO UPDATE`, which left orphaned chunks (removed text lived on in higher `chunk_idx` rows and kept being retrieved).
 
 ### Cost
 
