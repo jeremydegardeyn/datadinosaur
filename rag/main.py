@@ -382,6 +382,9 @@ class FeedbackRequest(BaseModel):
     query_id: int
     rating: str          # 'up' | 'down'
 
+class FeedbackDeleteRequest(BaseModel):
+    query_id: int
+
 def check_auth(x_rag_secret: Optional[str]):
     if x_rag_secret != RAG_SECRET:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -664,6 +667,22 @@ def feedback_list(x_rag_secret: Optional[str] = Header(None)):
 
     return {"ok": True, "up": counts["up"], "down": counts["down"],
             "count": len(items), "items": items}
+
+
+@app.post("/feedback_delete")
+def feedback_delete(body: FeedbackDeleteRequest, x_rag_secret: Optional[str] = Header(None)):
+    """Admin: clear the thumbs feedback on a query so it drops off the review
+    list. The underlying audit row (query, sources, grounding) is kept."""
+    check_auth(x_rag_secret)
+    with pg_conn() as pg:
+        with pg.cursor() as cur:
+            cur.execute("UPDATE rag_queries SET feedback = NULL, feedback_at = NULL WHERE id = %s",
+                        (body.query_id,))
+            updated = cur.rowcount
+        pg.commit()
+    if not updated:
+        raise HTTPException(status_code=404, detail="query not found")
+    return {"ok": True}
 
 
 EVAL_DATASET = os.path.join(os.path.dirname(os.path.abspath(__file__)), "eval_dataset.json")

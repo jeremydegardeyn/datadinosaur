@@ -143,7 +143,7 @@ function renderFeedback(d){
        '<span style="font-weight:400;color:var(--text-muted);font-size:.85rem">(' +
        d.items.length + ')</span></h2>' +
        '<table class="admin-table"><thead><tr><th>When</th><th>Question &amp; answer</th>' +
-       '<th>Sources</th><th>Top score</th></tr></thead><tbody>';
+       '<th>Sources</th><th>Top score</th><th></th></tr></thead><tbody>';
   d.items.forEach(function(it){
     var srcs = (it.sources || []).map(function(s){
       return '<a href="' + esc(s.url) + '" target="_blank" rel="noopener noreferrer">' +
@@ -155,6 +155,7 @@ function renderFeedback(d){
               '<div class="fb-answer">' + esc(it.answer) + '</div></td>' +
          '<td>' + srcs + '</td>' +
          '<td>' + (it.top_score == null ? '—' : it.top_score) + '</td>' +
+         '<td><button class="btn btn-ghost" onclick="delFeedback(' + it.id + ', this)">Delete</button></td>' +
          '</tr>';
   });
   h += '</tbody></table></section>';
@@ -180,6 +181,21 @@ async function loadFeedback(btn){
     out.innerHTML = '<p class="alert alert-error">Network error</p>';
   } finally {
     btn.disabled = false; btn.textContent = orig;
+  }
+}
+async function delFeedback(id, btn){
+  if (!confirm('Remove this flagged entry from the review list?')) return;
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    var res = await fetch('/api/rag/feedback_delete', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query_id: id })
+    });
+    var d = await res.json();
+    if (!res.ok || !d.ok) { btn.disabled = false; btn.textContent = 'Delete'; alert(d.error || 'Delete failed'); return; }
+    loadFeedback(document.getElementById('load-feedback'));
+  } catch (e) {
+    btn.disabled = false; btn.textContent = 'Delete'; alert('Network error');
   }
 }
 </script>

@@ -88,6 +88,15 @@ if ($action === 'ask') {
     $result = rag_request($rag_url . '/feedback_list', [], $rag_secret, 30);
     json_response($result['body'], $result['status']);
 
+} elseif ($action === 'feedback_delete') {
+    // Admin-only: clear a flagged entry from the review list.
+    require_admin();
+    $data = json_decode(file_get_contents('php://input'), true);
+    $qid  = (int)($data['query_id'] ?? 0);
+    if (!$qid) json_response(['error' => 'query_id is required'], 400);
+    $result = rag_request($rag_url . '/feedback_delete', ['query_id' => $qid], $rag_secret);
+    json_response($result['body'], $result['status']);
+
 } else {
     json_response(['error' => 'Not found'], 404);
 }
