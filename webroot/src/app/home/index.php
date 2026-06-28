@@ -54,7 +54,6 @@ $json_ld = json_encode([
     </div>
     <div class="hero-logo">
       <div class="hero-dino-wrap">
-        <canvas id="hero-matrix" aria-hidden="true"></canvas>
         <canvas id="hero-chomp-back" aria-hidden="true"></canvas>
         <svg class="hero-dino-svg" viewBox="98 218 596 138"
              xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -225,7 +224,7 @@ $json_ld = json_encode([
 </section>
 <?php endif; ?>
 
-<script src="/assets/js/hero-animation.js?v=1" defer></script>
+<script src="/assets/js/hero-animation.js?v=2" defer></script>
 <script src="/assets/js/hero-letter-physics.js?v=7" defer></script>
 <script src="/assets/js/hero-chomp-bits.js?v=6" defer></script>
 

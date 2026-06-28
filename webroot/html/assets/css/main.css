@@ -165,33 +165,6 @@ h1,h2,h3,h4,h5 {
   padding: .5rem .5rem .6rem;
 }
 
-#hero-matrix {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  /* top/bottom gradient fade — transparent background shows through */
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0,0,0,0.5) 12%,
-    black 28%,
-    black 72%,
-    rgba(0,0,0,0.5) 88%,
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0,0,0,0.5) 12%,
-    black 28%,
-    black 72%,
-    rgba(0,0,0,0.5) 88%,
-    transparent 100%
-  );
-  /* opacity driven by JS */
-}
-
 /* chomp-bit canvases — back sits behind the dino/letters, front in front, so
    bits fly out with depth on either side of the chomp. */
 #hero-chomp-back,
