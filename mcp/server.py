@@ -46,7 +46,7 @@ MCP_TOKEN   = os.environ["MCP_TOKEN"]                       # clients authentica
 APP_SECRET  = os.environ["APP_SECRET"]                      # X-API-Token for the PHP API
 RAG_SECRET  = os.environ["RAG_SECRET"]                      # X-Rag-Secret for the RAG service
 RAG_URL     = os.getenv("RAG_URL", "http://rag:8000")
-SITE_URL    = os.getenv("SITE_URL", "https://my.datadinosaur.com").rstrip("/")
+SITE_URL    = os.getenv("SITE_URL", "https://www.datadinosaur.com").rstrip("/")
 PORT        = int(os.getenv("MCP_PORT", "3333"))
 
 GOATCOUNTER_CODE      = os.getenv("GOATCOUNTER_CODE", "")
@@ -59,16 +59,17 @@ RAG_HEADERS = {"X-Rag-Secret": RAG_SECRET, "Content-Type": "application/json"}
 # DNS-rebinding protection defaults to localhost-only, which rejects the
 # proxied Host header (HTTP 421). Allow our own domain through; the bearer
 # token enforced below is the real access gate. PUBLIC_HOST/PUBLIC_ORIGIN let
-# this be overridden without code changes.
-PUBLIC_HOST   = os.getenv("PUBLIC_HOST", "my.datadinosaur.com")
-PUBLIC_ORIGIN = os.getenv("PUBLIC_ORIGIN", "https://my.datadinosaur.com")
+# this be overridden without code changes. Both www (canonical) and my (now
+# redirected) are allowed so existing MCP clients pointed at my keep working.
+PUBLIC_HOST   = os.getenv("PUBLIC_HOST", "www.datadinosaur.com,my.datadinosaur.com")
+PUBLIC_ORIGIN = os.getenv("PUBLIC_ORIGIN", "https://www.datadinosaur.com,https://my.datadinosaur.com")
 
 mcp = FastMCP(
     "datadinosaur",
     stateless_http=True,
     transport_security=TransportSecuritySettings(
-        allowed_hosts=[PUBLIC_HOST],
-        allowed_origins=[PUBLIC_ORIGIN],
+        allowed_hosts=[h.strip() for h in PUBLIC_HOST.split(",") if h.strip()],
+        allowed_origins=[o.strip() for o in PUBLIC_ORIGIN.split(",") if o.strip()],
     ),
 )
 

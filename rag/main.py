@@ -53,7 +53,7 @@ GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
 app = FastAPI(title="DataDinosaur RAG")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://my.datadinosaur.com"],
+    allow_origins=["https://www.datadinosaur.com", "https://my.datadinosaur.com"],
     allow_methods=["POST"],
     allow_headers=["*"],
 )
@@ -482,7 +482,7 @@ def search(body: SearchRequest, x_rag_secret: Optional[str] = Header(None)):
 
     results = [{
         "title":     r["post_title"],
-        "url":       f"https://my.datadinosaur.com/blog/{r['post_slug']}",
+        "url":       f"https://www.datadinosaur.com/blog/{r['post_slug']}",
         "chunk":     r["content"],
         "score":     round(float(r["score"]), 4),       # cosine similarity
         "rrf_score": round(float(r["rrf_score"]), 5),   # fused rank score (ordering)
@@ -551,7 +551,7 @@ def ask(body: AskRequest, x_rag_secret: Optional[str] = Header(None)):
             continue
         sources.append({
             "title": row["post_title"],
-            "url":   f"https://my.datadinosaur.com/blog/{row['post_slug']}",
+            "url":   f"https://www.datadinosaur.com/blog/{row['post_slug']}",
         })
         seen_slugs.add(row["post_slug"])
 
@@ -651,7 +651,7 @@ def feedback_list(x_rag_secret: Optional[str] = Header(None)):
                 continue
             seen.add(slug)
             out.append({"title": titles.get(slug, slug),
-                        "url": f"https://my.datadinosaur.com/blog/{slug}"})
+                        "url": f"https://www.datadinosaur.com/blog/{slug}"})
         return out
 
     items = [{
