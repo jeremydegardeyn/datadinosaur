@@ -7,5 +7,5 @@
 (function () {
   var tagline = document.getElementById('hero-tagline');
   if (!tagline) return;
-  setTimeout(function () { tagline.classList.add('visible'); }, 1200);
+  setTimeout(function () { tagline.classList.add('visible'); }, 3200);
 })();

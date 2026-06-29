@@ -224,7 +224,7 @@ $json_ld = json_encode([
 </section>
 <?php endif; ?>
 
-<script src="/assets/js/hero-animation.js?v=2" defer></script>
+<script src="/assets/js/hero-animation.js?v=3" defer></script>
 <script src="/assets/js/hero-letter-physics.js?v=7" defer></script>
 <script src="/assets/js/hero-chomp-bits.js?v=6" defer></script>
 
