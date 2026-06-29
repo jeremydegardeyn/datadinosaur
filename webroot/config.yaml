@@ -2,7 +2,7 @@ site:
   name: "DataDinosaur"
   tagline: "Human Data Expertise for the AI Era"
   description: "Real-world data engineering insights, career advice, and consulting for professionals navigating the AI landscape."
-  base_url: "https://my.datadinosaur.com"
+  base_url: "https://www.datadinosaur.com"
   author: "Jeremy"
   copyright_year: 2026
 

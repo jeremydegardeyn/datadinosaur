@@ -177,7 +177,7 @@ if ($action === 'update' && $api && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'ok'   => true,
         'id'   => $post_id,
         'slug' => $slug,
-        'url'  => 'https://my.datadinosaur.com/blog/' . $slug,
+        'url'  => 'https://www.datadinosaur.com/blog/' . $slug,
     ]);
 }
 

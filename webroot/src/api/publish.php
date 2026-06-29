@@ -84,5 +84,5 @@ json_response([
     'ok'   => true,
     'id'   => (int)$id,
     'slug' => $slug,
-    'url'  => 'https://my.datadinosaur.com/blog/' . $slug,
+    'url'  => 'https://www.datadinosaur.com/blog/' . $slug,
 ]);
