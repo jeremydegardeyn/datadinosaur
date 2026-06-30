@@ -7,8 +7,9 @@ const PAD = 18;
 
 let KANA = {};
 let srs;
-let drill = 'read';    // read | write | hira2kata | kata2hira
-let script = 'hiragana'; // hiragana | katakana | both  (only used by write/read)
+let mode = 'study';    // study | practice
+let drill = 'read';    // read | write | convert
+let script = 'hiragana'; // hiragana | katakana | both
 let current = null;    // the kana being ASKED about (SRS subject + cue glyph for read/cross)
 let target = null;     // the kana to DRAW (draw drills) or whose reading to TYPE (read)
 let strokes = [];
@@ -39,13 +40,13 @@ function counterpart(ch) {
   srs = new SRS(Object.keys(KANA));
   setupCanvas();
   setupControls();
-  setDrill('read');
+  setMode('study');
 })();
 
 function pool() {
-  if (drill === 'hira2kata') return Object.keys(KANA).filter((c) => KANA[c].type === 'hiragana');
-  if (drill === 'kata2hira') return Object.keys(KANA).filter((c) => KANA[c].type === 'katakana');
-  return Object.keys(KANA).filter((c) => script === 'both' || KANA[c].type === script);
+  let p = Object.keys(KANA).filter((c) => script === 'both' || KANA[c].type === script);
+  if (drill === 'convert') p = p.filter((c) => counterpart(c)); // only chars with a twin
+  return p;
 }
 
 // ── canvas + drawing ─────────────────────────────────────────────────────────
@@ -136,7 +137,7 @@ function drawGhost(parts) {
 function nextKana() {
   cancelAnimationFrame(hintTimer);
   current = srs.next(pool());
-  target = (drill === 'hira2kata' || drill === 'kata2hira') ? counterpart(current) : current;
+  target = (drill === 'convert') ? counterpart(current) : current;
   strokes = []; checked = false;
 
   const info = KANA[current];
@@ -152,9 +153,9 @@ function nextKana() {
     cueMain.textContent = current;
     cueMain.className = 'cue-glyph';
     cueSub.textContent = '';
-  } else {
-    const from = drill === 'hira2kata' ? 'hiragana' : 'katakana';
-    const to = drill === 'hira2kata' ? 'katakana' : 'hiragana';
+  } else { // convert — show one script, draw the other
+    const from = info.type;
+    const to = from === 'hiragana' ? 'katakana' : 'hiragana';
     cueLabel.textContent = `Draw the ${to} for this ${from}`;
     cueMain.textContent = current;
     cueMain.className = 'cue-glyph';
@@ -268,23 +269,89 @@ function updateProgress() {
   $('accuracy').textContent = s.accuracy === null ? 'new' : `${s.accuracy}% accuracy`;
 }
 
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('[data-mode]').forEach((b) => b.classList.toggle('active', b.dataset.mode === m));
+  const isStudy = m === 'study';
+  $('drillRow').classList.toggle('hidden', isStudy);
+  $('gameView').classList.toggle('hidden', isStudy);
+  $('studyView').classList.toggle('hidden', !isStudy);
+  if (isStudy) { renderStudy(); updateProgress(); }
+  else setDrill(drill);
+}
+
 function setDrill(d) {
   drill = d;
   document.querySelectorAll('[data-drill]').forEach((b) => b.classList.toggle('active', b.dataset.drill === d));
   const isRead = d === 'read';
-  const cross = d === 'hira2kata' || d === 'kata2hira';
   $('padWrap').classList.toggle('hidden', isRead);
   $('typeWrap').classList.toggle('hidden', !isRead);
   ['undoBtn', 'clearBtn', 'hintBtn'].forEach((id) => $(id).classList.toggle('hidden', isRead));
   $('speakBtn').classList.toggle('hidden', isRead); // hide audio in read drill (it's the answer)
-  $('scriptRow').classList.toggle('disabled', cross);
   nextKana();
 }
 
 function setScript(s) {
   script = s;
   document.querySelectorAll('[data-script]').forEach((b) => b.classList.toggle('active', b.dataset.script === s));
-  nextKana();
+  if (mode === 'study') renderStudy(); else nextKana();
+}
+
+// ── study chart: every character, with a stroke-order animation on hover ──────
+function renderStudy() {
+  const host = $('studyGrid');
+  host.innerHTML = '';
+  for (const ch of pool()) {
+    const info = KANA[ch];
+    const cell = document.createElement('button');
+    cell.className = 'kcell';
+    cell.title = `${pretty(info.reading)} · hover to see it drawn`;
+    cell.innerHTML =
+      `<span class="kcell-glyph">${ch}</span>` +
+      `<canvas class="kcell-canvas" width="120" height="120" aria-hidden="true"></canvas>` +
+      `<span class="kcell-romaji">${pretty(info.reading)}</span>`;
+    const cv = cell.querySelector('canvas');
+    let cancel = null;
+    const start = () => { if (!cancel) { cell.classList.add('drawing'); cancel = animateStrokesOn(cv, ch); } };
+    const stop = () => {
+      if (cancel) { cancel(); cancel = null; }
+      cell.classList.remove('drawing');
+      cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+    };
+    cell.addEventListener('mouseenter', start);
+    cell.addEventListener('mouseleave', stop);
+    cell.addEventListener('focus', start);
+    cell.addEventListener('blur', stop);
+    host.appendChild(cell);
+  }
+}
+
+function animateStrokesOn(cv, ch) {
+  const ctx = cv.getContext('2d');
+  const S = cv.width, P = 16;
+  const tmpl = KANA[ch].strokes.map((s) => s.map(([x, y]) => [P + x * (S - 2 * P), P + y * (S - 2 * P)]));
+  const perStroke = 420, gap = 120, total = tmpl.length * (perStroke + gap);
+  const begin = performance.now();
+  let raf;
+  const frame = (now) => {
+    const t = (now - begin) % total;
+    ctx.clearRect(0, 0, S, S);
+    ctx.strokeStyle = '#6fb3ff'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    let acc = 0;
+    for (let i = 0; i < tmpl.length; i++) {
+      const s = acc, e = acc + perStroke;
+      let frac;
+      if (t >= e + gap) frac = 1; else if (t >= s) frac = Math.min(1, (t - s) / perStroke); else break;
+      const st = tmpl[i], n = Math.max(2, Math.floor(st.length * frac));
+      ctx.beginPath(); ctx.moveTo(st[0][0], st[0][1]);
+      for (let j = 1; j < n; j++) ctx.lineTo(st[j][0], st[j][1]);
+      ctx.stroke();
+      acc = e + gap;
+    }
+    raf = requestAnimationFrame(frame);
+  };
+  raf = requestAnimationFrame(frame);
+  return () => cancelAnimationFrame(raf);
 }
 
 function speak() {
@@ -310,7 +377,7 @@ function setupControls() {
   $('answerInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') (checked ? nextKana() : check());
   });
+  document.querySelectorAll('[data-mode]').forEach((b) => (b.onclick = () => setMode(b.dataset.mode)));
   document.querySelectorAll('[data-drill]').forEach((b) => (b.onclick = () => setDrill(b.dataset.drill)));
-  document.querySelectorAll('[data-script]').forEach((b) =>
-    (b.onclick = () => { if (!$('scriptRow').classList.contains('disabled')) setScript(b.dataset.script); }));
+  document.querySelectorAll('[data-script]').forEach((b) => (b.onclick = () => setScript(b.dataset.script)));
 }

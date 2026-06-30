@@ -141,3 +141,22 @@ code { background: var(--panel-2); padding: 1px 5px; border-radius: 5px; font-si
 }
 .credit a { color: var(--blue); text-decoration: none; }
 .credit a:hover { text-decoration: underline; }
+
+/* study chart */
+.study { max-width: 980px; margin: 22px auto; padding: 0 18px; }
+.study-hint { color: var(--muted); font-size: 13px; text-align: center; margin: 0 0 16px; }
+.kchart { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px; }
+.kcell {
+  position: relative; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 12px; padding: 12px 6px 8px; cursor: pointer; color: var(--ink);
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.kcell:hover, .kcell:focus { border-color: var(--blue); outline: none; }
+.kcell-glyph { font-size: 38px; line-height: 1; height: 46px; display: grid; place-items: center; }
+.kcell-canvas {
+  position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
+  width: 50px; height: 50px; display: none;
+}
+.kcell.drawing .kcell-glyph { visibility: hidden; }
+.kcell.drawing .kcell-canvas { display: block; }
+.kcell-romaji { font-size: 13px; color: var(--muted); text-transform: lowercase; }

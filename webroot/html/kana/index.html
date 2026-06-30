@@ -24,12 +24,10 @@
   </header>
 
   <div class="controls">
-    <div class="seg drills">
-      <span class="seg-label">Drill</span>
-      <button data-drill="read" class="active" title="See the character, type its romaji (no audio)">Recognize → Type</button>
-      <button data-drill="write" title="See/hear the romaji, draw the kana">Sound → Write</button>
-      <button data-drill="hira2kata" title="Hiragana → Katakana">ひ → カ</button>
-      <button data-drill="kata2hira" title="Katakana → Hiragana">カ → ひ</button>
+    <div class="seg modes">
+      <span class="seg-label">Mode</span>
+      <button data-mode="study" class="active" title="Browse every character and watch it drawn">Study</button>
+      <button data-mode="practice" title="Quiz yourself with drills">Practice</button>
     </div>
     <div class="seg scripts" id="scriptRow">
       <span class="seg-label">Script</span>
@@ -37,9 +35,20 @@
       <button data-script="katakana" title="Katakana">カタカナ</button>
       <button data-script="both" title="Both scripts">Both</button>
     </div>
+    <div class="seg drills hidden" id="drillRow">
+      <span class="seg-label">Practice</span>
+      <button data-drill="read" class="active" title="See the character, type its romaji">Recognize</button>
+      <button data-drill="write" title="See/hear the romaji, draw the character">Write</button>
+      <button data-drill="convert" title="Draw the matching character in the other script">Convert ⇄</button>
+    </div>
   </div>
 
-  <main class="game">
+  <section class="study" id="studyView">
+    <p class="study-hint">Hover a character to watch it drawn. The romaji (sound) is shown under each one.</p>
+    <div class="kchart" id="studyGrid"></div>
+  </section>
+
+  <main class="game hidden" id="gameView">
     <section class="panel pad-panel">
       <div class="cue">
         <span class="cue-label" id="cueLabel">Draw the hiragana for</span>
