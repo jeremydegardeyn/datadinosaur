@@ -15,7 +15,9 @@ let target = null;     // the kana to DRAW (draw drills) or whose reading to TYP
 let strokes = [];
 let drawing = false;
 let checked = false;
-let sessionAttempts = 0; // completed turns this visit; gates the Review button
+let sessionAttempts = 0; // completed turns this session; gates the Review button
+let sessCorrect = 0;     // correct answers this session
+const KANA_MIN = 10;     // answers needed before a session joins the leaderboard
 
 // romaji variants accepted when typing the sound (read drill)
 const READING_ALIASES = {
@@ -40,6 +42,7 @@ function counterpart(ch) {
   srs = new SRS(Object.keys(KANA));
   setupCanvas();
   setupControls();
+  updateBestCounter();
   setMode('study');
 })();
 
@@ -189,6 +192,7 @@ function checkDraw() {
   finishTurn();
   const report = grade(KANA[target].strokes, strokes);
   srs.record(current, report.pass, report.score);
+  if (report.pass) sessCorrect++;
   const rev = $('reveal'); rev.textContent = target; rev.classList.add('show');
   renderFeedback(report);
   updateProgress();
@@ -200,6 +204,7 @@ function checkRead() {
   finishTurn();
   const ok = aliases(KANA[target].reading).includes(raw);
   srs.record(current, ok, ok ? 100 : 0);
+  if (ok) sessCorrect++;
   $('readResult').innerHTML =
     `<span class="big">${current}</span> = <span class="rd">${pretty(KANA[target].reading)}</span>` +
     (ok ? ' ✓' : ` — you wrote “${raw}”`);
@@ -249,13 +254,80 @@ async function finishSession() {
   const s = srs.stats(pool());
   const card = $('senseiCard'); card.classList.remove('hidden');
   $('senseiBody').innerHTML = '<em>Sensei is reviewing your session…</em>';
+
+  // Records this session and builds the cross-user accuracy histogram (must run
+  // before resetSession, while the session counters still hold this run).
+  const lb = await sessionLeaderboardHtml();
+
   const res = await review({
     weakest: s.weakest.map((w) => ({ char: w.char, reading: KANA[w.char].reading, misses: w.seen - w.correct })),
     accuracy: s.accuracy, mastered: s.mastered, poolSize: s.poolSize,
   });
   const weak = s.weakest.length
     ? `<p class="example">Focus next: ${s.weakest.map((w) => `<span class="jp">${w.char}</span>`).join(' ')}</p>` : '';
-  $('senseiBody').innerHTML = `<p class="mnemonic">${res.note}</p>${weak}`;
+  $('senseiBody').innerHTML = `<p class="mnemonic">${res.note}</p>${weak}${lb}`;
+
+  resetSession();   // start a fresh session for the next run
+}
+
+// ── cross-user session leaderboard (accuracy histogram, like the blog quizzes) ─
+function loadBest() {
+  try { return JSON.parse(localStorage.getItem('kanaBest')) || { acc: 0 }; }
+  catch (e) { return { acc: 0 }; }
+}
+function saveBest(acc, correct, total) {
+  const b = loadBest();
+  if (acc > (b.acc || 0)) localStorage.setItem('kanaBest', JSON.stringify({ acc, correct, total }));
+  updateBestCounter();
+}
+function updateBestCounter() {
+  const el = $('bestSession'); if (!el) return;
+  const b = loadBest();
+  el.textContent = b.acc ? `best ${b.acc}%` : '';
+}
+
+async function sessionLeaderboardHtml() {
+  const total = sessionAttempts, correct = sessCorrect;
+  if (total < KANA_MIN) {
+    return `<p class="kana-lb-note">Answer at least ${KANA_MIN} in a session to join the leaderboard — you did ${total}.</p>`;
+  }
+  const acc = Math.round(100 * correct / total);
+  saveBest(acc, correct, total);
+  let data = null;
+  try {
+    const r = await fetch('/api/kana', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correct, total }),
+    });
+    data = await r.json();
+  } catch (e) { /* offline or API down — show the local numbers only */ }
+
+  const best = loadBest().acc;
+  let h = `<div class="kana-lb"><p class="kana-lb-title">This session <b>${acc}%</b> (${correct}/${total}) · Best <b>${best}%</b></p>`;
+  if (data && data.dist) {
+    h += kanaHist(data.dist, data.count, Math.round(best / 10));
+    h += `<p class="kana-lb-cap">Your best lands here among ${data.count} ${data.count === 1 ? 'session' : 'sessions'}.</p>`;
+  }
+  return h + `</div>`;
+}
+
+function kanaHist(dist, count, bestIdx) {
+  const max = Math.max(1, ...dist);
+  let bars = '';
+  for (let s = 0; s <= 10; s++) {
+    const c = dist[s] || 0;
+    const you = s === bestIdx ? ' you' : '';
+    bars += `<div class="kana-col${you}">` +
+      (s === bestIdx ? `<span class="kana-you">You</span>` : '') +
+      `<div class="kana-bar" style="height:${Math.round(c / max * 100)}%"></div>` +
+      `<span class="kana-lbl">${s * 10}</span></div>`;
+  }
+  return `<div class="kana-hist">${bars}</div>`;
+}
+
+function resetSession() {
+  sessionAttempts = 0; sessCorrect = 0;
+  $('finishBtn').classList.add('hidden');
 }
 
 // ── chrome ───────────────────────────────────────────────────────────────────

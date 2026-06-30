@@ -160,3 +160,21 @@ code { background: var(--panel-2); padding: 1px 5px; border-radius: 5px; font-si
 .kcell.drawing .kcell-glyph { visibility: hidden; }
 .kcell.drawing .kcell-canvas { display: block; }
 .kcell-romaji { font-size: 13px; color: var(--muted); text-transform: lowercase; }
+
+/* session leaderboard (Review session card) */
+#bestSession { color: var(--green); }
+.kana-lb { margin-top: 12px; }
+.kana-lb-title { font-size: 14px; margin: 0 0 10px; color: var(--muted); }
+.kana-lb-title b { color: var(--ink); }
+.kana-hist { display: flex; align-items: flex-end; gap: 4px; height: 92px; padding-top: 14px; }
+.kana-col {
+  position: relative; flex: 1 1 0; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+}
+.kana-bar { width: 100%; max-width: 18px; min-height: 2px; background: var(--line); border-radius: 3px 3px 0 0; }
+.kana-col.you .kana-bar { background: var(--blue); }
+.kana-lbl { margin-top: 4px; font-size: 9px; color: var(--muted); }
+.kana-col.you .kana-lbl { color: var(--blue); font-weight: 600; }
+.kana-you { position: absolute; top: 0; font-size: 9px; font-weight: 600; color: var(--blue); }
+.kana-lb-cap { font-size: 11px; color: var(--muted); margin: 8px 0 0; }
+.kana-lb-note { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
