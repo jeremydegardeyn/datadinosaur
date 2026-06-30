@@ -369,32 +369,94 @@ function setScript(s) {
   if (mode === 'study') renderStudy(); else nextKana();
 }
 
-// ── study chart: every character, with a stroke-order animation on hover ──────
+// ── study chart: the gojūon table, laid out by vowel (columns) and consonant
+//    (rows), with the gaps left blank — then the voiced / p-sound rows below.
+const GOJUON_ROWS = [
+  ['a',  'i',   'u',   'e',  'o' ],
+  ['ka', 'ki',  'ku',  'ke', 'ko'],
+  ['sa', 'shi', 'su',  'se', 'so'],
+  ['ta', 'chi', 'tsu', 'te', 'to'],
+  ['na', 'ni',  'nu',  'ne', 'no'],
+  ['ha', 'hi',  'fu',  'he', 'ho'],
+  ['ma', 'mi',  'mu',  'me', 'mo'],
+  ['ya', null,  'yu',  null, 'yo'],
+  ['ra', 'ri',  'ru',  're', 'ro'],
+  ['wa', null,  null,  null, 'wo'],
+  ['n',  null,  null,  null, null],
+];
+const DAKUTEN_ROWS = [
+  ['ga', 'gi',  'gu',  'ge', 'go'],
+  ['za', 'ji',  'zu',  'ze', 'zo'],
+  ['da', 'dji', 'dzu', 'de', 'do'],
+  ['ba', 'bi',  'bu',  'be', 'bo'],
+  ['pa', 'pi',  'pu',  'pe', 'po'],
+];
+
+function studyCell(ch) {
+  const info = KANA[ch];
+  const cell = document.createElement('button');
+  cell.className = 'gcell';
+  cell.title = `${pretty(info.reading)} · hover to see it drawn`;
+  cell.innerHTML =
+    `<span class="kcell-glyph">${ch}</span>` +
+    `<canvas class="kcell-canvas" width="120" height="120" aria-hidden="true"></canvas>` +
+    `<span class="gcell-romaji">${pretty(info.reading)}</span>`;
+  const cv = cell.querySelector('canvas');
+  let cancel = null;
+  const start = () => { if (!cancel) { cell.classList.add('drawing'); cancel = animateStrokesOn(cv, ch); } };
+  const stop = () => {
+    if (cancel) { cancel(); cancel = null; }
+    cell.classList.remove('drawing');
+    cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+  };
+  cell.addEventListener('mouseenter', start);
+  cell.addEventListener('mouseleave', stop);
+  cell.addEventListener('focus', start);
+  cell.addEventListener('blur', stop);
+  return cell;
+}
+
+function buildGojuon(byReading, rows) {
+  const grid = document.createElement('div');
+  grid.className = 'gojuon';
+  for (const row of rows) {
+    for (const r of row) {
+      const ch = r && byReading[r];
+      if (ch) {
+        grid.appendChild(studyCell(ch));
+      } else {
+        const e = document.createElement('div');
+        e.className = 'gcell empty';
+        grid.appendChild(e);
+      }
+    }
+  }
+  return grid;
+}
+
 function renderStudy() {
   const host = $('studyGrid');
   host.innerHTML = '';
-  for (const ch of pool()) {
-    const info = KANA[ch];
-    const cell = document.createElement('button');
-    cell.className = 'kcell';
-    cell.title = `${pretty(info.reading)} · hover to see it drawn`;
-    cell.innerHTML =
-      `<span class="kcell-glyph">${ch}</span>` +
-      `<canvas class="kcell-canvas" width="120" height="120" aria-hidden="true"></canvas>` +
-      `<span class="kcell-romaji">${pretty(info.reading)}</span>`;
-    const cv = cell.querySelector('canvas');
-    let cancel = null;
-    const start = () => { if (!cancel) { cell.classList.add('drawing'); cancel = animateStrokesOn(cv, ch); } };
-    const stop = () => {
-      if (cancel) { cancel(); cancel = null; }
-      cell.classList.remove('drawing');
-      cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
-    };
-    cell.addEventListener('mouseenter', start);
-    cell.addEventListener('mouseleave', stop);
-    cell.addEventListener('focus', start);
-    cell.addEventListener('blur', stop);
-    host.appendChild(cell);
+  const scripts = script === 'both' ? ['hiragana', 'katakana'] : [script];
+  for (const sc of scripts) {
+    const byReading = {};
+    Object.keys(KANA).filter((c) => KANA[c].type === sc)
+      .forEach((c) => { byReading[KANA[c].reading] = c; });
+
+    if (script === 'both') {
+      const h = document.createElement('h3');
+      h.className = 'kana-sec';
+      h.textContent = sc === 'hiragana' ? 'Hiragana' : 'Katakana';
+      host.appendChild(h);
+    }
+
+    host.appendChild(buildGojuon(byReading, GOJUON_ROWS));
+
+    const lab = document.createElement('p');
+    lab.className = 'kana-extra-label';
+    lab.textContent = 'Voiced & p-sounds  (゛ dakuten · ゜ handakuten)';
+    host.appendChild(lab);
+    host.appendChild(buildGojuon(byReading, DAKUTEN_ROWS));
   }
 }
 

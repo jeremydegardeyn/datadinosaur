@@ -142,24 +142,33 @@ code { background: var(--panel-2); padding: 1px 5px; border-radius: 5px; font-si
 .credit a { color: var(--blue); text-decoration: none; }
 .credit a:hover { text-decoration: underline; }
 
-/* study chart */
+/* study chart — gojūon table (5 vowel columns), like a textbook kana chart */
 .study { max-width: 980px; margin: 22px auto; padding: 0 18px; }
 .study-hint { color: var(--muted); font-size: 13px; text-align: center; margin: 0 0 16px; }
-.kchart { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px; }
-.kcell {
-  position: relative; background: var(--panel); border: 1px solid var(--line);
-  border-radius: 12px; padding: 12px 6px 8px; cursor: pointer; color: var(--ink);
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
+.gojuon {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px;
+  background: var(--line); border: 1px solid var(--line);
+  border-radius: 12px; overflow: hidden; max-width: 520px; margin: 0 auto;
 }
-.kcell:hover, .kcell:focus { border-color: var(--blue); outline: none; }
-.kcell-glyph { font-size: 38px; line-height: 1; height: 46px; display: grid; place-items: center; }
-.kcell-canvas {
-  position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
-  width: 50px; height: 50px; display: none;
+.gcell {
+  position: relative; background: var(--panel); border: none; color: var(--ink);
+  cursor: pointer; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; padding: 0;
 }
-.kcell.drawing .kcell-glyph { visibility: hidden; }
-.kcell.drawing .kcell-canvas { display: block; }
-.kcell-romaji { font-size: 13px; color: var(--muted); text-transform: lowercase; }
+.gcell.empty { cursor: default; background: var(--panel-2); }
+.gcell .kcell-glyph { font-size: 32px; line-height: 1; }
+.gcell-romaji {
+  position: absolute; right: 6px; bottom: 4px; font-size: 11px;
+  color: var(--muted); text-transform: lowercase;
+}
+.gcell:hover:not(.empty) { background: var(--panel-2); }
+.gcell.drawing .kcell-glyph { visibility: hidden; }
+.gcell .kcell-canvas {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 46px; height: 46px; display: none;
+}
+.gcell.drawing .kcell-canvas { display: block; }
+.kana-sec { text-align: center; margin: 10px 0 12px; font-size: 16px; }
+.kana-extra-label { text-align: center; color: var(--muted); font-size: 12px; margin: 18px 0 8px; }
 
 /* session leaderboard (Review session card) */
 #bestSession { color: var(--green); }
