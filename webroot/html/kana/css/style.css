@@ -178,3 +178,14 @@ code { background: var(--panel-2); padding: 1px 5px; border-radius: 5px; font-si
 .kana-you { position: absolute; top: 0; font-size: 9px; font-weight: 600; color: var(--blue); }
 .kana-lb-cap { font-size: 11px; color: var(--muted); margin: 8px 0 0; }
 .kana-lb-note { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+
+/* Sensei's recommended study path (always-visible banner under the menu) */
+.path-note {
+  max-width: 980px; margin: 14px auto 0; padding: 9px 18px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px;
+  background: var(--panel); border: 1px solid var(--line);
+  border-left: 3px solid var(--blue); border-radius: 10px;
+  font-size: 13px; color: var(--ink);
+}
+.path-note .path-title { color: var(--muted); font-weight: 600; margin-right: 4px; }
+.path-note b { color: var(--blue); }
