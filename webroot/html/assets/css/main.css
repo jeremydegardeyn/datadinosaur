@@ -681,3 +681,31 @@ select { cursor: pointer; }
   .props-grid { grid-template-columns: 1fr; }
   .services-grid { grid-template-columns: 1fr; }
 }
+
+/* ---- Brain Breaks ---- */
+.page-head { padding: 3rem 0 1rem; text-align: center; }
+.page-head h1 { font-size: 2.2rem; margin-bottom: .6rem; }
+.page-lead { color: var(--text-muted); max-width: 60ch; margin: 0 auto; line-height: 1.7; }
+.bb-section { padding: 1.5rem 0 4rem; }
+.bb-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem; max-width: 900px; margin: 0 auto;
+}
+.bb-card {
+  display: flex; flex-direction: column; gap: .5rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 1.5rem;
+  text-decoration: none; color: var(--text);
+  transition: border-color .15s, transform .15s;
+}
+a.bb-card:hover { border-color: var(--primary); transform: translateY(-3px); }
+.bb-badge {
+  font-size: 1.8rem; line-height: 1; display: inline-flex; align-items: center;
+  justify-content: center; width: 56px; height: 56px; border-radius: 14px;
+  background: var(--bg); border: 1px solid var(--border); margin-bottom: .25rem;
+}
+.bb-card h2 { font-size: 1.2rem; margin: 0; }
+.bb-card p { color: var(--text-muted); font-size: .92rem; line-height: 1.6; margin: 0; flex: 1; }
+.bb-go { color: var(--primary); font-weight: 600; font-size: .9rem; margin-top: .4rem; }
+.bb-card-soon { opacity: .6; }
+.bb-card-soon .bb-badge { color: var(--text-muted); }

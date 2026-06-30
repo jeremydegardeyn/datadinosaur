@@ -66,6 +66,8 @@ footer:
       href: "/services"
     - label: "Contact"
       href: "/contact"
+    - label: "Brain Breaks"
+      href: "/brain-breaks"
   social:
     - label: "LinkedIn"
       href: "https://www.linkedin.com/in/jeremy-degardeyn-05288b77/"
