@@ -464,7 +464,10 @@ function animateStrokesOn(cv, ch) {
   const ctx = cv.getContext('2d');
   const S = cv.width, P = 16;
   const tmpl = KANA[ch].strokes.map((s) => s.map(([x, y]) => [P + x * (S - 2 * P), P + y * (S - 2 * P)]));
-  const perStroke = 420, gap = 120, total = tmpl.length * (perStroke + gap);
+  // Half speed (perStroke/gap doubled) and a long hold on the finished glyph
+  // before it clears and redraws.
+  const perStroke = 840, gap = 240, endHold = 1400;
+  const total = tmpl.length * (perStroke + gap) + endHold;
   const begin = performance.now();
   let raf;
   const frame = (now) => {
