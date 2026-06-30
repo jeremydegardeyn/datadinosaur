@@ -7,13 +7,14 @@ const PAD = 18;
 
 let KANA = {};
 let srs;
-let drill = 'write';   // write | read | hira2kata | kata2hira
+let drill = 'read';    // read | write | hira2kata | kata2hira
 let script = 'hiragana'; // hiragana | katakana | both  (only used by write/read)
 let current = null;    // the kana being ASKED about (SRS subject + cue glyph for read/cross)
 let target = null;     // the kana to DRAW (draw drills) or whose reading to TYPE (read)
 let strokes = [];
 let drawing = false;
 let checked = false;
+let sessionAttempts = 0; // completed turns this visit; gates the Review button
 
 // romaji variants accepted when typing the sound (read drill)
 const READING_ALIASES = {
@@ -38,7 +39,7 @@ function counterpart(ch) {
   srs = new SRS(Object.keys(KANA));
   setupCanvas();
   setupControls();
-  setDrill('write');
+  setDrill('read');
 })();
 
 function pool() {
@@ -147,7 +148,7 @@ function nextKana() {
     cueMain.className = 'cue-romaji';
     cueSub.textContent = '';
   } else if (drill === 'read') {
-    cueLabel.textContent = `Type the sound of this ${info.type}`;
+    cueLabel.textContent = `Type the romaji for this ${info.type}`;
     cueMain.textContent = current;
     cueMain.className = 'cue-glyph';
     cueSub.textContent = '';
@@ -203,7 +204,7 @@ function checkRead() {
     (ok ? ' ✓' : ` — you wrote “${raw}”`);
   $('readResult').className = ok ? 'read-result good' : 'read-result bad';
   renderFeedback({ score: ok ? 100 : 0, strokes: [],
-    messages: [ok ? 'Correct! 🎉' : `Not quite — listen and try to remember the shape→sound link.`] });
+    messages: [ok ? 'Correct! 🎉' : `Not quite — try to remember this shape→sound link.`] });
   updateProgress();
 }
 
@@ -211,6 +212,8 @@ function finishTurn() {
   checked = true;
   $('checkBtn').disabled = true;
   $('nextBtn').classList.remove('hidden');
+  sessionAttempts++;
+  if (sessionAttempts > 1) $('finishBtn').classList.remove('hidden');
 }
 
 function renderFeedback(r) {

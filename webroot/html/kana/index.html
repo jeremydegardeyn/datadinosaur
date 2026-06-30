@@ -26,16 +26,16 @@
   <div class="controls">
     <div class="seg drills">
       <span class="seg-label">Drill</span>
-      <button data-drill="write" class="active">Sound → Write</button>
-      <button data-drill="read">Read (type sound)</button>
-      <button data-drill="hira2kata">ひ → カ</button>
-      <button data-drill="kata2hira">カ → ひ</button>
+      <button data-drill="read" class="active" title="See the character, type its romaji (no audio)">Recognize → Type</button>
+      <button data-drill="write" title="See/hear the romaji, draw the kana">Sound → Write</button>
+      <button data-drill="hira2kata" title="Hiragana → Katakana">ひ → カ</button>
+      <button data-drill="kata2hira" title="Katakana → Hiragana">カ → ひ</button>
     </div>
     <div class="seg scripts" id="scriptRow">
       <span class="seg-label">Script</span>
-      <button data-script="hiragana" class="active">ひらがな</button>
-      <button data-script="katakana">カタカナ</button>
-      <button data-script="both">Both</button>
+      <button data-script="hiragana" class="active" title="Hiragana">ひらがな</button>
+      <button data-script="katakana" title="Katakana">カタカナ</button>
+      <button data-script="both" title="Both scripts">Both</button>
     </div>
   </div>
 
@@ -84,7 +84,7 @@
           <span>🧠 AI Sensei</span>
           <div>
             <button id="senseiBtn" class="toolbtn">Mnemonic</button>
-            <button id="finishBtn" class="toolbtn">Review session</button>
+            <button id="finishBtn" class="toolbtn hidden">Review session</button>
           </div>
         </div>
         <div id="senseiCard" class="sensei-card hidden">
