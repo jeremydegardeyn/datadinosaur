@@ -13,6 +13,8 @@ nav:
     href: "/blog"
   - label: "Services"
     href: "/services"
+  - label: "About"
+    href: "/about"
   - label: "Contact"
     href: "/contact"
 
@@ -64,6 +66,8 @@ footer:
       href: "/blog"
     - label: "Services"
       href: "/services"
+    - label: "About"
+      href: "/about"
     - label: "Contact"
       href: "/contact"
     - label: "Brain Breaks"

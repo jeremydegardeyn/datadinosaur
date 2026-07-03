@@ -142,6 +142,13 @@ switch ($page) {
         require SRC_ROOT . '/app/contact/index.php';
         break;
 
+    case 'about':
+        $page_title  = 'About — ' . $config['site']['name'];
+        $og_title    = 'About Jeremy — ' . $config['site']['name'];
+        $meta_desc   = 'Jeremy — the human behind DataDinosaur. 20+ years in IT and data, now navigating the AI era hands-on, one project at a time.';
+        require SRC_ROOT . '/app/about/index.php';
+        break;
+
     case 'brain-breaks':
         $page_title  = 'Brain Breaks — ' . $config['site']['name'];
         $og_title    = 'Brain Breaks — ' . $config['site']['name'];
