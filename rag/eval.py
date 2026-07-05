@@ -12,7 +12,7 @@ strongly-relevant chunk and that /ask flags them out of scope.
 Run it inside the rag container (RAG_SECRET comes from the env there):
     docker compose exec rag python eval.py
 Or point it at the deployed service from elsewhere:
-    RAG_URL=https://my.datadinosaur.com/internal-rag RAG_SECRET=... python eval.py
+    RAG_URL=https://www.datadinosaur.com/internal-rag RAG_SECRET=... python eval.py
 
 This is a measurement tool — it never writes to the index.
 """

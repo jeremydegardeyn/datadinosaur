@@ -53,7 +53,7 @@ GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
 app = FastAPI(title="DataDinosaur RAG")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://www.datadinosaur.com", "https://my.datadinosaur.com"],
+    allow_origins=["https://www.datadinosaur.com"],
     allow_methods=["POST"],
     allow_headers=["*"],
 )

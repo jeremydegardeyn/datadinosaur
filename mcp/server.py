@@ -59,10 +59,10 @@ RAG_HEADERS = {"X-Rag-Secret": RAG_SECRET, "Content-Type": "application/json"}
 # DNS-rebinding protection defaults to localhost-only, which rejects the
 # proxied Host header (HTTP 421). Allow our own domain through; the bearer
 # token enforced below is the real access gate. PUBLIC_HOST/PUBLIC_ORIGIN let
-# this be overridden without code changes. Both www (canonical) and my (now
-# redirected) are allowed so existing MCP clients pointed at my keep working.
-PUBLIC_HOST   = os.getenv("PUBLIC_HOST", "www.datadinosaur.com,my.datadinosaur.com")
-PUBLIC_ORIGIN = os.getenv("PUBLIC_ORIGIN", "https://www.datadinosaur.com,https://my.datadinosaur.com")
+# this be overridden without code changes. Canonical host is www — my. only
+# 301-redirects, so it never reaches the MCP with that Host.
+PUBLIC_HOST   = os.getenv("PUBLIC_HOST", "www.datadinosaur.com")
+PUBLIC_ORIGIN = os.getenv("PUBLIC_ORIGIN", "https://www.datadinosaur.com")
 
 mcp = FastMCP(
     "datadinosaur",
