@@ -77,14 +77,14 @@ mcp = FastMCP(
 # ── HTTP helpers ──────────────────────────────────────────────────────────────
 
 def _api_get(params: dict) -> dict:
-    with httpx.Client(timeout=30) as c:
+    with httpx.Client(timeout=30, follow_redirects=True) as c:
         r = c.get(f"{SITE_URL}/api/blog", params=params, headers=API_HEADERS)
         r.raise_for_status()
         return r.json()
 
 def _api_post(data: dict) -> dict:
     """POST form-encoded to /api/blog (matches the PHP $_POST handlers)."""
-    with httpx.Client(timeout=30) as c:
+    with httpx.Client(timeout=30, follow_redirects=True) as c:
         r = c.post(f"{SITE_URL}/api/blog", data=data, headers=API_HEADERS)
         r.raise_for_status()
         return r.json()
@@ -97,7 +97,7 @@ def search_blog(query: str, top_k: int = 4) -> dict:
     """Semantic search over published blog posts. Returns the most relevant
     content chunks (with source post title, URL, and similarity score) so you
     can answer questions grounded in what Jeremy has actually written."""
-    with httpx.Client(timeout=30) as c:
+    with httpx.Client(timeout=30, follow_redirects=True) as c:
         r = c.post(f"{RAG_URL}/search", json={"query": query, "top_k": top_k}, headers=RAG_HEADERS)
         r.raise_for_status()
         return r.json()
@@ -131,7 +131,7 @@ def create_post(title: str, content: str, excerpt: str = "",
     triggered on publish. Returns the new post id, slug, and URL."""
     payload = {"title": title, "content": content, "excerpt": excerpt,
                "category": category, "status": status}
-    with httpx.Client(timeout=60) as c:
+    with httpx.Client(timeout=60, follow_redirects=True) as c:
         r = c.post(f"{SITE_URL}/api/publish", json=payload, headers=API_HEADERS)
         r.raise_for_status()
         return r.json()
@@ -180,7 +180,7 @@ def _gc_get(path: str, params: dict) -> dict:
     if not (GOATCOUNTER_BASE and GOATCOUNTER_API_TOKEN):
         return {"error": "GoatCounter is not configured (set GOATCOUNTER_CODE and GOATCOUNTER_API_TOKEN)."}
     headers = {"Authorization": f"Bearer {GOATCOUNTER_API_TOKEN}"}
-    with httpx.Client(timeout=30) as c:
+    with httpx.Client(timeout=30, follow_redirects=True) as c:
         r = c.get(f"{GOATCOUNTER_BASE}{path}", params=params, headers=headers)
         r.raise_for_status()
         return r.json()
