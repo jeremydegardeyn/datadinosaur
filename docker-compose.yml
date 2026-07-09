@@ -82,7 +82,7 @@ services:
       - .env
     environment:
       RAG_URL:  http://rag:8000
-      SITE_URL: https://my.datadinosaur.com
+      SITE_URL: https://www.datadinosaur.com
     depends_on:
       - rag
     networks:
