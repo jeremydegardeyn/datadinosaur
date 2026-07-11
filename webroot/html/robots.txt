@@ -3,7 +3,8 @@ Allow: /
 
 Disallow: /admin
 Disallow: /api/
+Disallow: /mcp
 Disallow: /blog/edit
 Disallow: /blog/new
 
-Sitemap: https://my.datadinosaur.com/sitemap.xml
+Sitemap: https://www.datadinosaur.com/sitemap.xml
