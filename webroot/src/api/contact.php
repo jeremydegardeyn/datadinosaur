@@ -15,8 +15,19 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Honeypot
+// Honeypot — bots that fill the hidden field are dropped silently.
 if (!empty($_POST['website'])) {
+    header('Location: /contact?success=1');
+    exit;
+}
+
+// Timing trap — the form embeds a signed render time. Drop (silently, as a
+// fake success) anything with no valid signature (i.e. didn't render the real
+// form) or submitted implausibly fast (<3s = a bot, not a human typing).
+$fts  = (int)($_POST['ts'] ?? 0);
+$fsig = (string)($_POST['tsig'] ?? '');
+$fexp = hash_hmac('sha256', (string)$fts, getenv('APP_SECRET') ?: 'dd');
+if (!$fts || !hash_equals($fexp, $fsig) || (time() - $fts) < 3) {
     header('Location: /contact?success=1');
     exit;
 }

@@ -1,5 +1,8 @@
 <?php
 $consulting_types = $config['contact']['consulting_types'];
+// Signed render time for the timing trap (see api/contact.php).
+$form_ts  = time();
+$form_sig = hash_hmac('sha256', (string)$form_ts, getenv('APP_SECRET') ?: 'dd');
 ?>
 <div class="container page-content">
   <div class="contact-wrap">
@@ -31,6 +34,9 @@ $consulting_types = $config['contact']['consulting_types'];
       <div style="display:none" aria-hidden="true">
         <input type="text" name="website" tabindex="-1" autocomplete="off">
       </div>
+      <!-- Timing trap: signed page-render time -->
+      <input type="hidden" name="ts"   value="<?= (int)$form_ts ?>">
+      <input type="hidden" name="tsig" value="<?= e($form_sig) ?>">
 
       <div class="form-row">
         <label>Name *
