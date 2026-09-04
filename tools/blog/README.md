@@ -1,12 +1,26 @@
 # Blog tooling
 
-Supporting scripts for the `blog-post` skill, which lives at
-`~/.claude/skills/blog-post/SKILL.md` and calls into this directory. The skill file is the
-prose; these are the moving parts. Keeping them here rather than beside the skill means they
-are version controlled and reviewable, and there is only one copy.
+The `blog-post` skill and the scripts it calls. `SKILL.md` here is the same file Claude Code
+loads from `~/.claude/skills/blog-post/SKILL.md`: the two paths are a **hard link**, one set of
+bytes with two names, so editing either edits both and the repo copy is the backup.
 
-| Script | Job |
+Two things follow from that. A symlink would have been the obvious choice but needs
+Administrator on Windows, whereas a hard link does not. And because some editors save by writing
+a new file and renaming over the old one, which breaks the link silently, it is worth checking
+occasionally:
+
+```
+fsutil hardlink list C:
+epos\datadinosaur	oolslog\SKILL.md
+```
+
+Two paths listed means the link holds. One means they have diverged, and the fix is to copy the
+newer file over the other and recreate the link with
+`New-Item -ItemType HardLink -Path <skill path> -Target <repo path>`.
+
+| File | Job |
 |---|---|
+| `SKILL.md` | The skill itself: voice, post format, publish and cross-post steps |
 | `cdp.py` | Drive real Chrome over the DevTools Protocol and write PNG files to disk |
 | `upload_images.py` | POST images to `/api/upload` and print the Markdown to paste into a post |
 | `composite_card.py` | Join two screenshots into one social card: cause left, effect right |
