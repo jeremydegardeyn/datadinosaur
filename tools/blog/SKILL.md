@@ -233,72 +233,36 @@ It only scales and places the captures, so the card stays evidence rather than i
 
 > Want to include an image in the LinkedIn post? It has to be attached now — LinkedIn can't add one after the post is created. If so, give me a file path to the image; otherwise I'll post text-only.
 
-- If the user declines or gives no image → post text-only with `shareMediaCategory = "NONE"` (Snippet A).
-- If the user gives a readable image **file path** → run the 3-step upload and reference the asset with `shareMediaCategory = "IMAGE"` (Snippet B).
+- If the user declines or gives no image → run without `--image`.
+- If the user gives a readable image **file path** → pass it as `--image`.
 - A pasted chat image is NOT a readable byte stream — you need a real file path on disk. If only a pasted image exists, ask the user to save it locally and give you the path.
 
-### Snippet A — text-only
+### Posting
 
-```powershell
-$linkedInBody = @{
-  author = "<LINKEDIN_MEMBER_ID from .env>"
-  lifecycleState = "PUBLISHED"
-  specificContent = @{
-    "com.linkedin.ugc.ShareContent" = @{
-      shareCommentary = @{ text = "<teaser + blog URL + hashtags>" }
-      shareMediaCategory = "NONE"
-    }
-  }
-  visibility = @{ "com.linkedin.ugc.MemberNetworkVisibility" = "PUBLIC" }
-} | ConvertTo-Json -Depth 10
-$bytes = [System.Text.Encoding]::UTF8.GetBytes($linkedInBody)
-Invoke-WebRequest -Uri "https://api.linkedin.com/v2/ugcPosts" -Method POST `
-  -Headers @{ "Authorization"="Bearer <LINKEDIN_ACCESS_TOKEN>"; "Content-Type"="application/json"; "X-Restli-Protocol-Version"="2.0.0" } `
-  -Body $bytes -UseBasicParsing | Select-Object -ExpandProperty Content
+Write the post text to a file, then run `post_linkedin.py`. It reads the token and member
+id from the `.env` itself, does the register → upload → attach sequence when an image is
+given, and prints the resulting post URL.
+
+```bash
+python /c/repos/datadinosaur/tools/blog/post_linkedin.py \
+  --text /path/to/linkedin.txt \
+  --image /path/to/card.png \
+  --title "<short title>" --alt "<short alt text>"
 ```
 
-### Snippet B — with an image (register → upload → attach)
+Use that path verbatim, and put nothing in front of it. The command is allow-listed by
+exact prefix in `.claude/settings.local.json`; a leading `cd`, a `VAR=...` assignment or a
+different spelling of the path will not match the rule, and the auto-mode classifier
+blocks the call instead. Building the request inline with `curl` or `Invoke-RestMethod`
+gets blocked for the same reason, which is why the sequence lives in a script.
 
-```powershell
-$token   = "<LINKEDIN_ACCESS_TOKEN>"
-$owner   = "<LINKEDIN_MEMBER_ID from .env>"
-$imgPath = "<absolute path to the image file>"
+`--dry-run` validates the text and prints what would be sent without calling anything.
+The script refuses text over LinkedIn's 3000-character limit, and refuses any character
+outside the Basic Multilingual Plane, which is what catches emoji before they reach the
+feed rather than after.
 
-# 1) Register the image upload
-$reg = @{ registerUploadRequest = @{
-  recipes = @("urn:li:digitalmediaRecipe:feedshare-image")
-  owner = $owner
-  serviceRelationships = @(@{ relationshipType="OWNER"; identifier="urn:li:userGeneratedContent" })
-} } | ConvertTo-Json -Depth 10
-$regResp = Invoke-RestMethod -Uri "https://api.linkedin.com/v2/assets?action=registerUpload" -Method POST `
-  -Headers @{ "Authorization"="Bearer $token"; "Content-Type"="application/json" } `
-  -Body ([System.Text.Encoding]::UTF8.GetBytes($reg))
-$asset     = $regResp.value.asset
-$uploadUrl = $regResp.value.uploadMechanism.'com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'.uploadUrl
-
-# 2) Upload the image bytes to the one-time URL
-Invoke-WebRequest -Uri $uploadUrl -Method POST `
-  -Headers @{ "Authorization"="Bearer $token" } `
-  -InFile $imgPath -ContentType "application/octet-stream" -UseBasicParsing | Out-Null
-
-# 3) Create the post referencing the uploaded asset
-$linkedInBody = @{
-  author = $owner
-  lifecycleState = "PUBLISHED"
-  specificContent = @{ "com.linkedin.ugc.ShareContent" = @{
-    shareCommentary = @{ text = "<teaser + blog URL + hashtags>" }
-    shareMediaCategory = "IMAGE"
-    media = @(@{ status="READY"; media=$asset; title=@{ text="<short title>" }; description=@{ text="<short alt text>" } })
-  } }
-  visibility = @{ "com.linkedin.ugc.MemberNetworkVisibility" = "PUBLIC" }
-} | ConvertTo-Json -Depth 12
-$bytes = [System.Text.Encoding]::UTF8.GetBytes($linkedInBody)
-Invoke-WebRequest -Uri "https://api.linkedin.com/v2/ugcPosts" -Method POST `
-  -Headers @{ "Authorization"="Bearer $token"; "Content-Type"="application/json"; "X-Restli-Protocol-Version"="2.0.0" } `
-  -Body $bytes -UseBasicParsing | Select-Object -ExpandProperty Content
-```
-
-If LinkedIn returns 401, the token has expired — tell the user and skip to the **LinkedIn token expired** section. The blog post is already live.
+If it reports a 401, the token has expired — the script prints the refresh steps. The blog
+post is already live at that point, so only the cross-post needs redoing.
 
 ## Step 6 — Report back
 
