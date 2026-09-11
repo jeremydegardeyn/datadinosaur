@@ -36,6 +36,7 @@ $json_ld = json_encode([
       <div class="hero-cta">
         <a href="/blog" class="btn btn-primary">Read the Blog</a>
         <a href="/services" class="btn btn-outline">Consulting Services</a>
+        <a href="/brain-breaks" class="btn btn-outline">Brain Breaks</a>
       </div>
       <?php if (!empty($config['footer']['social'])): ?>
       <div class="hero-social">
