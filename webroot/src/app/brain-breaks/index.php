@@ -18,6 +18,17 @@
       <span class="bb-go">Play →</span>
     </a>
 
+    <a class="bb-card" href="/ear/">
+      <span class="bb-badge" aria-hidden="true">🎸</span>
+      <h2>Fretboard Ear</h2>
+      <p>
+        Guitar ear training. Hear a plucked string or a strummed chord, guess the note or chord
+        in the key you pick, then see exactly where it sits on the fretboard. Every sound is
+        synthesised in your browser — no recordings, no server.
+      </p>
+      <span class="bb-go">Play →</span>
+    </a>
+
     <div class="bb-card bb-card-soon" aria-disabled="true">
       <span class="bb-badge" aria-hidden="true">？</span>
       <h2>More coming</h2>

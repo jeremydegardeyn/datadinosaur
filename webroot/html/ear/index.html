@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fretboard Ear — guitar ear trainer</title>
+  <meta name="description" content="Guitar ear training: hear a plucked string or a strummed chord, guess the note or chord in your chosen key, then see where it lives on the fretboard." />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🎸</span>
+      <span class="title">Fretboard Ear</span>
+      <span class="tag">guitar ear trainer</span>
+    </div>
+    <div class="stats">
+      <span id="score" title="Correct / answered">0 / 0</span>
+      <span id="acc" title="Accuracy">—</span>
+      <span id="streak" title="Current streak">0 streak</span>
+      <span id="best" title="Best streak on this device"></span>
+      <button id="resetBtn" class="ghostbtn" title="Reset this session's score">⟲</button>
+      <a class="backlink" href="/brain-breaks" title="Back to Brain Breaks">← Brain Breaks</a>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="seg">
+      <span class="seg-label">Mode</span>
+      <button data-mode="note" class="active" title="Single plucked notes">Notes</button>
+      <button data-mode="chord" title="Strummed chords">Chords</button>
+    </div>
+    <div class="seg">
+      <label class="seg-label" for="keySel">Key</label>
+      <select id="keySel"></select>
+    </div>
+    <div class="seg" id="refRow">
+      <label class="check"><input type="checkbox" id="refToggle" /> Play tonic first</label>
+      <button id="refBtn" class="toolbtn" title="Hear the key's home chord (R)">Hear key</button>
+    </div>
+  </div>
+
+  <main class="game">
+    <section class="panel">
+      <div class="prompt-row">
+        <div>
+          <div class="cue-label">Key of <b id="keyName">C major</b></div>
+          <div id="prompt" class="prompt">Press Play, then pick the note you hear.</div>
+        </div>
+        <div class="btn-row">
+          <button id="playBtn" class="bigbtn">▶ Play</button>
+          <button id="nextBtn" class="bigbtn secondary hidden">Next →</button>
+        </div>
+      </div>
+
+      <div id="answers" class="answers"></div>
+      <div id="result" class="result"></div>
+    </section>
+
+    <section class="panel">
+      <div class="board-head">
+        <span>Fretboard</span>
+        <span class="hint-text">Reveals where the sound came from after you guess. Tap any fret to hear it.</span>
+      </div>
+      <div id="fretboard" class="board"></div>
+      <div class="legend">
+        <span><i class="sw sw-hit"></i> played here</span>
+        <span><i class="sw sw-echo"></i> same note elsewhere</span>
+        <span><i class="sw sw-root"></i> chord root</span>
+      </div>
+    </section>
+  </main>
+
+  <p class="howto">
+    <b>How to use it.</b> Pick a key. With <i>Play tonic first</i> on, you hear the key's home chord
+    before every question, so you are training relative pitch — recognising a note by how it sits
+    against the key, not by memorising absolute frequencies. Start with Notes in one key, then Chords,
+    then switch keys. Chromatic mode drops the key context entirely.
+    Keys <kbd>1</kbd>–<kbd>7</kbd> answer, <kbd>Space</kbd> plays/advances, <kbd>R</kbd> replays the key.
+  </p>
+
+  <footer class="credit">
+    Every sound is synthesised in your browser with the Karplus-Strong plucked-string algorithm —
+    no recordings, no server, nothing leaves the page.
+  </footer>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

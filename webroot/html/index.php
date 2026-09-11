@@ -152,7 +152,7 @@ switch ($page) {
     case 'brain-breaks':
         $page_title  = 'Brain Breaks — ' . $config['site']['name'];
         $og_title    = 'Brain Breaks — ' . $config['site']['name'];
-        $meta_desc   = 'Little games and brain exercises from DataDinosaur — a break from the data and AI grind. First up: Kana Sensei, a Japanese kana trainer.';
+        $meta_desc   = 'Little games and brain exercises from DataDinosaur — a break from the data and AI grind. Kana Sensei, a Japanese kana trainer, and Fretboard Ear, a guitar ear trainer.';
         require SRC_ROOT . '/app/brain-breaks/index.php';
         break;
 
