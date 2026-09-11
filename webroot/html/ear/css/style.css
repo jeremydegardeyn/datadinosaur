@@ -119,6 +119,10 @@ select {
 .fb-dot-root text { fill: #1a1200; }
 .fb-dot-echo circle { fill: rgba(46,160,67,.18); stroke: rgba(46,160,67,.7); }
 .fb-dot-echo text { fill: rgba(255,255,255,.7); }
+.fb-dot-miss circle { fill: var(--red); stroke: #ffb3b0; }
+.sw-miss { background: var(--red); }
+.board.armed .fb-hit { cursor: crosshair; }
+.board.armed .fb-hit:hover { fill: rgba(47,129,247,.25); }
 .fb-dot-flash circle { fill: var(--blue); stroke: #9cc4ff; animation: fade .9s forwards; }
 .fb-dot-flash text { animation: fade .9s forwards; }
 .fb-mute { fill: #ff8f8a; font-size: 15px; font-weight: 700; }

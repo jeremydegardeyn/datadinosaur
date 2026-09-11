@@ -12,9 +12,9 @@ const $ = (id) => document.getElementById(id);
 const LS_KEY = 'ear.v1';
 
 const state = {
-  mode: 'note',            // 'note' | 'chord'
+  mode: 'note',            // 'note' | 'chord' | 'locate'
   key: buildKey('C'),
-  refFirst: true,          // play the tonic chord before each question
+  refFirst: false,         // play the tonic chord before each question
   question: null,          // { index, played } | { index, voicing }
   answered: false,
   lastPc: null,            // avoid the same answer twice in a row
@@ -34,6 +34,10 @@ const board = createFretboard($('fretboard'), {
   onPluck: ({ string, fret, midi }) => {
     audioContext();
     playNote(midi, { gain: 0.45 });
+    if (state.mode === 'locate' && state.question && !state.answered) {
+      answerLocate({ string, fret, midi });
+      return;
+    }
     board.flash(string, fret, spell(pc(midi), state.key));
   },
 });
@@ -89,6 +93,8 @@ function playRef() {
 function renderAnswers() {
   const wrap = $('answers');
   wrap.innerHTML = '';
+  wrap.classList.toggle('hidden', state.mode === 'locate');
+  if (state.mode === 'locate') return;
   const k = state.key;
   const items = state.mode === 'note' ? k.degrees : k.chords;
   wrap.classList.toggle('dense', items.length > 8);
@@ -122,9 +128,12 @@ function resetRound() {
   renderAnswers();
   $('refRow').classList.toggle('hidden', state.key.chromatic);
   $('keyName').textContent = state.key.label;
-  $('prompt').textContent = state.mode === 'note'
-    ? 'Press Play, then pick the note you hear.'
-    : 'Press Play, then pick the chord you hear.';
+  $('prompt').textContent = {
+    note: 'Press Play, then pick the note you hear.',
+    chord: 'Press Play, then pick the chord you hear.',
+    locate: 'Press Play, then tap the fretboard where you heard it.',
+  }[state.mode];
+  $('fretboard').classList.remove('armed');
   $('result').textContent = '';
   $('result').className = 'result';
   $('nextBtn').classList.add('hidden');
@@ -133,7 +142,7 @@ function resetRound() {
 
 function makeQuestion() {
   const k = state.key;
-  if (state.mode === 'note') {
+  if (state.mode !== 'chord') {
     let idx, tries = 0;
     do { idx = Math.floor(Math.random() * k.degrees.length); }
     while (k.degrees[idx].pc === state.lastPc && ++tries < 8);
@@ -160,7 +169,7 @@ function playQuestion() {
     delay = 1.35;
   }
   const when = ac.currentTime + delay + 0.02;
-  if (state.mode === 'note') {
+  if (state.mode !== 'chord') {
     playNote(q.played.midi, { when, gain: 0.5 });
   } else {
     const midis = voicingMidi(q.voicing);
@@ -173,8 +182,11 @@ function onPlay() {
   if (!state.question) {
     state.question = makeQuestion();
     $('playBtn').textContent = '↻ Replay';
-    $('prompt').textContent = state.mode === 'note' ? 'Which note is this?' : 'Which chord is this?';
+    $('prompt').textContent = {
+      note: 'Which note is this?', chord: 'Which chord is this?', locate: 'Tap where you heard it.',
+    }[state.mode];
     setAnswersEnabled(true);
+    $('fretboard').classList.toggle('armed', state.mode === 'locate');
   }
   playQuestion();
 }
@@ -190,6 +202,53 @@ function nextQuestion() {
   onPlay();
 }
 
+/** Find-it mode: the tapped position is the answer. Any spot with the same
+ *  exact pitch is correct; same pitch class in another octave is a near miss. */
+function answerLocate(tap) {
+  const k = state.key;
+  const q = state.question;
+  const target = q.played;
+  const correct = tap.midi === target.midi;
+  state.answered = true;
+  $('fretboard').classList.remove('armed');
+  recordResult(correct);
+
+  const tpc = pc(target.midi);
+  const exact = positionsForPc(tpc).filter(p => OPEN_STRINGS[p.string] + p.fret === target.midi);
+  board.showLocate(exact, positionsForPc(tpc), tap, spell(tpc, k), spell(pc(tap.midi), k));
+
+  const name = spell(tpc, k);
+  const where = describePos(target);
+  const tapped = describePos(tap);
+  if (correct) {
+    const samePos = tap.string === target.string && tap.fret === target.fret;
+    const others = exact.filter(p => !(p.string === tap.string && p.fret === tap.fret)).map(describePos);
+    $('result').innerHTML = samePos
+      ? `✅ <b>${name}</b> — ${where}.` + (others.length ? ` (Same pitch also at ${others.join(', ')}.)` : '')
+      : `✅ <b>${name}</b> — same pitch: you tapped ${tapped}, it was played at ${where}.`;
+  } else if (pc(tap.midi) === tpc) {
+    $('result').innerHTML = `🟡 Right note, wrong octave — you tapped <b>${name}</b> at ${tapped}; it was ${where}.`;
+  } else {
+    $('result').innerHTML = `❌ You tapped <b>${spell(pc(tap.midi), k)}</b> at ${tapped}. It was <b>${name}</b> — ${where}.`;
+  }
+  $('result').className = 'result ' + (correct ? 'ok' : 'bad');
+  $('nextBtn').classList.remove('hidden');
+  $('nextBtn').focus();
+}
+
+const STRING_NAMES = ['E', 'A', 'D', 'G', 'B', 'e'];
+function describePos(p) {
+  return `string ${6 - p.string} (${STRING_NAMES[p.string]}), fret ${p.fret}`;
+}
+
+function recordResult(correct) {
+  state.stats.total++;
+  if (correct) { state.stats.correct++; state.stats.streak++; }
+  else state.stats.streak = 0;
+  if (state.stats.streak > state.best) { state.best = state.stats.streak; saveBest(); }
+  renderStats();
+}
+
 function answer(i) {
   if (!state.question || state.answered) return;
   state.answered = true;
@@ -201,19 +260,14 @@ function answer(i) {
   if (!correct) btns[i].classList.add('wrong');
   setAnswersEnabled(false);
 
-  // Stats
-  state.stats.total++;
-  if (correct) { state.stats.correct++; state.stats.streak++; }
-  else state.stats.streak = 0;
-  if (state.stats.streak > state.best) { state.best = state.stats.streak; saveBest(); }
-  renderStats();
+  recordResult(correct);
 
   // Reveal on the fretboard
   const label = (p) => spell(p, k);
   if (state.mode === 'note') {
     const target = k.degrees[q.index];
     board.showNote(q.played, positionsForPc(target.pc), label(target.pc));
-    const where = `string ${6 - q.played.string} (${['E','A','D','G','B','e'][q.played.string]}), fret ${q.played.fret}`;
+    const where = describePos(q.played);
     const yours = k.degrees[i].name;
     $('result').innerHTML = correct
       ? `✅ <b>${target.name}</b> — played on ${where}.`

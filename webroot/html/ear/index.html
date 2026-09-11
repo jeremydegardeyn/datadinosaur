@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fretboard Ear — guitar ear trainer</title>
-  <meta name="description" content="Guitar ear training: hear a plucked string or a strummed chord, guess the note or chord in your chosen key, then see where it lives on the fretboard." />
+  <meta name="description" content="Guitar ear training: hear a plucked string or a strummed chord, name it or find it on the fretboard in your chosen key, then see exactly where it lives." />
   <link rel="stylesheet" href="./css/style.css" />
 </head>
 <body>
@@ -29,6 +29,7 @@
       <span class="seg-label">Mode</span>
       <button data-mode="note" class="active" title="Single plucked notes">Notes</button>
       <button data-mode="chord" title="Strummed chords">Chords</button>
+      <button data-mode="locate" title="Hear a note, tap where it is on the fretboard">Find it</button>
     </div>
     <div class="seg">
       <label class="seg-label" for="keySel">Key</label>
@@ -67,6 +68,7 @@
         <span><i class="sw sw-hit"></i> played here</span>
         <span><i class="sw sw-echo"></i> same note elsewhere</span>
         <span><i class="sw sw-root"></i> chord root</span>
+        <span><i class="sw sw-miss"></i> your tap (missed)</span>
       </div>
     </section>
   </main>
@@ -75,7 +77,8 @@
     <b>How to use it.</b> Pick a key. With <i>Play tonic first</i> on, you hear the key's home chord
     before every question, so you are training relative pitch — recognising a note by how it sits
     against the key, not by memorising absolute frequencies. Start with Notes in one key, then Chords,
-    then switch keys. Chromatic mode drops the key context entirely.
+    then <i>Find it</i> — same sound, but you answer by tapping the fret you think it came from
+    (any spot with the same pitch counts) — then switch keys. Chromatic mode drops the key context entirely.
     Keys <kbd>1</kbd>–<kbd>7</kbd> answer, <kbd>Space</kbd> plays/advances, <kbd>R</kbd> replays the key.
   </p>
 

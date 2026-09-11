@@ -124,11 +124,24 @@ export function createFretboard(container, { onPluck } = {}) {
     }
   }
 
+  /**
+   * Reveal for Find-it mode: every position with the exact pitch is correct
+   * (green); other positions of the pitch class are faint; the tap is marked
+   * red if it missed.
+   */
+  function showLocate(correctPositions, others, tapped, label, tapLabel) {
+    clear();
+    const isCorrect = (p) => correctPositions.some(c => c.string === p.string && c.fret === p.fret);
+    for (const p of others) if (!isCorrect(p)) dot(p.string, p.fret, label, 'fb-dot-echo');
+    for (const p of correctPositions) dot(p.string, p.fret, label, 'fb-dot-hit');
+    if (tapped && !isCorrect(tapped)) dot(tapped.string, tapped.fret, tapLabel, 'fb-dot-miss');
+  }
+
   /** Brief flash on a plucked position (explore mode). */
   function flash(s, f, label) {
     const g = dot(s, f, label, 'fb-dot-flash');
     setTimeout(() => g.remove(), 900);
   }
 
-  return { clear, showNote, showChord, flash };
+  return { clear, showNote, showChord, showLocate, flash };
 }
