@@ -42,10 +42,16 @@
       <button data-drill="write" title="See/hear the romaji, draw the character">Write</button>
       <button data-drill="convert" title="Draw the matching character in the other script">Convert ⇄</button>
     </div>
+    <div class="seg lens hidden" id="lenRow">
+      <span class="seg-label">Session</span>
+      <button data-len="10" title="10 questions per session">10</button>
+      <button data-len="20" class="active" title="20 questions per session">20</button>
+      <button data-len="40" title="40 questions per session">40</button>
+    </div>
   </div>
 
   <p class="path-note">
-    <span class="path-title">🧠 Sensei's recommended path</span>
+    <span class="path-title">🧭 Recommended path</span>
     <span><b>1.</b> Study the chart</span>
     <span><b>2.</b> Practice → Recognize</span>
     <span><b>3.</b> Practice → Write</span>
@@ -96,23 +102,36 @@
         <div id="chips" class="chips"></div>
       </div>
 
-      <div class="sensei">
-        <div class="sensei-head">
-          <span>🧠 AI Sensei</span>
-          <div>
-            <button id="senseiBtn" class="toolbtn">Mnemonic</button>
-            <button id="finishBtn" class="toolbtn hidden">Review session</button>
-          </div>
+      <div class="session">
+        <div class="session-head">
+          <span class="session-title">Session <b id="sessPos">0</b> / <b id="sessLen">20</b></span>
+          <span class="session-tally"><span class="tl-ok">✓ <b id="sessOk">0</b></span> <span class="tl-bad">✗ <b id="sessBad">0</b></span></span>
         </div>
-        <div id="senseiCard" class="sensei-card hidden">
-          <div id="senseiBody"></div>
-        </div>
-        <p class="hint-text">Mnemonics are AI-authored but pre-generated and served statically —
-          no runtime model, no API, works offline. Drawing, grading, and review all run
-          entirely on-device.</p>
+        <div id="sessTiles" class="session-tiles" aria-label="Session progress"></div>
+        <p class="hint-text">Results appear automatically when the session is complete.
+          <button id="endEarlyBtn" class="linkbtn hidden">End session now</button></p>
       </div>
     </section>
   </main>
+
+  <section class="results hidden" id="resultsView">
+    <div class="panel results-panel">
+      <div class="results-head">
+        <div>
+          <div class="cue-label">Session complete</div>
+          <div class="results-score"><b id="resScore">0 / 0</b> <span id="resPct">0%</span></div>
+          <div id="resSub" class="results-sub"></div>
+        </div>
+        <div class="results-actions">
+          <button id="retryMissesBtn" class="toolbtn">Retry misses</button>
+          <button id="newSessionBtn" class="toolbtn primary">New session →</button>
+        </div>
+      </div>
+      <div id="resTiles" class="session-tiles"></div>
+      <div id="resMisses" class="misses"></div>
+      <div id="resLb"></div>
+    </div>
+  </section>
 
   <footer class="credit">
     Kana stroke data from <a href="https://kanjivg.tagaini.net" target="_blank" rel="noopener">KanjiVG</a>

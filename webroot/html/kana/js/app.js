@@ -1,6 +1,5 @@
 import { grade } from './grader.js';
 import { SRS } from './srs.js';
-import { mnemonic, review } from './sensei.js';
 
 const $ = (id) => document.getElementById(id);
 const PAD = 18;
@@ -15,8 +14,11 @@ let target = null;     // the kana to DRAW (draw drills) or whose reading to TYP
 let strokes = [];
 let drawing = false;
 let checked = false;
-let sessionAttempts = 0; // completed turns this session; gates the Review button
+let sessionAttempts = 0; // completed turns this session
 let sessCorrect = 0;     // correct answers this session
+let sessionLen = 20;     // questions per session; results show automatically at the end
+let sessionLog = [];     // one entry per answered turn: { char, target, ok, score, typed }
+let queue = null;        // when set, kana are drawn from here instead of the SRS (retry misses)
 const KANA_MIN = 10;     // answers needed before a session joins the leaderboard
 
 // romaji variants accepted when typing the sound (read drill)
@@ -139,7 +141,8 @@ function drawGhost(parts) {
 // ── flow ─────────────────────────────────────────────────────────────────────
 function nextKana() {
   cancelAnimationFrame(hintTimer);
-  current = srs.next(pool());
+  if (sessionAttempts >= sessionLen) return showResults();
+  current = (queue && queue.length) ? queue.shift() : srs.next(pool());
   target = (drill === 'convert') ? counterpart(current) : current;
   strokes = []; checked = false;
 
@@ -169,10 +172,11 @@ function nextKana() {
   $('answerInput').value = '';
   $('readResult').textContent = '';
   $('feedback').classList.add('hidden');
-  $('senseiCard').classList.add('hidden');
   $('checkBtn').disabled = false;
   $('nextBtn').classList.add('hidden');
+  $('nextBtn').textContent = 'Next →';
   render();
+  renderSession();
   if (drill === 'read') setTimeout(() => $('answerInput').focus(), 0);
   updateProgress();
 }
@@ -193,6 +197,8 @@ function checkDraw() {
   const report = grade(KANA[target].strokes, strokes);
   srs.record(current, report.pass, report.score);
   if (report.pass) sessCorrect++;
+  sessionLog.push({ char: current, target, ok: report.pass, score: report.score });
+  renderSession();
   const rev = $('reveal'); rev.textContent = target; rev.classList.add('show');
   renderFeedback(report);
   updateProgress();
@@ -205,6 +211,8 @@ function checkRead() {
   const ok = aliases(KANA[target].reading).includes(raw);
   srs.record(current, ok, ok ? 100 : 0);
   if (ok) sessCorrect++;
+  sessionLog.push({ char: current, target, ok, score: ok ? 100 : 0, typed: raw });
+  renderSession();
   $('readResult').innerHTML =
     `<span class="big">${current}</span> = <span class="rd">${pretty(KANA[target].reading)}</span>` +
     (ok ? ' ✓' : ` — you wrote “${raw}”`);
@@ -219,7 +227,8 @@ function finishTurn() {
   $('checkBtn').disabled = true;
   $('nextBtn').classList.remove('hidden');
   sessionAttempts++;
-  if (sessionAttempts > 1) $('finishBtn').classList.remove('hidden');
+  $('endEarlyBtn').classList.toggle('hidden', sessionAttempts < 2 || sessionAttempts >= sessionLen);
+  if (sessionAttempts >= sessionLen) $('nextBtn').textContent = 'See results →';
 }
 
 function renderFeedback(r) {
@@ -235,39 +244,75 @@ function renderFeedback(r) {
   }).join('');
 }
 
-// ── sensei ───────────────────────────────────────────────────────────────────
-async function askSensei() {
-  const card = $('senseiCard'); card.classList.remove('hidden');
-  $('senseiBody').innerHTML = '<em>Sensei is thinking…</em>';
-  const info = KANA[current];
-  const res = await mnemonic({ char: current, reading: info.reading, type: info.type });
-  let html = `<p class="mnemonic">${res.mnemonic}</p>`;
-  if (res.example) {
-    const e = res.example;
-    html += `<p class="example"><span class="jp">${e.word}</span> <span class="rd">${e.reading}</span> — ${e.meaning}</p>`;
-  }
-  card.classList.toggle('offline', !!res.offline);
-  $('senseiBody').innerHTML = html;
+// ── session tracker + results ─────────────────────────────────────────────────
+function tileHtml(i, big) {
+  const e = sessionLog[i];
+  const cls = e ? (e.ok ? 'tile ok' : 'tile bad') : (i === sessionAttempts && !checked ? 'tile now' : 'tile');
+  const title = e ? `${e.char} · ${e.ok ? 'correct' : 'missed'}` : `question ${i + 1}`;
+  return `<span class="${cls}" title="${title}">${e && big ? e.char : ''}</span>`;
 }
 
-async function finishSession() {
+function renderSession() {
+  $('sessPos').textContent = sessionAttempts;
+  $('sessLen').textContent = sessionLen;
+  $('sessOk').textContent = sessCorrect;
+  $('sessBad').textContent = sessionAttempts - sessCorrect;
+  let h = '';
+  for (let i = 0; i < sessionLen; i++) h += tileHtml(i, false);
+  $('sessTiles').innerHTML = h;
+}
+
+async function showResults() {
+  const total = sessionAttempts, correct = sessCorrect;
+  if (!total) return startSession();
+  $('gameView').classList.add('hidden');
+  $('resultsView').classList.remove('hidden');
+  const pct = Math.round(100 * correct / total);
+  $('resScore').textContent = `${correct} / ${total}`;
+  $('resPct').textContent = `${pct}%`;
   const s = srs.stats(pool());
-  const card = $('senseiCard'); card.classList.remove('hidden');
-  $('senseiBody').innerHTML = '<em>Sensei is reviewing your session…</em>';
+  $('resSub').textContent = `${s.mastered}/${s.poolSize} kana mastered overall` +
+    (s.weakest.length ? ` · shakiest: ${s.weakest.slice(0, 4).map((w) => w.char).join(' ')}` : '');
+  let tiles = '';
+  for (let i = 0; i < total; i++) tiles += tileHtml(i, true);
+  $('resTiles').innerHTML = tiles;
 
-  // Records this session and builds the cross-user accuracy histogram (must run
-  // before resetSession, while the session counters still hold this run).
-  const lb = await sessionLeaderboardHtml();
+  const misses = sessionLog.filter((e) => !e.ok);
+  $('retryMissesBtn').classList.toggle('hidden', misses.length === 0);
+  if (!misses.length) {
+    $('resMisses').innerHTML = '<p class="misses-none">Perfect session — nothing missed. 🎉</p>';
+  } else {
+    $('resMisses').innerHTML = `<h3>Missed (${misses.length})</h3>` + misses.map((e) => {
+      const info = KANA[e.target];
+      const yours = e.typed !== undefined
+        ? `<span class="lbl">you wrote</span><span class="yours">${e.typed || '—'}</span>`
+        : `<span class="lbl">your drawing</span><span class="yours">${e.score}/100</span>`;
+      return `<div class="miss-row"><span class="jp">${e.target}</span>` +
+        `<span><span class="lbl">reading</span><span class="rd">${pretty(info.reading)}</span></span><span>${yours}</span></div>`;
+    }).join('');
+  }
+  $('resLb').innerHTML = await sessionLeaderboardHtml();
+}
 
-  const res = await review({
-    weakest: s.weakest.map((w) => ({ char: w.char, reading: KANA[w.char].reading, misses: w.seen - w.correct })),
-    accuracy: s.accuracy, mastered: s.mastered, poolSize: s.poolSize,
-  });
-  const weak = s.weakest.length
-    ? `<p class="example">Focus next: ${s.weakest.map((w) => `<span class="jp">${w.char}</span>`).join(' ')}</p>` : '';
-  $('senseiBody').innerHTML = `<p class="mnemonic">${res.note}</p>${weak}${lb}`;
-
-  resetSession();   // start a fresh session for the next run
+function startSession({ retry = false } = {}) {
+  const misses = retry ? sessionLog.filter((e) => !e.ok).map((e) => e.char) : [];
+  sessionAttempts = 0; sessCorrect = 0; sessionLog = [];
+  if (retry && misses.length) {
+    // Shuffle so the retry order differs from the first pass.
+    for (let i = misses.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [misses[i], misses[j]] = [misses[j], misses[i]];
+    }
+    queue = misses; sessionLen = misses.length;
+  } else {
+    queue = null;
+    const active = document.querySelector('[data-len].active');
+    sessionLen = Number(active ? active.dataset.len : 20);
+  }
+  $('resultsView').classList.add('hidden');
+  $('gameView').classList.remove('hidden');
+  $('endEarlyBtn').classList.add('hidden');
+  nextKana();
 }
 
 // ── cross-user session leaderboard (accuracy histogram, like the blog quizzes) ─
@@ -325,11 +370,6 @@ function kanaHist(dist, count, bestIdx) {
   return `<div class="kana-hist">${bars}</div>`;
 }
 
-function resetSession() {
-  sessionAttempts = 0; sessCorrect = 0;
-  $('finishBtn').classList.add('hidden');
-}
-
 // ── chrome ───────────────────────────────────────────────────────────────────
 function updateProgress() {
   const s = srs.stats(pool());
@@ -346,13 +386,15 @@ function setMode(m) {
   document.querySelectorAll('[data-mode]').forEach((b) => b.classList.toggle('active', b.dataset.mode === m));
   const isStudy = m === 'study';
   $('drillRow').classList.toggle('hidden', isStudy);
-  $('gameView').classList.toggle('hidden', isStudy);
+  $('lenRow').classList.toggle('hidden', isStudy);
+  $('gameView').classList.toggle('hidden', isStudy || sessionAttempts >= sessionLen);
+  $('resultsView').classList.toggle('hidden', isStudy || sessionAttempts < sessionLen);
   $('studyView').classList.toggle('hidden', !isStudy);
   if (isStudy) { renderStudy(); updateProgress(); }
-  else setDrill(drill);
+  else setDrill(drill, { keepSession: true });
 }
 
-function setDrill(d) {
+function setDrill(d, { keepSession = false } = {}) {
   drill = d;
   document.querySelectorAll('[data-drill]').forEach((b) => b.classList.toggle('active', b.dataset.drill === d));
   const isRead = d === 'read';
@@ -360,13 +402,13 @@ function setDrill(d) {
   $('typeWrap').classList.toggle('hidden', !isRead);
   ['undoBtn', 'clearBtn', 'hintBtn'].forEach((id) => $(id).classList.toggle('hidden', isRead));
   $('speakBtn').classList.toggle('hidden', isRead); // hide audio in read drill (it's the answer)
-  nextKana();
+  if (keepSession && sessionAttempts > 0) nextKana(); else startSession();
 }
 
 function setScript(s) {
   script = s;
   document.querySelectorAll('[data-script]').forEach((b) => b.classList.toggle('active', b.dataset.script === s));
-  if (mode === 'study') renderStudy(); else nextKana();
+  if (mode === 'study') renderStudy(); else startSession();
 }
 
 // ── study chart: the gojūon table, laid out by vowel (columns) and consonant
@@ -508,8 +550,13 @@ function setupControls() {
   $('checkBtn').onclick = check;
   $('nextBtn').onclick = nextKana;
   $('speakBtn').onclick = speak;
-  $('senseiBtn').onclick = askSensei;
-  $('finishBtn').onclick = finishSession;
+  $('newSessionBtn').onclick = () => startSession();
+  $('retryMissesBtn').onclick = () => startSession({ retry: true });
+  $('endEarlyBtn').onclick = () => { sessionLen = sessionAttempts; showResults(); };
+  document.querySelectorAll('[data-len]').forEach((b) => (b.onclick = () => {
+    document.querySelectorAll('[data-len]').forEach((x) => x.classList.toggle('active', x === b));
+    startSession();
+  }));
   $('resetBtn').onclick = () => { if (confirm('Reset all progress?')) { srs.reset(); nextKana(); } };
   $('answerInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') (checked ? nextKana() : check());
