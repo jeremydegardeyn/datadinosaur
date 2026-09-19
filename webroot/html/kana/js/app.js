@@ -226,7 +226,7 @@ function checkRead() {
     (ok ? ' ✓' : ` — you wrote “${raw}”`);
   $('readResult').className = ok ? 'read-result good' : 'read-result bad';
   renderFeedback({ score: ok ? 100 : 0, verdict: ok, strokes: [],
-    messages: [ok ? 'Correct! 🎉' : `Not quite — try to remember this shape→sound link.`] });
+    messages: [ok ? 'Correct! 🎉' : `${current} is read “${pretty(KANA[target].reading)}”, not “${raw}”. You can retry the misses at the end of the session.`] });
   updateProgress();
 }
 
