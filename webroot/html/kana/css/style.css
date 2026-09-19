@@ -77,7 +77,7 @@ body {
   font-size: 30px; text-align: center; letter-spacing: 1px;
 }
 #answerInput:focus { outline: none; border-color: var(--blue); }
-.read-result { margin-top: 14px; text-align: center; font-size: 16px; min-height: 28px; }
+.read-result { margin-top: 14px; text-align: center; font-size: 16px; min-height: 48px; }
 .read-result .big { font-size: 30px; }
 .read-result.good { color: #6fdc8c; }
 .read-result.bad { color: #ff8a85; }
@@ -104,7 +104,8 @@ body {
 .hidden { display: none !important; }
 
 /* feedback */
-.feedback { border-bottom: 1px solid var(--line); padding-bottom: 16px; margin-bottom: 16px; }
+.feedback { border-bottom: 1px solid var(--line); padding-bottom: 16px; margin-bottom: 16px; min-height: 93px; }
+.feedback.blank { visibility: hidden; }
 .score-row { display: flex; gap: 16px; align-items: center; }
 .score {
   flex: 0 0 76px; height: 76px; border-radius: 50%; display: grid; place-items: center;
@@ -116,6 +117,7 @@ body {
 .score.verdict { font-size: 34px; }
 .msgs { margin: 0; padding-left: 18px; color: var(--ink); font-size: 14px; line-height: 1.5; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.chips:empty { display: none; }
 .chip { font-size: 12px; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--line); }
 .chip.good { background: rgba(46,160,67,.15); border-color: var(--green); color: #6fdc8c; }
 .chip.warn { background: rgba(218,54,51,.15); border-color: var(--red); color: #ff8a85; }

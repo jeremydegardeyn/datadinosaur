@@ -179,7 +179,9 @@ function nextKana() {
   $('reveal').textContent = ''; $('reveal').classList.remove('show');
   $('answerInput').value = '';
   $('readResult').textContent = '';
-  $('feedback').classList.add('hidden');
+  // Keep the feedback block's space reserved (visibility, not display) so the
+  // panel doesn't jump in height when the result appears.
+  $('feedback').classList.add('blank'); $('msgs').innerHTML = ''; $('chips').innerHTML = '';
   $('checkBtn').disabled = false;
   $('nextBtn').classList.add('hidden');
   $('nextBtn').textContent = 'Next →';
@@ -240,7 +242,7 @@ function finishTurn() {
 }
 
 function renderFeedback(r) {
-  const fb = $('feedback'); fb.classList.remove('hidden');
+  const fb = $('feedback'); fb.classList.remove('blank', 'hidden');
   const tone = r.score >= 90 ? 'great' : r.score >= 70 ? 'ok' : 'bad';
   // Draw drills get a 0-100 score; the recognize drill is simply right or wrong.
   $('scoreNum').textContent = r.verdict === undefined ? r.score : (r.verdict ? '✓' : '✗');
