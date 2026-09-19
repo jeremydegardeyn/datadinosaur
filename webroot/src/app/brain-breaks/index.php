@@ -13,7 +13,8 @@
       <h2>Kana Sensei</h2>
       <p>
         Learn to read and write Japanese hiragana and katakana — a character chart, recognition
-        drills, stroke-order practice, and an AI sensei for mnemonics. Runs entirely in your browser.
+        drills, stroke-order practice, and scored sessions that show you what to work on. Runs
+        entirely in your browser.
       </p>
       <span class="bb-go">Play →</span>
     </a>
