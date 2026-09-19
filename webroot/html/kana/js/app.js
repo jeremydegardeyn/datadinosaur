@@ -142,7 +142,15 @@ function drawGhost(parts) {
 function nextKana() {
   cancelAnimationFrame(hintTimer);
   if (sessionAttempts >= sessionLen) return showResults();
-  current = (queue && queue.length) ? queue.shift() : srs.next(pool());
+  if (queue && queue.length) {
+    current = queue.shift();
+  } else {
+    // Each kana at most once per session; fall back to repeats only if the
+    // pool is smaller than the session.
+    const seen = new Set(sessionLog.map((e) => e.char));
+    const fresh = pool().filter((c) => !seen.has(c));
+    current = srs.next(fresh.length ? fresh : pool());
+  }
   target = (drill === 'convert') ? counterpart(current) : current;
   strokes = []; checked = false;
 
@@ -217,7 +225,7 @@ function checkRead() {
     `<span class="big">${current}</span> = <span class="rd">${pretty(KANA[target].reading)}</span>` +
     (ok ? ' ✓' : ` — you wrote “${raw}”`);
   $('readResult').className = ok ? 'read-result good' : 'read-result bad';
-  renderFeedback({ score: ok ? 100 : 0, strokes: [],
+  renderFeedback({ score: ok ? 100 : 0, verdict: ok, strokes: [],
     messages: [ok ? 'Correct! 🎉' : `Not quite — try to remember this shape→sound link.`] });
   updateProgress();
 }
@@ -234,8 +242,9 @@ function finishTurn() {
 function renderFeedback(r) {
   const fb = $('feedback'); fb.classList.remove('hidden');
   const tone = r.score >= 90 ? 'great' : r.score >= 70 ? 'ok' : 'bad';
-  $('scoreNum').textContent = r.score;
-  $('scoreRing').className = `score ${tone}`;
+  // Draw drills get a 0-100 score; the recognize drill is simply right or wrong.
+  $('scoreNum').textContent = r.verdict === undefined ? r.score : (r.verdict ? '✓' : '✗');
+  $('scoreRing').className = `score ${tone}` + (r.verdict === undefined ? '' : ' verdict');
   $('msgs').innerHTML = r.messages.map((m) => `<li>${m}</li>`).join('');
   $('chips').innerHTML = (r.strokes || []).map((s) => {
     const cls = !s.ordered ? 'chip warn' : s.reversed ? 'chip warn' : s.shape >= 0.6 ? 'chip good' : 'chip soft';
@@ -258,7 +267,7 @@ function renderSession() {
   $('sessOk').textContent = sessCorrect;
   $('sessBad').textContent = sessionAttempts - sessCorrect;
   let h = '';
-  for (let i = 0; i < sessionLen; i++) h += tileHtml(i, false);
+  for (let i = 0; i < sessionLen; i++) h += tileHtml(i, true);
   $('sessTiles').innerHTML = h;
 }
 
@@ -307,7 +316,7 @@ function startSession({ retry = false } = {}) {
   } else {
     queue = null;
     const active = document.querySelector('[data-len].active');
-    sessionLen = Number(active ? active.dataset.len : 20);
+    sessionLen = Math.min(Number(active ? active.dataset.len : 20), pool().length);
   }
   $('resultsView').classList.add('hidden');
   $('gameView').classList.remove('hidden');
