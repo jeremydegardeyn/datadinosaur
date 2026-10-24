@@ -5,6 +5,8 @@ services:
   nginx:
     image: nginx:1.25-alpine
     restart: always
+    # Reload every 6h so nginx picks up certificates the certbot service renews
+    command: /bin/sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & exec nginx -g 'daemon off;'"
     ports:
       - "80:80"
       - "443:443"
@@ -90,6 +92,7 @@ services:
 
   certbot:
     image: certbot/certbot:latest
+    restart: always
     volumes:
       - ./nginx/certbot/conf:/etc/letsencrypt
       - ./nginx/certbot/www:/var/www/certbot
