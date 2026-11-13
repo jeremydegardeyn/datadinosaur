@@ -8,12 +8,32 @@ $current_page = min($current_page, $total_pages);
 $posts        = get_posts($current_page, $per_page, $cat_id);
 $categories   = get_categories();
 $show_sidebar = $config['blog']['show_sidebar'] ?? true;
+
+// Category and page 2+ views are distinct pages: give each its own canonical
+// and description instead of collapsing them all onto /blog.
+$base   = rtrim($config['site']['base_url'], '/');
+$qs     = [];
+if ($cat_id) $qs['cat'] = $cat_id;
+if ($current_page > 1) $qs['p'] = $current_page;
+$canonical_url = $base . '/blog' . ($qs ? '?' . http_build_query($qs) : '');
+if ($cat_id) {
+    $cat_row = array_values(array_filter($categories, fn ($c) => (int)$c['id'] === $cat_id))[0] ?? null;
+    if ($cat_row) {
+        $page_title = $cat_row['name'] . ' — Blog — ' . $config['site']['name'];
+        $og_title   = $cat_row['name'] . ' posts on DataDinosaur';
+        $meta_desc  = (int)$cat_row['post_count'] . ' posts on ' . $cat_row['name']
+                    . ' from DataDinosaur: hands-on write-ups of working builds, with what was measured and what was not tested.';
+    } else {
+        $seo_noindex = true;
+    }
+}
+if ($current_page > 1) $page_title = 'Page ' . $current_page . ' — ' . $page_title;
 ?>
 <div class="container blog-layout <?= $show_sidebar ? 'has-sidebar' : '' ?>">
   <div class="blog-main">
     <h1 class="page-heading">Blog</h1>
     <?php if ($cat_id): ?>
-    <?php $cat_name = array_values(array_filter($categories, fn($c) => $c['id'] === $cat_id))[0]['name'] ?? 'Category'; ?>
+    <?php $cat_name = array_values(array_filter($categories, fn($c) => (int)$c['id'] === $cat_id))[0]['name'] ?? 'Category'; ?>
     <p class="filter-notice">Filtered by: <strong><?= e($cat_name) ?></strong>
       &nbsp;<a href="/blog">&times; clear</a></p>
     <?php endif; ?>
@@ -28,7 +48,7 @@ $show_sidebar = $config['blog']['show_sidebar'] ?? true;
       ?>
       <article class="post-row<?= !empty($p['pinned']) ? ' post-row--pinned' : '' ?>">
         <?php if (!empty($p['pinned'])): ?>
-        <span class="pinned-badge">📌 Pinned</span>
+        <span class="pinned-badge">Pinned</span>
         <?php endif; ?>
         <div class="post-row-meta">
           <?php if ($config['blog']['show_date']): ?>
@@ -51,7 +71,7 @@ $show_sidebar = $config['blog']['show_sidebar'] ?? true;
         <p class="post-row-excerpt"><?= e($excerpt) ?></p>
         <div class="post-row-footer">
           <?php if ($config['blog']['show_author']): ?>
-          <span class="post-author">By <?= e($p['author']) ?></span>
+          <span class="post-author">By <?= e(author_name($p, $config)) ?></span>
           <?php endif; ?>
           <a href="/blog/<?= e($p['slug']) ?>" class="post-read-more">Continue reading &rarr;</a>
           <?php if (is_admin()): ?>
@@ -96,7 +116,19 @@ $show_sidebar = $config['blog']['show_sidebar'] ?? true;
       </form>
       <div id="searchResults" class="search-results"></div>
     </div>
-    <?php break; case 'categories': ?>
+    <?php break; case 'series': $all_series = get_all_series(); if ($all_series): ?>
+    <div class="sidebar-widget">
+      <h3>Series</h3>
+      <ul class="cat-list">
+        <?php foreach ($all_series as $s): ?>
+        <li>
+          <a href="/series/<?= e(series_slug($s['name'])) ?>"><?= e($s['name']) ?></a>
+          <span class="cat-count"><?= (int)$s['post_count'] ?></span>
+        </li>
+        <?php endforeach; ?>
+      </ul>
+    </div>
+    <?php endif; break; case 'categories': ?>
     <div class="sidebar-widget">
       <h3>Categories</h3>
       <ul class="cat-list">
@@ -124,9 +156,15 @@ $show_sidebar = $config['blog']['show_sidebar'] ?? true;
     <?php endif; ?>
 
     <div class="sidebar-widget cta-widget">
-      <h3>Need help?</h3>
-      <p>I offer data consulting on architecture, governance, and AI integration.</p>
-      <a href="/contact" class="btn btn-primary btn-full">Get in Touch</a>
+      <h3>New posts by email</h3>
+      <p>One email per post. No tracking.</p>
+      <?php $subscribe_source = 'blog-sidebar'; require SRC_ROOT . '/layout/subscribe-form.php'; ?>
+    </div>
+
+    <div class="sidebar-widget cta-widget">
+      <h3>Need a second pair of eyes?</h3>
+      <p>Independent reviews of AI gateways, RAG security, and data platforms.</p>
+      <a href="/services" class="btn btn-outline btn-full">Consulting services</a>
     </div>
   </aside>
   <?php endif; ?>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Guardrail Gauntlet — an AI gateway arcade game</title>
+  <meta name="description" content="You are the AI gateway. Requests from agents on two clouds race toward the model; allow, block, redact, or disable each one before it lands. A free browser game from DataDinosaur." />
+  <link rel="canonical" href="https://www.datadinosaur.com/gauntlet/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="DataDinosaur" />
+  <meta property="og:title" content="Guardrail Gauntlet — can you run the AI gateway?" />
+  <meta property="og:description" content="Requests race toward the model. Allow, block, redact, or disable each one before it lands." />
+  <meta property="og:url" content="https://www.datadinosaur.com/gauntlet/" />
+  <meta property="og:image" content="https://www.datadinosaur.com/gauntlet/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" type="image/svg+xml" href="/assets/images/favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon-180.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap" />
+  <link rel="stylesheet" href="./css/style.css?v=1" />
+  <script data-goatcounter="https://datadinosaur.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/gauntlet/" aria-label="Guardrail Gauntlet">
+      <svg class="brand-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3.5v5.5c0 4.6 -3.4 8.3 -8 9c-4.6 -.7 -8 -4.4 -8 -9v-5.5z"/><path d="M9 12l2 2l4 -4"/></svg>
+      <span class="title">Guardrail Gauntlet</span>
+    </a>
+    <div class="hud" aria-live="off">
+      <span class="hud-item"><span class="hud-label">Wave</span> <b id="hudWave">1</b>/8</span>
+      <span class="hud-item"><span class="hud-label">Score</span> <b id="hudScore">0</b></span>
+      <span class="hud-item"><span class="hud-label">Combo</span> <b id="hudCombo">×1</b></span>
+      <span class="meter" title="Trust: drops on breaches and false blocks">
+        <span class="hud-label">Trust</span>
+        <span class="meter-bar"><span id="trustBar" class="meter-fill trust"></span></span>
+      </span>
+      <span class="meter" title="Token budget for this wave">
+        <span class="hud-label">Budget</span>
+        <span class="meter-bar"><span id="budgetBar" class="meter-fill budget"></span></span>
+      </span>
+    </div>
+    <div class="top-actions">
+      <button id="pauseBtn" class="iconbtn" type="button" aria-label="Pause (P)" title="Pause (P)">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 5v14M15 5v14"/></svg>
+      </button>
+      <button id="muteBtn" class="iconbtn" type="button" aria-label="Mute sound (M)" title="Sound (M)">
+        <svg class="snd-on" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5 -4v14l-5 -4h-4z"/><path d="M17 9a4 4 0 0 1 0 6"/><path d="M19.5 6.5a8 8 0 0 1 0 11"/></svg>
+        <svg class="snd-off" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5 -4v14l-5 -4h-4z"/><path d="M17 10l4 4M21 10l-4 4"/></svg>
+      </button>
+      <a class="backlink" href="/brain-breaks">← Brain Breaks</a>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="field-wrap" aria-label="Request traffic">
+      <canvas id="field" aria-hidden="true"></canvas>
+      <div id="banner" class="banner" role="status" aria-live="assertive" hidden></div>
+      <div id="toast" class="toast" aria-live="polite"></div>
+    </section>
+
+    <aside class="registry" aria-label="Agent registry">
+      <h2>Agent registry</h2>
+      <ul id="registryList"></ul>
+      <p class="registry-note">Disabling an agent takes effect after the gateway's cache refreshes (2.5&nbsp;s).</p>
+    </aside>
+
+    <section class="inspector" aria-label="Selected request" aria-live="polite">
+      <div class="insp-meta">
+        <span id="inspAgent" class="chip">—</span>
+        <span id="inspType" class="chip chip-ghost">waiting for traffic</span>
+        <span id="inspTurn" class="chip chip-warn" hidden></span>
+        <span class="insp-hint">Tab: next request · click a packet to select it</span>
+      </div>
+      <ol id="inspTrail" class="trail" hidden></ol>
+      <p id="inspText" class="insp-text">Requests appear here as they approach the gateway.</p>
+      <div class="actions">
+        <button class="act act-allow"   data-act="allow"   type="button" aria-keyshortcuts="A"><kbd>A</kbd> Allow</button>
+        <button class="act act-block"   data-act="block"   type="button" aria-keyshortcuts="S"><kbd>S</kbd> Block</button>
+        <button class="act act-redact"  data-act="redact"  type="button" aria-keyshortcuts="D"><kbd>D</kbd> Redact</button>
+        <button class="act act-disable" data-act="disable" type="button" aria-keyshortcuts="F"><kbd>F</kbd> Disable agent</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Start -->
+  <div id="startOverlay" class="overlay">
+    <div class="card card-wide">
+      <p class="eyebrow">A DataDinosaur brain break</p>
+      <h1>Guardrail Gauntlet</h1>
+      <p class="lead">You are the AI gateway. Agents on AWS and Google Cloud send model calls and tool calls toward
+        the model. Decide each one before it reaches the gate. Anything you don't decide is allowed through.</p>
+      <div class="rules">
+        <div><kbd>A</kbd> <b>Allow</b> clean requests. Blocking them costs trust.</div>
+        <div><kbd>S</kbd> <b>Block</b> injections, exfiltration, tools the agent shouldn't touch, and runaway costs.</div>
+        <div><kbd>D</kbd> <b>Redact</b> personal data so the request still works without it.</div>
+        <div><kbd>F</kbd> <b>Disable</b> an agent the registry flags as compromised.</div>
+      </div>
+      <p class="small">From wave 4, some conversations only turn dangerous on the third message. Watch the conversation
+        trail. Eight waves make a shift.</p>
+      <div class="start-row">
+        <button id="startBtn" class="btn-primary" type="button">Start shift <kbd>Enter</kbd></button>
+        <span id="bestScore" class="small"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wave debrief -->
+  <div id="debriefOverlay" class="overlay" hidden>
+    <div class="card card-wide">
+      <p class="eyebrow" id="debriefEyebrow">Wave complete</p>
+      <h2 id="debriefTitle">Wave 1 cleared</h2>
+      <div id="debriefStats" class="stat-row"></div>
+      <div id="debriefList"></div>
+      <div class="start-row">
+        <button id="nextWaveBtn" class="btn-primary" type="button">Next wave <kbd>Enter</kbd></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paused -->
+  <div id="pauseOverlay" class="overlay" hidden>
+    <div class="card">
+      <h2>Paused</h2>
+      <p class="small">Press <kbd>P</kbd> or the button to resume.</p>
+      <div class="start-row"><button id="resumeBtn" class="btn-primary" type="button">Resume</button></div>
+    </div>
+  </div>
+
+  <!-- End of shift -->
+  <div id="reportOverlay" class="overlay" hidden>
+    <div class="card card-wide">
+      <p class="eyebrow">Incident report</p>
+      <h2 id="reportTitle">Shift complete</h2>
+      <p id="reportReason" class="lead"></p>
+      <div id="reportStats" class="stat-row"></div>
+      <canvas id="reportCard" width="1200" height="630" class="report-card" aria-label="Shareable report card"></canvas>
+      <div class="start-row wrap">
+        <button id="againBtn" class="btn-primary" type="button">Play again <kbd>Enter</kbd></button>
+        <button id="downloadBtn" class="btn-ghost" type="button">Download report card</button>
+        <button id="copyBtn" class="btn-ghost" type="button">Copy result</button>
+      </div>
+      <div class="report-cta">
+        <p>Running a real AI gateway? The posts behind this game cover
+          <a href="/series/ai-gateway">the AI gateway series</a>, and an
+          <a href="/services#gateway-review">AI Gateway Readiness Review</a> walks through these controls on your traffic.</p>
+      </div>
+    </div>
+  </div>
+
+  <noscript><p class="noscript">Guardrail Gauntlet needs JavaScript.</p></noscript>
+  <script src="./js/deck.js?v=2"></script>
+  <script src="./js/game.js?v=4"></script>
+</body>
+</html>

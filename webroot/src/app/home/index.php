@@ -1,5 +1,23 @@
 <?php
 $recent_posts = get_recent_posts(3);
+$hide_footer_subscribe = true;   // this page has its own signup block
+$all_series   = get_all_series();
+$categories   = get_categories();
+$post_total   = count_posts();
+$series_desc  = $config['series'] ?? [];
+$series_icon  = ['AI gateway' => 'gateway', 'FinChat build log' => 'agent', 'RAG in practice' => 'search'];
+$cat_icon     = fn (string $n) => match (true) {
+    str_contains($n, 'Governance') => 'shield',
+    str_contains($n, 'Agent')      => 'agent',
+    str_contains($n, 'Data')       => 'database',
+    default                        => 'growth',
+};
+$cat_blurb = [
+    'AI Governance & Gateways' => 'Where policy binds on model and agent traffic, who can change it, and how fast an agent can be stopped.',
+    'Agents & Evals'           => 'Grounding, evaluation, and observability for agents in production, including what a managed service can take over.',
+    'Data Platform'            => 'Pipelines, catalogs, and cost on Google Cloud: Dataflow, BigQuery, Iceberg, and the data behind RAG.',
+    'Career & Craft'           => 'Staying useful as AI does more of the work: judgment, teaching, influence, and writing it down.',
+];
 
 // Structured data for homepage
 $social_urls = array_map(fn($s) => $s['href'], $config['footer']['social'] ?? []);
@@ -17,7 +35,7 @@ $json_ld = json_encode([
             '@type'       => 'Person',
             'name'        => $config['site']['author'],
             'url'         => $config['site']['base_url'],
-            'jobTitle'    => 'Data Engineer & Consultant',
+            'jobTitle'    => $config['site']['author_title'] ?? 'Data & AI Architect',
             'description' => $config['site']['description'],
             'sameAs'      => $social_urls,
         ],
@@ -30,13 +48,13 @@ $json_ld = json_encode([
     <div class="hero-content">
       <h1 class="hero-title">Human Data Expertise<br>for the AI Era</h1>
       <p class="hero-sub">
-        Real-world insights for data engineers navigating the shift. Written by a practitioner,
-        based on daily experiences. Career advice, technical depth, and consulting when you need it.
+        Hands-on write-ups for architects and data engineers putting AI into production, especially in
+        regulated industries. Each post reports a working build: what was built, what was measured, and
+        what the test does not show.
       </p>
       <div class="hero-cta">
-        <a href="/blog" class="btn btn-primary">Read the Blog</a>
-        <a href="/services" class="btn btn-outline">Consulting Services</a>
-        <a href="/brain-breaks" class="btn btn-outline">Brain Breaks</a>
+        <a href="/start-here" class="btn btn-primary btn-lg">Start here <?= icon('arrow', 18) ?></a>
+        <a href="/blog" class="btn btn-ghost btn-lg">Browse all posts</a>
       </div>
       <?php if (!empty($config['footer']['social'])): ?>
       <div class="hero-social">
@@ -169,35 +187,44 @@ $json_ld = json_encode([
   </div>
 </section>
 
-<!-- Value props -->
-<section class="value-props">
+<!-- Proof strip -->
+<section class="proof-strip" aria-label="About this site">
+  <div class="container proof-inner">
+    <div class="proof-item"><span class="proof-num">20+</span><span class="proof-label">years in IT and data</span></div>
+    <div class="proof-item"><span class="proof-num"><?= (int)$post_total ?></span><span class="proof-label">posts from working builds</span></div>
+    <div class="proof-item"><span class="proof-num">2</span><span class="proof-label">clouds tested: Google Cloud and AWS</span></div>
+    <div class="proof-item"><span class="proof-num"><?= count($all_series) ?></span><span class="proof-label">running series</span></div>
+  </div>
+</section>
+
+<?php if ($all_series): ?>
+<!-- Series -->
+<section class="home-section">
   <div class="container">
-    <div class="props-grid">
-      <div class="prop-card">
-        <div class="prop-icon">&#128200;</div>
-        <h3>Career Strategy</h3>
-        <p>Practical advice on staying relevant and growing your career as gen AI reshapes the data engineering landscape.</p>
-      </div>
-      <div class="prop-card">
-        <div class="prop-icon">&#128736;</div>
-        <h3>Technical Depth</h3>
-        <p>Governance, metadata management, data quality, responsible AI — the durable skills that matter most right now.</p>
-      </div>
-      <div class="prop-card">
-        <div class="prop-icon">&#128101;</div>
-        <h3>1-on-1 Consulting</h3>
-        <p>Need expert eyes on your data architecture? Reach out for direct consulting on your specific challenges.</p>
-      </div>
+    <div class="section-header">
+      <h2>Read a series</h2>
+      <a href="/start-here" class="section-link">Start here &rarr;</a>
+    </div>
+    <div class="card-grid">
+      <?php foreach ($all_series as $s): ?>
+      <a class="feature-card" href="/series/<?= e(series_slug($s['name'])) ?>">
+        <span class="card-icon"><?= icon($series_icon[$s['name']] ?? 'book', 22) ?></span>
+        <span class="feature-card-title"><?= e($s['name']) ?></span>
+        <span class="feature-card-text"><?= e($series_desc[$s['name']] ?? '') ?></span>
+        <span class="feature-card-meta"><?= (int)$s['post_count'] ?> posts in reading order &rarr;</span>
+      </a>
+      <?php endforeach; ?>
     </div>
   </div>
 </section>
+<?php endif; ?>
 
 <!-- Recent blog posts -->
 <?php if (!empty($recent_posts)): ?>
 <section class="recent-posts">
   <div class="container">
     <div class="section-header">
-      <h2>Latest from the Blog</h2>
+      <h2>Latest posts</h2>
       <a href="/blog" class="section-link">All posts &rarr;</a>
     </div>
     <div class="post-grid">
@@ -214,9 +241,9 @@ $json_ld = json_encode([
         </div>
         <div class="post-card-footer">
           <time class="post-meta-date" datetime="<?= e($p['published_at']) ?>">
-            <?= date($config['blog']['date_format'], strtotime($p['published_at'])) ?>
+            <?= date($config['blog']['date_format'], strtotime($p['published_at'])) ?> · <?= reading_time($p['content'] ?? '') ?> min
           </time>
-          <a href="/blog/<?= e($p['slug']) ?>" class="post-read-more">Read &rarr;</a>
+          <a href="/blog/<?= e($p['slug']) ?>" class="post-read-more" aria-label="Read <?= e($p['title']) ?>">Read &rarr;</a>
         </div>
       </article>
       <?php endforeach; ?>
@@ -225,16 +252,62 @@ $json_ld = json_encode([
 </section>
 <?php endif; ?>
 
+<?php if ($categories): ?>
+<!-- Topics -->
+<section class="home-section">
+  <div class="container">
+    <div class="section-header">
+      <h2>Topics</h2>
+    </div>
+    <div class="card-grid card-grid-4">
+      <?php foreach ($categories as $c): ?>
+      <a class="feature-card" href="/blog?cat=<?= (int)$c['id'] ?>">
+        <span class="card-icon"><?= icon($cat_icon($c['name']), 22) ?></span>
+        <span class="feature-card-title"><?= e($c['name']) ?></span>
+        <?php if (!empty($cat_blurb[$c['name']])): ?>
+        <span class="feature-card-text"><?= e($cat_blurb[$c['name']]) ?></span>
+        <?php endif; ?>
+        <span class="feature-card-meta"><?= (int)$c['post_count'] ?> posts &rarr;</span>
+      </a>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
+
+<!-- Brain Breaks (secondary) -->
+<section class="home-section home-breaks">
+  <div class="container breaks-inner">
+    <div>
+      <h2>Brain Breaks</h2>
+      <p>Small browser games for when you need a minute away from the screen you were already staring at.</p>
+    </div>
+    <div class="breaks-links">
+      <a href="/gauntlet/" class="break-chip"><?= icon('shield', 18) ?> Guardrail Gauntlet</a>
+      <a href="/kana/" class="break-chip"><?= icon('kana', 18) ?> Kana Sensei</a>
+      <a href="/ear/" class="break-chip"><?= icon('guitar', 18) ?> Fretboard Ear</a>
+    </div>
+  </div>
+</section>
+
 <script src="/assets/js/hero-animation.js?v=3" defer></script>
 <script src="/assets/js/hero-letter-physics.js?v=7" defer></script>
 <script src="/assets/js/hero-chomp-bits.js?v=6" defer></script>
 
-<!-- CTA banner -->
-<section class="cta-banner">
-  <div class="container">
-    <h2>Have a data challenge?</h2>
-    <p>I offer consulting on data architecture, governance, AI integration, and data quality.
-       Let's talk about what you're working on.</p>
-    <a href="/contact" class="btn btn-primary">Get in Touch</a>
+<!-- Close: subscribe + consulting -->
+<section class="home-close">
+  <div class="container close-grid">
+    <div class="next-card">
+      <h2>Get the next post by email</h2>
+      <p>One email when a new post goes up. No tracking, unsubscribe in one click.
+         Subscribers also get the <a href="/resources/rag-security-checklist">RAG security checklist</a>.</p>
+      <?php $subscribe_source = 'home'; require SRC_ROOT . '/layout/subscribe-form.php'; ?>
+    </div>
+    <div class="next-card">
+      <h2>Need a second pair of eyes?</h2>
+      <p>Independent reviews of AI gateways, RAG security, data governance, and Google Cloud data platforms,
+         from the same hands-on approach as the posts.</p>
+      <a href="/services" class="btn btn-outline">See consulting services</a>
+    </div>
   </div>
 </section>

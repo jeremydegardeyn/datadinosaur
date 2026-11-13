@@ -140,15 +140,25 @@ def create_post(title: str, content: str, excerpt: str = "",
 def update_post(post_id: int, title: Optional[str] = None, slug: Optional[str] = None,
                 excerpt: Optional[str] = None, content: Optional[str] = None,
                 status: Optional[str] = None, pinned: Optional[bool] = None,
-                visible: Optional[bool] = None) -> dict:
+                visible: Optional[bool] = None, summary: Optional[str] = None,
+                series: Optional[str] = None, series_order: Optional[int] = None,
+                category_id: Optional[int] = None) -> dict:
     """Partially update a post — send only the fields you want to change.
     status is 'published' or 'draft'. Flipping to 'published' the first time
-    stamps the publish date. Returns the post id, slug, and URL."""
+    stamps the publish date. summary is one key point per line, shown in a
+    "Key points" box above the post. series groups posts (same name = same
+    series); series_order sets reading order. Pass "" to clear summary or
+    series. Changing title/excerpt/summary/content moves the post's
+    modified date; other fields don't. Returns the post id, slug, and URL."""
     data: dict = {"action": "update", "post_id": post_id}
     if title   is not None: data["title"]   = title
     if slug    is not None: data["slug"]    = slug
     if excerpt is not None: data["excerpt"] = excerpt
     if content is not None: data["content"] = content
+    if summary is not None: data["summary"] = summary
+    if series  is not None: data["series"]  = series
+    if series_order is not None: data["series_order"] = series_order
+    if category_id  is not None: data["category_id"]  = category_id
     if status  is not None: data["status"]  = status
     if pinned  is not None: data["pinned"]  = int(pinned)
     if visible is not None: data["visible"] = int(visible)

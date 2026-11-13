@@ -4,9 +4,10 @@ WORKDIR /var/www
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g-dev libzip-dev unzip \
-    libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+    libpng-dev libjpeg62-turbo-dev libfreetype6-dev libwebp-dev \
     libicu-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    fonts-dejavu-core \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) \
         pdo pdo_mysql mysqli \
         gd zip intl \

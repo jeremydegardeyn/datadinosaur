@@ -49,6 +49,8 @@ $dest = $dir . '/' . $name;
 if (!move_uploaded_file($file['tmp_name'], $dest)) {
     json_response(['error' => 'Could not save file'], 500);
 }
+[$dest, $ext] = dd_optimize_upload($dest, $ext);
+$name = basename($dest);
 @chmod($dest, 0644);
 
 json_response(['ok' => true, 'url' => '/assets/uploads/' . $name]);

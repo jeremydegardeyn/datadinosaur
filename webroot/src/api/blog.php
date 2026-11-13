@@ -125,7 +125,8 @@ if ($action === 'update' && $api && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $current = $stmt->fetch();
     if (!$current) json_response(['error' => 'Post not found'], 404);
 
-    $allowed = ['title','slug','excerpt','content','category_id','status','pinned','visible'];
+    $allowed = ['title','slug','excerpt','summary','content','category_id','series','series_order',
+                'status','pinned','visible'];
     $sets    = [];
     $vals    = [];
     foreach ($allowed as $f) {
@@ -135,7 +136,9 @@ if ($action === 'update' && $api && $_SERVER['REQUEST_METHOD'] === 'POST') {
             json_response(['error' => "invalid status"], 400);
         }
         if (in_array($f, ['pinned','visible'], true))  $v = (int)(bool)(int)$v;
-        if ($f === 'category_id') $v = $v === '' ? null : (int)$v;
+        if ($f === 'category_id')  $v = $v === '' ? null : (int)$v;
+        if ($f === 'series_order') $v = $v === '' ? null : (int)$v;
+        if (in_array($f, ['series','summary'], true)) $v = trim((string)$v) === '' ? null : trim((string)$v);
         $sets[] = "$f = ?";
         $vals[] = $v;
     }
@@ -145,6 +148,9 @@ if ($action === 'update' && $api && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $new_status = $_POST['status'] ?? $current['status'];
     if ($new_status === 'published' && $current['status'] !== 'published') {
         $sets[] = "published_at = NOW()";
+    }
+    if (dd_words_changed($current, $_POST)) {
+        $sets[] = "content_updated_at = NOW()";
     }
     $sets[] = "updated_at = NOW()";
 
@@ -195,6 +201,9 @@ if (in_array($action, ['create', 'update'], true) && $_SERVER['REQUEST_METHOD'] 
     $category_id = !empty($_POST['category_id']) ? (int)$_POST['category_id'] : null;
     $pinned      = isset($_POST['pinned'])  ? 1 : 0;
     $visible     = isset($_POST['visible']) ? 1 : 0;
+    $summary     = trim($_POST['summary'] ?? '') ?: null;
+    $series      = trim($_POST['series']  ?? '') ?: null;
+    $series_order = ($_POST['series_order'] ?? '') === '' ? null : (int)$_POST['series_order'];
     $slug        = $slug_input ?: sanitize_slug($title);
 
     if (!$title || !$content) {
@@ -204,11 +213,13 @@ if (in_array($action, ['create', 'update'], true) && $_SERVER['REQUEST_METHOD'] 
 
     if ($action === 'create') {
         $stmt = $pdo->prepare(
-            "INSERT INTO blog_posts (title, slug, excerpt, content, author, category_id, status, pinned, visible, published_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO blog_posts (title, slug, excerpt, summary, content, author, category_id, series, series_order,
+                                     status, pinned, visible, published_at, content_updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
         $pub = $status === 'published' ? date('Y-m-d H:i:s') : null;
-        $stmt->execute([$title, $slug, $excerpt, $content, 'Jeremy', $category_id, $status, $pinned, $visible, $pub]);
+        $stmt->execute([$title, $slug, $excerpt, $summary, $content, 'Jeremy', $category_id, $series, $series_order,
+                        $status, $pinned, $visible, $pub, $pub]);
         $new_id = (int)$pdo->lastInsertId();
         header('Location: /blog/edit?id=' . $new_id . '&saved=1');
         exit;
@@ -216,15 +227,20 @@ if (in_array($action, ['create', 'update'], true) && $_SERVER['REQUEST_METHOD'] 
 
     // update
     $post_id = (int)($_POST['post_id'] ?? 0);
+    $before  = get_post_by_id($post_id) ?? [];
+    $changed = dd_words_changed($before, compact('title', 'excerpt', 'summary', 'content')) ? 1 : 0;
     $stmt = $pdo->prepare(
         "UPDATE blog_posts
-         SET title=?, slug=?, excerpt=?, content=?, category_id=?, status=?, pinned=?, visible=?,
+         SET title=?, slug=?, excerpt=?, summary=?, content=?, category_id=?, series=?, series_order=?,
+             status=?, pinned=?, visible=?,
              published_at = CASE WHEN status != 'published' AND ? = 'published'
                                  THEN NOW() ELSE published_at END,
+             content_updated_at = CASE WHEN ? = 1 THEN NOW() ELSE content_updated_at END,
              updated_at   = NOW()
          WHERE id = ?"
     );
-    $stmt->execute([$title, $slug, $excerpt, $content, $category_id, $status, $pinned, $visible, $status, $post_id]);
+    $stmt->execute([$title, $slug, $excerpt, $summary, $content, $category_id, $series, $series_order,
+                    $status, $pinned, $visible, $status, $changed, $post_id]);
     header('Location: /blog/edit?id=' . $post_id . '&saved=1');
     exit;
 }

@@ -15,17 +15,22 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     title          VARCHAR(255)  NOT NULL,
     slug           VARCHAR(280)  NOT NULL UNIQUE,
     excerpt        TEXT,
+    summary        TEXT          NULL,
     content        LONGTEXT      NOT NULL,
     author         VARCHAR(100)  DEFAULT 'Jeremy',
     category_id    INT,
+    series         VARCHAR(120)  NULL,
+    series_order   INT           NULL,
     status         ENUM('draft','published') DEFAULT 'draft',
     visible        TINYINT(1)    NOT NULL DEFAULT 1,
     pinned         TINYINT(1)    NOT NULL DEFAULT 0,
     views          INT           DEFAULT 0,
     created_at     DATETIME      DEFAULT CURRENT_TIMESTAMP,
     updated_at     DATETIME      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    content_updated_at DATETIME  NULL,
     published_at   DATETIME,
     FULLTEXT KEY ft_search (title, excerpt, content),
+    KEY idx_series (series, series_order),
     FOREIGN KEY (category_id) REFERENCES blog_categories(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -52,4 +57,16 @@ CREATE TABLE IF NOT EXISTS contact_inquiries (
     inquiry_type VARCHAR(200) DEFAULT 'General Question',
     status       ENUM('new','read','replied') DEFAULT 'new',
     created_at   DATETIME      DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Email subscribers (double opt-in)
+CREATE TABLE IF NOT EXISTS subscribers (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    email         VARCHAR(200) NOT NULL UNIQUE,
+    token         CHAR(32)     NOT NULL UNIQUE,
+    status        ENUM('pending','confirmed','unsubscribed') NOT NULL DEFAULT 'pending',
+    source        VARCHAR(120) NULL,
+    created_at    DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    confirmed_at  DATETIME     NULL,
+    unsubscribed_at DATETIME   NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

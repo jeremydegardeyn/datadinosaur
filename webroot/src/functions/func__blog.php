@@ -275,7 +275,155 @@ function dd_img_parts(string $imgAttrs, string $extra): array
     }
     $styleAttr = $style ? ' style="' . implode(';', $style) . '"' : '';
     // Drop a trailing self-closing slash so we can re-emit a clean tag.
-    return [rtrim($imgAttrs, " /"), $caption, $styleAttr, $class];
+    $imgAttrs = rtrim($imgAttrs, " /");
+
+    // Performance: lazy-load and decode off the main thread, and give the
+    // browser intrinsic dimensions for local uploads so the layout doesn't
+    // jump as images arrive.
+    if (stripos($imgAttrs, 'loading=') === false)  $imgAttrs .= ' loading="lazy"';
+    if (stripos($imgAttrs, 'decoding=') === false) $imgAttrs .= ' decoding="async"';
+    if (stripos($imgAttrs, ' width=') === false
+        && preg_match('#\ssrc="(/assets/(?:uploads|images)/[A-Za-z0-9._-]+)"#', $imgAttrs, $sm)) {
+        $dims = dd_local_image_size($sm[1]);
+        if ($dims) $imgAttrs .= ' width="' . $dims[0] . '" height="' . $dims[1] . '"';
+    }
+    return [$imgAttrs, $caption, $styleAttr, $class];
+}
+
+/** Intrinsic [width, height] of a file under html/, or null. */
+function dd_local_image_size(string $webPath): ?array
+{
+    static $cache = [];
+    if (array_key_exists($webPath, $cache)) return $cache[$webPath];
+    $file = APP_ROOT . '/html' . $webPath;
+    $info = is_file($file) ? @getimagesize($file) : false;
+    return $cache[$webPath] = $info ? [(int)$info[0], (int)$info[1]] : null;
+}
+
+/**
+ * Give every H2/H3 in rendered post HTML a stable id and a hover anchor link,
+ * and return the list of H2s for the table of contents.
+ *
+ * @return array{0:string,1:array<int,array{id:string,text:string}>}
+ */
+function dd_add_heading_anchors(string $html): array
+{
+    $toc  = [];
+    $used = [];
+    $html = preg_replace_callback(
+        '#<(h[23])>(.*?)</\1>#is',
+        function ($m) use (&$toc, &$used) {
+            $text = trim(html_entity_decode(strip_tags($m[2]), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            $id   = sanitize_slug($text) ?: 'section';
+            $base = $id;
+            $n    = 2;
+            while (isset($used[$id])) $id = $base . '-' . $n++;
+            $used[$id] = true;
+            if (strtolower($m[1]) === 'h2') $toc[] = ['id' => $id, 'text' => $text];
+            return '<' . $m[1] . ' id="' . $id . '">' . $m[2]
+                 . '<a class="heading-anchor" href="#' . $id . '" aria-label="Link to this section">#</a>'
+                 . '</' . $m[1] . '>';
+        },
+        $html
+    );
+    return [$html, $toc];
+}
+
+/** True if any reader-visible text field in $incoming differs from $current. */
+function dd_words_changed(array $current, array $incoming): bool
+{
+    foreach (['title', 'excerpt', 'summary', 'content'] as $f) {
+        if (!array_key_exists($f, $incoming)) continue;
+        if (trim((string)($incoming[$f] ?? '')) !== trim((string)($current[$f] ?? ''))) return true;
+    }
+    return false;
+}
+
+/** The date a post's words last changed (falls back to publish date). */
+function post_modified_at(array $post): ?string
+{
+    $d = $post['content_updated_at'] ?? null;
+    return $d ?: ($post['published_at'] ?? null);
+}
+
+/** URL slug for a series name. */
+function series_slug(string $name): string
+{
+    return sanitize_slug($name);
+}
+
+/** Posts in one series, in reading order. */
+function get_series_posts(string $series): array
+{
+    $stmt = db_connect()->prepare(
+        "SELECT id, title, slug, excerpt, content, published_at, series_order
+         FROM blog_posts
+         WHERE series = ? AND status = 'published' AND visible = 1
+         ORDER BY COALESCE(series_order, 9999), published_at ASC"
+    );
+    $stmt->execute([$series]);
+    return $stmt->fetchAll();
+}
+
+/** All series with post counts, largest first. */
+function get_all_series(): array
+{
+    return db_connect()->query(
+        "SELECT series AS name, COUNT(*) AS post_count, MAX(published_at) AS latest
+         FROM blog_posts
+         WHERE series IS NOT NULL AND series <> '' AND status = 'published' AND visible = 1
+         GROUP BY series
+         ORDER BY post_count DESC, latest DESC"
+    )->fetchAll();
+}
+
+/** Find a series name from its URL slug. */
+function find_series_by_slug(string $slug): ?string
+{
+    foreach (get_all_series() as $s) {
+        if (series_slug($s['name']) === $slug) return $s['name'];
+    }
+    return null;
+}
+
+/**
+ * Up to $limit related posts: same series first, then same category, then
+ * newest. Never the post itself.
+ */
+function get_related_posts(array $post, int $limit = 3): array
+{
+    $pdo  = db_connect();
+    $stmt = $pdo->prepare(
+        "SELECT id, title, slug, excerpt, content, published_at
+         FROM blog_posts
+         WHERE id <> :id AND status = 'published' AND visible = 1
+         ORDER BY (series IS NOT NULL AND series = :series) DESC,
+                  (category_id IS NOT NULL AND category_id = :cat) DESC,
+                  published_at DESC
+         LIMIT :lim"
+    );
+    $stmt->bindValue(':id', (int)$post['id'], PDO::PARAM_INT);
+    $stmt->bindValue(':series', (string)($post['series'] ?? ''));
+    $stmt->bindValue(':cat', (int)($post['category_id'] ?? 0), PDO::PARAM_INT);
+    $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
+/** Look up several published posts by slug, preserving the given order. */
+function get_posts_by_slugs(array $slugs): array
+{
+    if (!$slugs) return [];
+    $in   = implode(',', array_fill(0, count($slugs), '?'));
+    $stmt = db_connect()->prepare(
+        "SELECT p.id, p.title, p.slug, p.excerpt, p.content, p.published_at, c.name AS category_name
+         FROM blog_posts p LEFT JOIN blog_categories c ON c.id = p.category_id
+         WHERE p.slug IN ($in) AND p.status = 'published' AND p.visible = 1"
+    );
+    $stmt->execute(array_values($slugs));
+    $by = [];
+    foreach ($stmt->fetchAll() as $r) $by[$r['slug']] = $r;
+    return array_values(array_filter(array_map(fn ($s) => $by[$s] ?? null, $slugs)));
 }
 
 function get_posts(int $page = 1, int $per_page = 8, ?int $category_id = null): array
@@ -335,8 +483,10 @@ function get_post_by_slug(string $slug): ?array
     $post = $stmt->fetch() ?: null;
 
     if ($post) {
-        // Increment view count
-        $pdo->prepare("UPDATE blog_posts SET views = views + 1 WHERE id = ?")
+        // Increment view count. `updated_at = updated_at` stops the column's
+        // ON UPDATE CURRENT_TIMESTAMP from firing — without it every page view
+        // stamped the post as modified now.
+        $pdo->prepare("UPDATE blog_posts SET views = views + 1, updated_at = updated_at WHERE id = ?")
             ->execute([$post['id']]);
     }
     return $post;
@@ -399,14 +549,18 @@ function search_posts(string $query, int $limit = 10): array
     return $stmt->fetchAll();
 }
 
-function get_categories(): array
+/** Categories with published-post counts. Public pages hide empty ones;
+ *  the editor passes false so every category is selectable. */
+function get_categories(bool $only_used = true): array
 {
-    $pdo  = db_connect();
-    $stmt = $pdo->query(
+    $pdo    = db_connect();
+    $having = $only_used ? 'HAVING post_count > 0' : '';
+    $stmt   = $pdo->query(
         "SELECT c.id, c.name, c.slug, COUNT(p.id) AS post_count
          FROM blog_categories c
          LEFT JOIN blog_posts p ON p.category_id = c.id AND p.status = 'published' AND p.visible = 1
          GROUP BY c.id
+         {$having}
          ORDER BY c.name ASC"
     );
     return $stmt->fetchAll();

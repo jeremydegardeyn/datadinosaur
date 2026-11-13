@@ -4,6 +4,35 @@ declare(strict_types=1);
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+/** Send a plain-text email to one recipient through the site's SMTP relay. */
+function send_site_email(string $to, string $subject, string $body, array $headers = []): bool
+{
+    $mail = new PHPMailer(true);
+    try {
+        $mail->isSMTP();
+        $mail->Host       = getenv('SMTP_HOST')       ?: 'localhost';
+        $mail->Port       = (int)(getenv('SMTP_PORT') ?: 587);
+        $mail->SMTPAuth   = (getenv('SMTP_USER') ?: '') !== '';
+        $mail->Username   = getenv('SMTP_USER')       ?: '';
+        $mail->Password   = getenv('SMTP_PASS')       ?: '';
+        $mail->SMTPSecure = $mail->SMTPAuth ? PHPMailer::ENCRYPTION_STARTTLS : '';
+        $mail->CharSet    = 'UTF-8';
+
+        $mail->setFrom(getenv('SMTP_FROM_EMAIL') ?: 'noreply@datadinosaur.com',
+                       getenv('SMTP_FROM_NAME')  ?: 'DataDinosaur');
+        $mail->addAddress($to);
+        foreach ($headers as $k => $v) $mail->addCustomHeader($k, $v);
+        $mail->isHTML(false);
+        $mail->Subject = $subject;
+        $mail->Body    = $body;
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        error_log('PHPMailer error: ' . $mail->ErrorInfo);
+        return false;
+    }
+}
+
 function send_contact_email(array $data): bool
 {
     $mail = new PHPMailer(true);

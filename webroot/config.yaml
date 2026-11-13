@@ -3,20 +3,38 @@ site:
   tagline: "Human Data Expertise for the AI Era"
   description: "Real-world data engineering insights, career advice, and consulting for professionals navigating the AI landscape."
   base_url: "https://www.datadinosaur.com"
-  author: "Jeremy"
+  author: "Jeremy DeGardeyn"
+  author_title: "Data & AI Architect"
   copyright_year: 2026
 
 nav:
-  - label: "Home"
-    href: "/"
+  - label: "Start here"
+    href: "/start-here"
   - label: "Blog"
     href: "/blog"
   - label: "Services"
     href: "/services"
+  - label: "Brain Breaks"
+    href: "/brain-breaks"
   - label: "About"
     href: "/about"
   - label: "Contact"
     href: "/contact"
+
+# One-line descriptions shown on series pages and on /start-here.
+# The key must match the post's `series` value exactly.
+series:
+  "AI gateway": "How to govern model and agent traffic through a gateway: operating models, routing, a cross-cloud containment lab, and where policy should bind."
+  "FinChat build log": "Building FinChat, a reference retail-banking data and AI platform on Google Cloud: grounding, evals, policy as code, safety alerting, and ServiceNow integration."
+  "RAG in practice": "Retrieval-augmented generation from the data side: why answers go wrong, how to secure the pipeline, and a working RAG chat widget."
+
+start_here:
+  top_posts:
+    - "alternative-to-buying-capacity-to-fix-dataflow-stockouts"
+    - "thinking-of-an-agent-as-a-colleague"
+    - "multi-turn-context-safety-alerting-catching-what-a-per-message-filter-cannot"
+    - "managing-data-products-in-google-clouds-knowledge-catalog"
+    - "stop-your-gcp-bill-before-it-stops-you"
 
 blog:
   posts_per_page: 8
@@ -33,6 +51,7 @@ blog:
   show_sidebar:        true
   sidebar_widgets:
     - search
+    - series
     - categories
     - recent_posts
 
@@ -46,6 +65,8 @@ ads:
 contact:
   email: "jeremy@datadinosaur.com"
   consulting_types:
+    - "AI Gateway Readiness Review"
+    - "RAG Security Assessment"
     - "Data Architecture Review"
     - "Data Governance & Metadata Strategy"
     - "AI / Gen AI Integration"
@@ -72,6 +93,8 @@ footer:
       href: "/contact"
     - label: "Brain Breaks"
       href: "/brain-breaks"
+    - label: "RSS"
+      href: "/feed.xml"
   social:
     - label: "LinkedIn"
       href: "https://www.linkedin.com/in/jeremy-degardeyn-05288b77/"

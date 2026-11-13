@@ -1,5 +1,11 @@
 <?php
 $consulting_types = $config['contact']['consulting_types'];
+// /contact?type=gateway|rag preselects the matching scoped review (linked from /services).
+$preselect = match ($_GET['type'] ?? '') {
+    'gateway' => 'AI Gateway Readiness Review',
+    'rag'     => 'RAG Security Assessment',
+    default   => null,
+};
 // Signed render time for the timing trap (see api/contact.php).
 $form_ts  = time();
 $form_sig = hash_hmac('sha256', (string)$form_ts, getenv('APP_SECRET') ?: 'dd');
@@ -9,8 +15,8 @@ $form_sig = hash_hmac('sha256', (string)$form_ts, getenv('APP_SECRET') ?: 'dd');
     <div class="contact-intro">
       <h1 class="page-heading">Get in Touch</h1>
       <p class="page-lead">
-        Whether you're looking for consulting help, have a question about a post,
-        or just want to talk data engineering — I'd love to hear from you.
+        Whether you're looking for a review, have a question about a post, or want to compare notes
+        on something you're building, send a message and I'll reply within one to two business days.
       </p>
       <p>
         <strong>Email directly:</strong>
@@ -54,7 +60,7 @@ $form_sig = hash_hmac('sha256', (string)$form_ts, getenv('APP_SECRET') ?: 'dd');
         <label>Type of inquiry
           <select name="type">
             <?php foreach ($consulting_types as $t): ?>
-            <option value="<?= e($t) ?>"><?= e($t) ?></option>
+            <option value="<?= e($t) ?>"<?= $t === $preselect ? ' selected' : '' ?>><?= e($t) ?></option>
             <?php endforeach; ?>
           </select>
         </label>

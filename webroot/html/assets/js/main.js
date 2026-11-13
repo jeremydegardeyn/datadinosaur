@@ -5,7 +5,30 @@
 const navToggle = document.getElementById('navToggle');
 const siteNav   = document.getElementById('siteNav');
 if (navToggle && siteNav) {
-  navToggle.addEventListener('click', () => siteNav.classList.toggle('open'));
+  navToggle.addEventListener('click', () => {
+    const open = siteNav.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+}
+
+/* ---- Light / dark theme toggle ----
+   No saved choice = follow the OS. A click picks the opposite of what is
+   showing now and remembers it on this device. */
+const themeToggle = document.getElementById('themeToggle');
+if (themeToggle) {
+  const root = document.documentElement;
+  const showing = () => root.getAttribute('data-theme')
+    || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  const label = () => themeToggle.setAttribute('aria-label',
+    showing() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+  label();
+  themeToggle.addEventListener('click', () => {
+    const next = showing() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('dd-theme', next); } catch (e) { /* private mode */ }
+    label();
+    document.dispatchEvent(new CustomEvent('dd:themechange', { detail: next }));
+  });
 }
 
 /* ---- Blog search (sidebar) ---- */

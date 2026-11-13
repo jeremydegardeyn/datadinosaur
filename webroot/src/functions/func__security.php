@@ -32,3 +32,12 @@ function validate_email(string $email): bool
 {
     return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 }
+
+/** Display name for a post's author. Posts store the short name "Jeremy";
+ *  public pages and structured data show the full name from config. */
+function author_name(array $post, array $config): string
+{
+    $a = trim((string)($post['author'] ?? ''));
+    $full = (string)($config['site']['author'] ?? 'Jeremy');
+    return ($a === '' || $a === 'Jeremy') ? $full : $a;
+}

@@ -1,7 +1,7 @@
 <?php
 $post_id   = isset($_GET['id']) ? (int)$_GET['id'] : null;
 $post      = $post_id ? get_post_by_id($post_id) : null;
-$categories = get_categories();
+$categories = get_categories(false);
 $is_new    = $post === null;
 $page_title = ($is_new ? 'New Post' : 'Edit: ' . $post['title']) . ' — Admin';
 ?>
@@ -67,6 +67,27 @@ $page_title = ($is_new ? 'New Post' : 'Edit: ' . $post['title']) . ' — Admin';
       <textarea name="excerpt" rows="2" maxlength="500"
                 placeholder="Short description for listings..."><?= $is_new ? '' : e($post['excerpt']) ?></textarea>
     </label>
+
+    <label>Summary <span class="field-note">(optional — one point per line, shown in a "Key points" box above the post)</span>
+      <textarea name="summary" rows="3" maxlength="1500"
+                placeholder="What was tested&#10;What the result was&#10;What it means for you"><?= $is_new ? '' : e($post['summary'] ?? '') ?></textarea>
+    </label>
+
+    <div class="form-row">
+      <label>Series <span class="field-note">(optional — posts with the same series name are linked together)</span>
+        <input type="text" name="series" maxlength="120" list="seriesList"
+               value="<?= $is_new ? '' : e($post['series'] ?? '') ?>" placeholder="e.g. AI gateway">
+        <datalist id="seriesList">
+          <?php foreach (get_all_series() as $s): ?>
+          <option value="<?= e($s['name']) ?>">
+          <?php endforeach; ?>
+        </datalist>
+      </label>
+      <label>Order in series
+        <input type="number" name="series_order" min="0" max="999"
+               value="<?= $is_new ? '' : e((string)($post['series_order'] ?? '')) ?>">
+      </label>
+    </div>
 
     <div class="editor-wrap">
       <label>Content * <span class="field-note">(Markdown supported)</span>

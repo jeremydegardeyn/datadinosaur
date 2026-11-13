@@ -7,6 +7,8 @@ $published      = (int)$pdo->query("SELECT COUNT(*) FROM blog_posts WHERE status
 $drafts         = $total_posts - $published;
 $pending_cmts   = (int)$pdo->query("SELECT COUNT(*) FROM blog_comments WHERE status='pending'")->fetchColumn();
 $new_inquiries  = (int)$pdo->query("SELECT COUNT(*) FROM contact_inquiries WHERE status='new'")->fetchColumn();
+$subscribers_confirmed = (int)$pdo->query("SELECT COUNT(*) FROM subscribers WHERE status='confirmed'")->fetchColumn();
+$subscribers_pending   = (int)$pdo->query("SELECT COUNT(*) FROM subscribers WHERE status='pending'")->fetchColumn();
 
 // Posts (paginated)
 $posts_per_page  = 15;
@@ -63,6 +65,12 @@ $inquiries = $inq_stmt->fetchAll();
     <div class="stat-card">
       <span class="stat-num"><?= $published ?></span>
       <span class="stat-label">Published Posts</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num"><?= $subscribers_confirmed ?></span>
+      <span class="stat-label">Subscribers
+        <?php if ($subscribers_pending): ?>(+<?= $subscribers_pending ?> pending)<?php endif; ?>
+        · <a href="/api/subscribe?action=export">CSV</a></span>
     </div>
     <div class="stat-card">
       <span class="stat-num"><?= $drafts ?></span>

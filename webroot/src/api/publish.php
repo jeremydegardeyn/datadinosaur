@@ -54,11 +54,15 @@ if ($category) {
 
 $pub_at = $status === 'published' ? date('Y-m-d H:i:s') : null;
 
+$summary = trim($data['summary'] ?? '') ?: null;
+$series  = trim($data['series']  ?? '') ?: null;
+
 $stmt = $pdo->prepare(
-    "INSERT INTO blog_posts (title, slug, excerpt, content, author, category_id, status, published_at)
-     VALUES (?, ?, ?, ?, 'Jeremy', ?, ?, ?)"
+    "INSERT INTO blog_posts (title, slug, excerpt, summary, content, author, category_id, series,
+                             status, published_at, content_updated_at)
+     VALUES (?, ?, ?, ?, ?, 'Jeremy', ?, ?, ?, ?, ?)"
 );
-$stmt->execute([$title, $slug, $excerpt, $content, $cat_id, $status, $pub_at]);
+$stmt->execute([$title, $slug, $excerpt, $summary, $content, $cat_id, $series, $status, $pub_at, $pub_at]);
 $id = $pdo->lastInsertId();
 
 // Trigger RAG re-index when post is published

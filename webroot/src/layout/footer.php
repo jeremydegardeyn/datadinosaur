@@ -2,7 +2,17 @@
 
 <footer class="site-footer">
   <div class="container footer-inner">
-    <nav class="footer-nav">
+    <?php if (empty($hide_footer_subscribe)): ?>
+    <div class="footer-subscribe">
+      <div>
+        <p class="footer-subscribe-title">New posts by email</p>
+        <p class="footer-subscribe-text">One email per post. No tracking. Or use the <a href="/feed.xml">RSS feed</a>.</p>
+      </div>
+      <?php $subscribe_source = 'footer'; require SRC_ROOT . '/layout/subscribe-form.php'; ?>
+    </div>
+    <?php endif; ?>
+
+    <nav class="footer-nav" aria-label="Footer">
       <?php foreach ($config['footer']['links'] as $link): ?>
       <a href="<?= e($link['href']) ?>"><?= e($link['label']) ?></a>
       <?php endforeach; ?>
@@ -24,13 +34,13 @@
     <?php endif; ?>
 
     <p class="footer-copy">
-      &copy; <?= $config['site']['copyright_year'] ?> <?= e($config['site']['name']) ?>.
+      &copy; <?= $config['site']['copyright_year'] ?> <?= e($config['site']['author']) ?> · <?= e($config['site']['name']) ?>.
       Real humans, real expertise.
     </p>
   </div>
 </footer>
 
-<script src="/assets/js/main.js?v=2"></script>
+<script src="/assets/js/main.js?v=3"></script>
 <script src="/assets/js/chat-widget.js?v=2"></script>
 </body>
 </html>
