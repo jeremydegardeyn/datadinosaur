@@ -393,12 +393,15 @@
 
     // packets
     var v = G.speed;
+    // Once you've decided a request it no longer needs reading time: it shoots
+    // to the gate and on to its target in about a second, whatever the speed setting.
+    var fastV = Math.max(v, (L.gateX - L.agentX) / 0.9);
     for (var i = 0; i < G.packets.length; i++) {
       var p = G.packets[i];
       if (p.state === 'dead') continue;
       p.trail.push(p.x, p.y); if (p.trail.length > 24) p.trail.splice(0, 2);
       if (p.state === 'incoming') {
-        p.x += v * dt;
+        p.x += (p.decided ? fastV : v) * dt;
         if (p.x >= L.gateX) {
           p.x = L.gateX;
           var st = agentState(p.req.agent);
@@ -417,7 +420,7 @@
           }
         }
       } else if (p.state === 'passing') {
-        var dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy), step = v * 1.8 * dt;
+        var dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy), step = fastV * 1.4 * dt;
         if (d <= step) { p.state = 'dead'; burst(p.tx, p.ty, p.redacted ? '#f59e0b' : '#10b981', 6); }
         else { p.x += dx / d * step; p.y += dy / d * step; }
       }
