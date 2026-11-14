@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap" />
-  <link rel="stylesheet" href="./css/style.css?v=2" />
+  <link rel="stylesheet" href="./css/style.css?v=3" />
   <script data-goatcounter="https://datadinosaur.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
@@ -99,12 +99,18 @@
       </div>
       <p class="small">From wave 4, some conversations only turn dangerous on the third message. Watch the conversation
         trail. Eight waves make a shift.</p>
-      <fieldset class="pace">
-        <legend>Pace</legend>
-        <label><input type="radio" name="pace" value="relaxed" /> <span>Relaxed</span></label>
-        <label><input type="radio" name="pace" value="standard" checked /> <span>Standard</span></label>
-        <label><input type="radio" name="pace" value="fast" /> <span>Fast</span></label>
-      </fieldset>
+      <div class="speed">
+        <div class="speed-head">
+          <label for="speed-start">Speed <b class="speed-val">33</b></label>
+          <button class="speed-reset" type="button">Default</button>
+        </div>
+        <div class="speed-row">
+          <span class="small">Slower</span>
+          <input id="speed-start" class="speed-range" type="range" min="25" max="150" step="1" value="33" />
+          <span class="small">Faster</span>
+        </div>
+        <p class="speed-hint small"></p>
+      </div>
       <div class="start-row">
         <button id="startBtn" class="btn-primary" type="button">Start shift <kbd>Enter</kbd></button>
         <span id="bestScore" class="small"></span>
@@ -130,6 +136,18 @@
     <div class="card">
       <h2>Paused</h2>
       <p class="small">Press <kbd>P</kbd> or the button to resume.</p>
+      <div class="speed">
+        <div class="speed-head">
+          <label for="speed-pause">Speed <b class="speed-val">33</b></label>
+          <button class="speed-reset" type="button">Default</button>
+        </div>
+        <div class="speed-row">
+          <span class="small">Slower</span>
+          <input id="speed-pause" class="speed-range" type="range" min="25" max="150" step="1" value="33" />
+          <span class="small">Faster</span>
+        </div>
+        <p class="speed-hint small"></p>
+      </div>
       <div class="start-row"><button id="resumeBtn" class="btn-primary" type="button">Resume</button></div>
     </div>
   </div>
@@ -157,6 +175,6 @@
 
   <noscript><p class="noscript">Guardrail Gauntlet needs JavaScript.</p></noscript>
   <script src="./js/deck.js?v=2"></script>
-  <script src="./js/game.js?v=5"></script>
+  <script src="./js/game.js?v=6"></script>
 </body>
 </html>

@@ -8,9 +8,14 @@
   var SITE = 'https://www.datadinosaur.com';
   var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var WAVES = 8;
-  // Pace multiplies travel time and the gaps between requests (bigger = slower).
-  var PACES = { relaxed: { k: 1.45, label: 'Relaxed' }, standard: { k: 1, label: 'Standard' }, fast: { k: 0.7, label: 'Fast' } };
-  var pace = 'standard';
+  // Speed is a percentage of the original 'Standard' pace. 33 is the default,
+  // 25 the slowest. Travel time and the gaps between requests scale by 100/speed;
+  // slower speeds also send fewer requests per wave so a shift doesn't drag.
+  var SPEED_MIN = 25, SPEED_MAX = 150, SPEED_DEFAULT = 33;
+  var speed = SPEED_DEFAULT;
+  function K() { return 100 / speed; }
+  function countScale() { return Math.min(1, Math.sqrt(speed / 100)); }
+  function baseTravel(n) { return Math.max(5.5, 10 - n * 0.55); }
   var CACHE_DELAY = 2.5;           // seconds before a registry disable takes effect
 
   // ---------------------------------------------------------------- utils
@@ -129,6 +134,13 @@
     if (G && G.packets && oldW) {
       G.packets.forEach(function (p) { p.x *= W / oldW; p.y *= H / oldH; p.sy *= H / oldH; });
     }
+    applySpeed();
+  }
+  // Packet velocity in px/s for the current wave, from the speed setting.
+  function applySpeed() {
+    if (!G || !G.cfg) return;
+    G.cfg.travel = G.cfg.travelBase * K();
+    G.speed = (L.gateX - L.agentX) / G.cfg.travel;
   }
 
   // ---------------------------------------------------------------- state
@@ -154,9 +166,10 @@
     if (n >= 5) mix.budget = 0.8;
     if (n >= 6) { mix.inject = 2.4; mix.pii = 2.4; mix.benign = 4.5; }
     return {
-      count: 6 + n * 2,
-      interval: Math.max(1.3, 3.2 - n * 0.25) * PACES[pace].k,
-      travel: Math.max(5.5, 10 - n * 0.55) * PACES[pace].k,
+      count: Math.max(4, Math.round((6 + n * 2) * countScale())),
+      interval: Math.max(1.3, 3.2 - n * 0.25) * K(),
+      travelBase: baseTravel(n),
+      travel: baseTravel(n) * K(),
       chains: n >= 4 ? (n >= 7 ? 3 : n >= 6 ? 2 : 1) : 0,
       rogue: n >= 3,
       mix: mix
@@ -186,16 +199,16 @@
     var dur = t;
     for (var c = 0; c < cfg.chains; c++) {
       var t0 = rand(dur * 0.15, dur * 0.7), chain = drawChain(), cid = 'c' + nextId++;
-      var gap = Math.max(1.8 * PACES[pace].k, cfg.interval * 1.5);
+      var gap = Math.max(1.8 * K(), cfg.interval * 1.5);
       for (var turn = 0; turn < 3; turn++) G.schedule.push({ t: t0 + turn * gap, kind: 'chain', chain: chain, cid: cid, turn: turn + 1 });
     }
     if (cfg.rogue) {
       var tr = dur * rand(0.3, 0.5);
       G.schedule.push({ t: tr, kind: 'rogueAlert' });
-      for (var k = 0; k < 4; k++) G.schedule.push({ t: tr + 1.4 + k * Math.max(1.3 * PACES[pace].k, cfg.interval * 1.1), kind: 'rogue' });
+      for (var k = 0; k < 4; k++) G.schedule.push({ t: tr + 1.4 + k * Math.max(1.3 * K(), cfg.interval * 1.1), kind: 'rogue' });
     }
     G.schedule.sort(function (a, b) { return a.t - b.t; });
-    G.speed = (L.gateX - L.agentX) / cfg.travel;
+    applySpeed();
     showBanner('Wave ' + n + (n === 4 ? ': watch for conversations that turn on the third message' :
                n === 3 ? ': the registry may flag a compromised agent' :
                n === 5 ? ': runaway-cost requests join the mix' : ''), 'info', 2.6);
@@ -745,7 +758,7 @@
     x.fillStyle = '#10b981'; x.font = '700 26px "JetBrains Mono", monospace'; x.fillText('INCIDENT REPORT', 70, 90);
     x.fillStyle = '#f4f7ff'; x.font = '700 64px "Space Grotesk", sans-serif'; x.fillText('Guardrail Gauntlet', 70, 165);
     x.fillStyle = '#8b95a8'; x.font = '28px "Space Grotesk", sans-serif';
-    x.fillText((reason === 'complete' ? 'Ran the AI gateway for all 8 waves' : 'Shift ended in wave ' + G.wave) + '  \u00b7  ' + PACES[pace].label + ' pace', 70, 212);
+    x.fillText((reason === 'complete' ? 'Ran the AI gateway for all 8 waves' : 'Shift ended in wave ' + G.wave) + '  \u00b7  speed ' + speed, 70, 212);
     // grade
     x.fillStyle = g === 'S' || g === 'A' ? '#10b981' : g === 'B' ? '#f59e0b' : '#ef4444';
     x.font = '700 200px "Space Grotesk", sans-serif'; x.textAlign = 'right'; x.fillText(g, 1130, 250); x.textAlign = 'left';
@@ -767,7 +780,7 @@
 
   function shareText() {
     var t = G.totals;
-    return 'I ran the AI gateway in Guardrail Gauntlet (' + PACES[pace].label.toLowerCase() + ' pace): grade ' + grade(t) + ', ' + G.score.toLocaleString() + ' points, ' +
+    return 'I ran the AI gateway in Guardrail Gauntlet (speed ' + speed + '): grade ' + grade(t) + ', ' + G.score.toLocaleString() + ' points, ' +
       t.breaches + ' breach' + (t.breaches === 1 ? '' : 'es') + ', ' + t.contained + ' compromised agent' + (t.contained === 1 ? '' : 's') +
       ' contained. ' + SITE + '/gauntlet/';
   }
@@ -781,16 +794,23 @@
   function hideOverlays() { OVERLAYS.forEach(function (o) { $(o).hidden = true; }); canvas.focus && canvas.focus(); }
   function currentOverlay() { for (var i = 0; i < OVERLAYS.length; i++) if (!$(OVERLAYS[i]).hidden) return OVERLAYS[i]; return null; }
 
-  function bestKey() { return pace === 'standard' ? 'gg-best2' : 'gg-best2-' + pace; }
+  function bestKey() { return 'gg-best3'; }
   function showBest() {
     var b = parseInt(store(bestKey()) || '0', 10);
-    $('bestScore').textContent = b ? 'Your best at ' + PACES[pace].label.toLowerCase() + ' pace: ' + b.toLocaleString() : '';
+    $('bestScore').textContent = b ? 'Your best: ' + b.toLocaleString() : '';
   }
-  function setPace(v) {
-    if (!PACES[v]) return;
-    pace = v; store('gg-pace', v);
-    var r = document.querySelector('input[name=pace][value=' + v + ']'); if (r) r.checked = true;
-    showBest();
+  function speedHint() {
+    return 'A request takes about ' + Math.round(baseTravel(1) * K()) + ' s to cross the screen in wave 1, ' +
+      Math.round(baseTravel(8) * K()) + ' s in wave 8.';
+  }
+  function setSpeed(v, fromInput) {
+    v = Math.round(Number(v));
+    if (!(v >= SPEED_MIN && v <= SPEED_MAX)) v = SPEED_DEFAULT;
+    speed = v; store('gg-speed', String(v));
+    Array.prototype.forEach.call(document.querySelectorAll('.speed-range'), function (r) { if (r !== fromInput) r.value = v; });
+    Array.prototype.forEach.call(document.querySelectorAll('.speed-val'), function (el) { el.textContent = v; });
+    Array.prototype.forEach.call(document.querySelectorAll('.speed-hint'), function (el) { el.textContent = speedHint(); });
+    applySpeed();
   }
   function begin() {
     Snd.init();
@@ -807,7 +827,8 @@
   // ---------------------------------------------------------------- input
   document.addEventListener('keydown', function (e) {
     if (e.target && /textarea|select/i.test(e.target.tagName)) return;
-    if (e.target && e.target.tagName === 'INPUT' && e.target.type !== 'radio') return;
+    if (e.target && e.target.tagName === 'INPUT' && e.target.type === 'range' && e.key !== 'Enter') return;
+    if (e.target && e.target.tagName === 'INPUT' && e.target.type !== 'range') return;
     var k = e.key.toLowerCase(), ov = currentOverlay();
     if (k === 'm') { Snd.setMuted(!Snd.muted); return; }
     if (ov) {
@@ -890,9 +911,12 @@
   // boot
   Snd.setMuted(Snd.muted);
   newGame(); layout(); renderInspector();
-  Array.prototype.forEach.call(document.querySelectorAll('input[name=pace]'), function (r) {
-    r.addEventListener('change', function () { if (r.checked) setPace(r.value); });
+  Array.prototype.forEach.call(document.querySelectorAll('.speed-range'), function (r) {
+    r.min = SPEED_MIN; r.max = SPEED_MAX;
+    r.addEventListener('input', function () { setSpeed(r.value, r); });
   });
-  setPace(store('gg-pace') || 'standard');
+  document.querySelectorAll('.speed-reset').forEach(function (b) { b.addEventListener('click', function () { setSpeed(SPEED_DEFAULT); }); });
+  setSpeed(store('gg-speed') || SPEED_DEFAULT);
+  showBest();
   requestAnimationFrame(frame);
 })();
