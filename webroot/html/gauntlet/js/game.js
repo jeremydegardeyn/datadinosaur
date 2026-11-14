@@ -8,6 +8,9 @@
   var SITE = 'https://www.datadinosaur.com';
   var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var WAVES = 8;
+  // Pace multiplies travel time and the gaps between requests (bigger = slower).
+  var PACES = { relaxed: { k: 1.45, label: 'Relaxed' }, standard: { k: 1, label: 'Standard' }, fast: { k: 0.7, label: 'Fast' } };
+  var pace = 'standard';
   var CACHE_DELAY = 2.5;           // seconds before a registry disable takes effect
 
   // ---------------------------------------------------------------- utils
@@ -151,9 +154,9 @@
     if (n >= 5) mix.budget = 0.8;
     if (n >= 6) { mix.inject = 2.4; mix.pii = 2.4; mix.benign = 4.5; }
     return {
-      count: 8 + n * 3,
-      interval: Math.max(0.55, 2.1 - n * 0.19),
-      travel: Math.max(3.0, 7.2 - n * 0.55),
+      count: 6 + n * 2,
+      interval: Math.max(1.3, 3.2 - n * 0.25) * PACES[pace].k,
+      travel: Math.max(5.5, 10 - n * 0.55) * PACES[pace].k,
       chains: n >= 4 ? (n >= 7 ? 3 : n >= 6 ? 2 : 1) : 0,
       rogue: n >= 3,
       mix: mix
@@ -183,13 +186,13 @@
     var dur = t;
     for (var c = 0; c < cfg.chains; c++) {
       var t0 = rand(dur * 0.15, dur * 0.7), chain = drawChain(), cid = 'c' + nextId++;
-      var gap = Math.max(1.1, cfg.interval * 1.5);
+      var gap = Math.max(1.8 * PACES[pace].k, cfg.interval * 1.5);
       for (var turn = 0; turn < 3; turn++) G.schedule.push({ t: t0 + turn * gap, kind: 'chain', chain: chain, cid: cid, turn: turn + 1 });
     }
     if (cfg.rogue) {
       var tr = dur * rand(0.3, 0.5);
       G.schedule.push({ t: tr, kind: 'rogueAlert' });
-      for (var k = 0; k < 4; k++) G.schedule.push({ t: tr + 1.4 + k * Math.max(0.9, cfg.interval * 1.1), kind: 'rogue' });
+      for (var k = 0; k < 4; k++) G.schedule.push({ t: tr + 1.4 + k * Math.max(1.3 * PACES[pace].k, cfg.interval * 1.1), kind: 'rogue' });
     }
     G.schedule.sort(function (a, b) { return a.t - b.t; });
     G.speed = (L.gateX - L.agentX) / cfg.travel;
@@ -714,8 +717,8 @@
   function endShift(reason) {
     G.running = false; G.over = true; hideBanner();
     var t = G.totals, g = grade(t);
-    var best = parseInt(store('gg-best') || '0', 10), isBest = G.score > best;
-    if (isBest) store('gg-best', String(G.score));
+    var bk = bestKey(), best = parseInt(store(bk) || '0', 10), isBest = G.score > best;
+    if (isBest) store(bk, String(G.score));
     if (reason === 'complete') Snd.cleared(); else Snd.breach();
     $('reportTitle').textContent = reason === 'complete' ? 'Shift complete — grade ' + g
       : reason === 'trust' ? 'Shift ended in wave ' + G.wave + ': trust lost' : 'Shift ended in wave ' + G.wave + ': token budget exhausted';
@@ -742,7 +745,7 @@
     x.fillStyle = '#10b981'; x.font = '700 26px "JetBrains Mono", monospace'; x.fillText('INCIDENT REPORT', 70, 90);
     x.fillStyle = '#f4f7ff'; x.font = '700 64px "Space Grotesk", sans-serif'; x.fillText('Guardrail Gauntlet', 70, 165);
     x.fillStyle = '#8b95a8'; x.font = '28px "Space Grotesk", sans-serif';
-    x.fillText(reason === 'complete' ? 'Ran the AI gateway for all 8 waves' : 'Shift ended in wave ' + G.wave, 70, 212);
+    x.fillText((reason === 'complete' ? 'Ran the AI gateway for all 8 waves' : 'Shift ended in wave ' + G.wave) + '  \u00b7  ' + PACES[pace].label + ' pace', 70, 212);
     // grade
     x.fillStyle = g === 'S' || g === 'A' ? '#10b981' : g === 'B' ? '#f59e0b' : '#ef4444';
     x.font = '700 200px "Space Grotesk", sans-serif'; x.textAlign = 'right'; x.fillText(g, 1130, 250); x.textAlign = 'left';
@@ -764,7 +767,7 @@
 
   function shareText() {
     var t = G.totals;
-    return 'I ran the AI gateway in Guardrail Gauntlet: grade ' + grade(t) + ', ' + G.score.toLocaleString() + ' points, ' +
+    return 'I ran the AI gateway in Guardrail Gauntlet (' + PACES[pace].label.toLowerCase() + ' pace): grade ' + grade(t) + ', ' + G.score.toLocaleString() + ' points, ' +
       t.breaches + ' breach' + (t.breaches === 1 ? '' : 'es') + ', ' + t.contained + ' compromised agent' + (t.contained === 1 ? '' : 's') +
       ' contained. ' + SITE + '/gauntlet/';
   }
@@ -778,6 +781,17 @@
   function hideOverlays() { OVERLAYS.forEach(function (o) { $(o).hidden = true; }); canvas.focus && canvas.focus(); }
   function currentOverlay() { for (var i = 0; i < OVERLAYS.length; i++) if (!$(OVERLAYS[i]).hidden) return OVERLAYS[i]; return null; }
 
+  function bestKey() { return pace === 'standard' ? 'gg-best2' : 'gg-best2-' + pace; }
+  function showBest() {
+    var b = parseInt(store(bestKey()) || '0', 10);
+    $('bestScore').textContent = b ? 'Your best at ' + PACES[pace].label.toLowerCase() + ' pace: ' + b.toLocaleString() : '';
+  }
+  function setPace(v) {
+    if (!PACES[v]) return;
+    pace = v; store('gg-pace', v);
+    var r = document.querySelector('input[name=pace][value=' + v + ']'); if (r) r.checked = true;
+    showBest();
+  }
   function begin() {
     Snd.init();
     newGame(); layout(); hideOverlays(); startWave(1);
@@ -792,7 +806,8 @@
 
   // ---------------------------------------------------------------- input
   document.addEventListener('keydown', function (e) {
-    if (e.target && /input|textarea|select/i.test(e.target.tagName)) return;
+    if (e.target && /textarea|select/i.test(e.target.tagName)) return;
+    if (e.target && e.target.tagName === 'INPUT' && e.target.type !== 'radio') return;
     var k = e.key.toLowerCase(), ov = currentOverlay();
     if (k === 'm') { Snd.setMuted(!Snd.muted); return; }
     if (ov) {
@@ -875,7 +890,9 @@
   // boot
   Snd.setMuted(Snd.muted);
   newGame(); layout(); renderInspector();
-  var best = parseInt(store('gg-best') || '0', 10);
-  if (best) $('bestScore').textContent = 'Your best: ' + best.toLocaleString();
+  Array.prototype.forEach.call(document.querySelectorAll('input[name=pace]'), function (r) {
+    r.addEventListener('change', function () { if (r.checked) setPace(r.value); });
+  });
+  setPace(store('gg-pace') || 'standard');
   requestAnimationFrame(frame);
 })();
