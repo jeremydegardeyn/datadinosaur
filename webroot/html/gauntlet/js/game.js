@@ -8,10 +8,10 @@
   var SITE = 'https://www.datadinosaur.com';
   var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var WAVES = 8;
-  // Speed is a percentage of the original 'Standard' pace. 60 is the default,
+  // Speed is a percentage of the original 'Standard' pace. 50 is the default,
   // 25 the slowest. Travel time and the gaps between requests scale by 100/speed;
   // slower speeds also send fewer requests per wave so a shift doesn't drag.
-  var SPEED_MIN = 25, SPEED_MAX = 150, SPEED_DEFAULT = 60;
+  var SPEED_MIN = 25, SPEED_MAX = 150, SPEED_DEFAULT = 50;
   var speed = SPEED_DEFAULT;
   function K() { return 100 / speed; }
   function countScale() { return Math.min(1, Math.sqrt(speed / 100)); }
@@ -809,7 +809,7 @@
   function setSpeed(v, fromInput) {
     v = Math.round(Number(v));
     if (!(v >= SPEED_MIN && v <= SPEED_MAX)) v = SPEED_DEFAULT;
-    speed = v; store('gg-speed2', String(v));
+    speed = v; store('gg-speed3', String(v));
     Array.prototype.forEach.call(document.querySelectorAll('.speed-range'), function (r) { if (r !== fromInput) r.value = v; });
     Array.prototype.forEach.call(document.querySelectorAll('.speed-val'), function (el) { el.textContent = v; });
     Array.prototype.forEach.call(document.querySelectorAll('.speed-hint'), function (el) { el.textContent = speedHint(); });
@@ -919,7 +919,7 @@
     r.addEventListener('input', function () { setSpeed(r.value, r); });
   });
   document.querySelectorAll('.speed-reset').forEach(function (b) { b.addEventListener('click', function () { setSpeed(SPEED_DEFAULT); }); });
-  setSpeed(store('gg-speed2') || SPEED_DEFAULT);
+  setSpeed(store('gg-speed3') || SPEED_DEFAULT);
   showBest();
   requestAnimationFrame(frame);
 })();
